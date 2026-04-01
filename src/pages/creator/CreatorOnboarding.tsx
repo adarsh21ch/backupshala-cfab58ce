@@ -124,7 +124,7 @@ const CreatorOnboarding = () => {
 
       localStorage.removeItem('creator-onboarding');
       await refreshProfile();
-      toast({ title: 'Application submitted! 🎉', description: 'We'll review within 24-48 hours.' });
+      toast({ title: 'Application submitted! 🎉', description: 'We will review within 24-48 hours.' });
       navigate('/dashboard');
     } catch (err: any) {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });
