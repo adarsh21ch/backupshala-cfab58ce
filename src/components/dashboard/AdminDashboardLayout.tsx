@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck } from 'lucide-react';
+import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
@@ -12,6 +12,7 @@ const adminNav = [
   { to: '/admin/payments', label: 'Payments', icon: CreditCard },
   { to: '/admin/commissions', label: 'Commissions', icon: IndianRupee },
   { to: '/admin/payouts', label: 'Payouts', icon: Wallet },
+  { to: '/admin/support', label: 'Support', icon: MessageSquare },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
