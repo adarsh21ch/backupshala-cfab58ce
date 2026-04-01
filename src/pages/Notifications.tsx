@@ -4,14 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Bell, CheckCheck, Info, Award, IndianRupee, UserPlus } from 'lucide-react';
+import { timeAgo } from '@/lib/format';
 
-const typeIcons: Record<string, any> = {
-  welcome: UserPlus,
-  payment: IndianRupee,
-  commission: IndianRupee,
-  certificate: Award,
-  info: Info,
-};
+const typeIcons: Record<string, any> = { info: Info, success: Award, warning: Info, payout: IndianRupee, commission: IndianRupee, enrollment: UserPlus, certificate: Award };
 
 const Notifications = () => {
   const { user } = useAuth();
@@ -20,57 +15,37 @@ const Notifications = () => {
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
+      const { data } = await supabase.from('notifications').select('*').eq('user_id', user!.id).order('created_at', { ascending: false });
       return data || [];
     },
     enabled: !!user,
   });
 
   const markAllRead = useMutation({
-    mutationFn: async () => {
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user!.id)
-        .eq('is_read', false);
-    },
+    mutationFn: async () => { await supabase.from('notifications').update({ is_read: true }).eq('user_id', user!.id).eq('is_read', false); },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
-
-  const timeAgo = (date: string) => {
-    const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-2xl">
         <div className="flex items-center justify-between">
           <h1 className="font-heading text-2xl font-700">Notifications</h1>
-          {notifications && notifications.some(n => !n.is_read) && (
+          {notifications?.some(n => !n.is_read) && (
             <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()} className="text-xs text-primary">
-              <CheckCheck className="h-4 w-4 mr-1" /> Mark all as read
+              <CheckCheck className="h-4 w-4 mr-1" /> Mark all read
             </Button>
           )}
         </div>
-
         {isLoading ? (
           <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>
         ) : notifications?.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <div className="rounded-xl border border-border bg-card p-8 text-center">
             <Bell className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">No notifications yet</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-card divide-y divide-border">
+          <div className="rounded-xl border border-border bg-card divide-y divide-border">
             {notifications?.map(n => {
               const Icon = typeIcons[n.type] || Info;
               return (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +26,7 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.toLowerCase().trim(), password });
       if (error) throw error;
-      navigate('/dashboard');
+      navigate(redirect);
     } catch (error: any) {
       toast({ title: 'Login failed', description: error.message, variant: 'destructive' });
     } finally {
@@ -41,15 +43,14 @@ const Login = () => {
             <span className="font-heading text-2xl font-800 text-accent">shala</span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Log in to continue learning</p>
+          <p className="mt-1 text-sm text-muted-foreground">Log in to continue</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <div>
             <Label htmlFor="email">Email Address</Label>
             <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 rounded-lg" />
           </div>
-
           <div>
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
@@ -57,8 +58,7 @@ const Login = () => {
             </div>
             <Input id="password" type="password" placeholder="Your password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 rounded-lg" />
           </div>
-
-          <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 rounded-pill font-semibold">
+          <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 rounded-md font-semibold">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Log In'}
           </Button>
         </form>

@@ -1,11 +1,12 @@
 import LandingNavbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import HowItWorks from '@/components/landing/HowItWorks';
+import ForStudents from '@/components/landing/ForStudents';
+import ForCreators from '@/components/landing/ForCreators';
+import FeeBreakdown from '@/components/landing/FeeBreakdown';
 import CoursesSection from '@/components/landing/CoursesSection';
-import CertificatePreview from '@/components/landing/CertificatePreview';
-import ReferEarn from '@/components/landing/ReferEarn';
-import Testimonials from '@/components/landing/Testimonials';
-import FinalCTA from '@/components/landing/FinalCTA';
+import CreatorCTA from '@/components/landing/CreatorCTA';
+import FAQ from '@/components/landing/FAQ';
 import Footer from '@/components/landing/Footer';
 
 const Index = () => (
@@ -13,11 +14,12 @@ const Index = () => (
     <LandingNavbar />
     <Hero />
     <HowItWorks />
+    <ForStudents />
     <CoursesSection />
-    <CertificatePreview />
-    <ReferEarn />
-    <Testimonials />
-    <FinalCTA />
+    <FeeBreakdown />
+    <ForCreators />
+    <CreatorCTA />
+    <FAQ />
     <Footer />
   </div>
 );
