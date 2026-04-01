@@ -1,4 +1,4 @@
-export const formatPrice = (amount: number): string => {
+export const formatINR = (amount: number): string => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -6,6 +6,8 @@ export const formatPrice = (amount: number): string => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
+
+export const formatPrice = formatINR;
 
 export const timeAgo = (date: string): string => {
   const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);

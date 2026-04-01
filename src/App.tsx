@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedRoute, { CreatorRoute } from "@/components/ProtectedRoute";
+import ProtectedRoute, { CreatorRoute, AdminRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Explore from "./pages/Explore";
 import CreatorProfile from "./pages/CreatorProfile";
@@ -30,6 +30,14 @@ import CreatorEarnings from "./pages/creator/CreatorEarnings";
 import CreatorPayouts from "./pages/creator/CreatorPayouts";
 import CreatorProfileEdit from "./pages/creator/CreatorProfileEdit";
 import NotFound from "./pages/NotFound";
+import AdminDashboardHome from "./pages/admin/AdminDashboardHome";
+import AdminCreators from "./pages/admin/AdminCreators";
+import AdminCourses from "./pages/admin/AdminCourses";
+import AdminStudents from "./pages/admin/AdminStudents";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminCommissions from "./pages/admin/AdminCommissions";
+import AdminPayouts from "./pages/admin/AdminPayouts";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +82,16 @@ const App = () => (
             <Route path="/creator/earnings" element={<CreatorRoute><CreatorEarnings /></CreatorRoute>} />
             <Route path="/creator/payouts" element={<CreatorRoute><CreatorPayouts /></CreatorRoute>} />
             <Route path="/creator/profile" element={<CreatorRoute><CreatorProfileEdit /></CreatorRoute>} />
+
+            {/* Admin panel */}
+            <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
+            <Route path="/admin/creators" element={<AdminRoute><AdminCreators /></AdminRoute>} />
+            <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
+            <Route path="/admin/students" element={<AdminRoute><AdminStudents /></AdminRoute>} />
+            <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
+            <Route path="/admin/commissions" element={<AdminRoute><AdminCommissions /></AdminRoute>} />
+            <Route path="/admin/payouts" element={<AdminRoute><AdminPayouts /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
