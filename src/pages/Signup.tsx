@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const Signup = () => {
-  const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '', referrerEmail: '' });
+  const [searchParams] = useSearchParams();
+  const refParam = searchParams.get('ref') || '';
+  const courseParam = searchParams.get('course') || '';
+  const creatorParam = searchParams.get('creator') || '';
+
+  const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '', referrerEmail: refParam });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -64,8 +69,12 @@ const Signup = () => {
         },
       });
       if (error) throw error;
-      toast({ title: 'Account created! 🎉', description: 'Welcome to Backupshala. Redirecting...' });
-      navigate('/dashboard');
+      toast({ title: 'Account created! 🎉', description: 'Welcome to Backupshala.' });
+      if (courseParam && creatorParam) {
+        navigate(`/c/${creatorParam}/${courseParam}`);
+      } else {
+        navigate('/explore');
+      }
     } catch (error: any) {
       toast({ title: 'Signup failed', description: error.message, variant: 'destructive' });
     } finally {
@@ -84,28 +93,25 @@ const Signup = () => {
             <span className="font-heading text-2xl font-800 text-accent">shala</span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">Create your account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Start learning digital skills for ₹249</p>
+          <p className="mt-1 text-sm text-muted-foreground">Start learning and earning on Backupshala</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <div>
             <Label htmlFor="fullName">Full Name</Label>
             <Input id="fullName" placeholder="Your full name" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} className="mt-1 rounded-lg" />
             {errors.fullName && <p className="mt-1 text-xs text-destructive">{errors.fullName}</p>}
           </div>
-
           <div>
             <Label htmlFor="email">Email Address</Label>
             <Input id="email" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1 rounded-lg" />
             {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
           </div>
-
           <div>
             <Label htmlFor="phone">Phone Number</Label>
             <Input id="phone" placeholder="9876543210" maxLength={10} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))} className="mt-1 rounded-lg" />
             {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone}</p>}
           </div>
-
           <div>
             <Label htmlFor="password">Password</Label>
             <div className="relative mt-1">
@@ -124,23 +130,26 @@ const Signup = () => {
             )}
             {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
           </div>
-
           <div>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input id="confirmPassword" type="password" placeholder="Re-enter password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} className="mt-1 rounded-lg" />
             {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
           </div>
-
           <div>
             <Label htmlFor="referrerEmail">Referrer's Email</Label>
-            <Input id="referrerEmail" type="email" placeholder="friend@example.com" value={form.referrerEmail} onChange={e => setForm(f => ({ ...f, referrerEmail: e.target.value }))} className="mt-1 rounded-lg" />
+            <Input
+              id="referrerEmail" type="email" placeholder="friend@example.com"
+              value={form.referrerEmail}
+              onChange={e => setForm(f => ({ ...f, referrerEmail: e.target.value }))}
+              readOnly={!!refParam}
+              className={`mt-1 rounded-lg ${refParam ? 'opacity-60' : ''}`}
+            />
             <p className="mt-1 text-xs text-muted-foreground">
               Enter the email of the person who referred you. If no one referred you, enter: <span className="font-mono text-primary">none@backupshala.com</span>
             </p>
             {errors.referrerEmail && <p className="mt-1 text-xs text-destructive">{errors.referrerEmail}</p>}
           </div>
-
-          <Button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-pill font-semibold">
+          <Button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-md font-semibold">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Account'}
           </Button>
         </form>
