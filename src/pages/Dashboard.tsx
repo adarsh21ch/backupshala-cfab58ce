@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, CheckCircle, Award, IndianRupee } from 'lucide-react';
+import { BookOpen, CheckCircle, Award, IndianRupee, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, timeAgo } from '@/lib/format';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -17,25 +17,57 @@ const Dashboard = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('enrollments')
-        .select('*, courses(title, slug, thumbnail_url, total_modules, modules(id)), module_completions:module_completions(module_id)')
-        .eq('student_id', user!.id);
+        .select('*, courses(title, slug, thumbnail_url, total_modules, creator_id, profiles:courses!inner(creator_id))')
+        .eq('student_id', user!.id)
+        .order('enrolled_at', { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const { data: completions } = useQuery({
+    queryKey: ['all-completions', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('module_completions').select('course_id, module_id').eq('student_id', user!.id);
       return data || [];
     },
     enabled: !!user,
   });
 
   const { data: certificates } = useQuery({
-    queryKey: ['my-certificates', user?.id],
+    queryKey: ['my-certificates-count', user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('certificates').select('id').eq('student_id', user!.id);
+      const { count } = await supabase.from('certificates').select('id', { count: 'exact', head: true }).eq('student_id', user!.id);
+      return count || 0;
+    },
+    enabled: !!user,
+  });
+
+  const { data: recentNotifications } = useQuery({
+    queryKey: ['recent-activity', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('notifications').select('*').eq('user_id', user!.id).order('created_at', { ascending: false }).limit(10);
       return data || [];
     },
     enabled: !!user,
   });
 
+  const completionsByCourse = completions?.reduce((acc: Record<string, number>, c) => {
+    acc[c.course_id] = (acc[c.course_id] || 0) + 1;
+    return acc;
+  }, {}) || {};
+
+  const totalModulesCompleted = completions?.length || 0;
+
   const firstName = profile?.full_name?.split(' ')[0] || 'Student';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const inProgressEnrollments = enrollments?.filter(e => {
+    const total = (e as any).courses?.total_modules || 0;
+    const done = completionsByCourse[e.course_id] || 0;
+    return !e.is_completed && done < total;
+  }) || [];
 
   return (
     <DashboardLayout>
@@ -45,11 +77,12 @@ const Dashboard = () => {
           <p className="mt-1 text-sm text-muted-foreground">Your learning dashboard</p>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
             { icon: BookOpen, label: 'Enrolled', value: enrollments?.length || 0, color: 'text-primary' },
-            { icon: CheckCircle, label: 'Completed', value: enrollments?.filter((e: any) => e.is_completed).length || 0, color: 'text-primary' },
-            { icon: Award, label: 'Certificates', value: certificates?.length || 0, color: 'text-accent' },
+            { icon: CheckCircle, label: 'Modules Done', value: totalModulesCompleted, color: 'text-primary' },
+            { icon: Award, label: 'Certificates', value: certificates || 0, color: 'text-accent' },
             { icon: IndianRupee, label: 'Wallet', value: formatPrice(profile?.wallet_balance || 0), color: 'text-primary' },
           ].map((stat, i) => (
             <div key={i} className="rounded-xl border border-border bg-card p-4">
@@ -60,10 +93,39 @@ const Dashboard = () => {
           ))}
         </div>
 
+        {/* Continue Learning */}
+        {inProgressEnrollments.length > 0 && (
+          <div>
+            <h2 className="font-heading text-lg font-600 mb-4">Continue Learning</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {inProgressEnrollments.slice(0, 3).map((enrollment: any) => {
+                const course = enrollment.courses;
+                const totalModules = course?.total_modules || 0;
+                const completedModules = completionsByCourse[enrollment.course_id] || 0;
+                const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+                return (
+                  <div key={enrollment.id} className="rounded-xl border border-border bg-card p-5">
+                    {course?.thumbnail_url && (
+                      <img src={course.thumbnail_url} alt={course?.title} className="mb-3 h-32 w-full rounded-lg object-cover" />
+                    )}
+                    <h3 className="font-heading text-sm font-600 line-clamp-2">{course?.title}</h3>
+                    <p className="mt-2 text-xs text-muted-foreground">{completedModules} of {totalModules} modules</p>
+                    <Progress value={progress} className="mt-2 h-1.5" />
+                    <Button asChild size="sm" className="mt-4 w-full rounded-md">
+                      <Link to={`/courses/${enrollment.course_id}`}>Continue →</Link>
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* My Courses */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-lg font-600">My Courses</h2>
-            <Button asChild variant="ghost" size="sm"><Link to="/explore">Browse More</Link></Button>
+            <Button asChild variant="ghost" size="sm"><Link to="/courses">View All</Link></Button>
           </div>
           {isLoading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -71,17 +133,22 @@ const Dashboard = () => {
             </div>
           ) : enrollments && enrollments.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {enrollments.map((enrollment: any) => {
+              {enrollments.slice(0, 6).map((enrollment: any) => {
                 const course = enrollment.courses;
                 const totalModules = course?.total_modules || 0;
-                const completedModules = enrollment.module_completions?.length || 0;
+                const completedModules = completionsByCourse[enrollment.course_id] || 0;
                 const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
                 return (
                   <div key={enrollment.id} className="rounded-xl border border-border bg-card p-5">
                     <h3 className="font-heading text-sm font-600 line-clamp-2">{course?.title}</h3>
                     <p className="mt-2 text-xs text-muted-foreground">{completedModules} of {totalModules} modules</p>
                     <Progress value={progress} className="mt-2 h-1.5" />
-                    <Button asChild size="sm" className="mt-4 w-full rounded-md" variant={progress > 0 ? 'default' : 'outline'}>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className={`text-xs font-medium ${enrollment.is_completed ? 'text-primary' : 'text-accent'}`}>
+                        {enrollment.is_completed ? '✓ Completed' : `${progress}%`}
+                      </span>
+                    </div>
+                    <Button asChild size="sm" className="mt-3 w-full rounded-md" variant={progress > 0 ? 'default' : 'outline'}>
                       <Link to={`/courses/${enrollment.course_id}`}>{progress === 100 ? 'Review' : progress > 0 ? 'Continue' : 'Start'}</Link>
                     </Button>
                   </div>
@@ -95,6 +162,34 @@ const Dashboard = () => {
               <Button asChild className="mt-4 rounded-md"><Link to="/explore">Explore Courses</Link></Button>
             </div>
           )}
+        </div>
+
+        {/* Recent Activity */}
+        {recentNotifications && recentNotifications.length > 0 && (
+          <div>
+            <h2 className="font-heading text-lg font-600 mb-4">Recent Activity</h2>
+            <div className="rounded-xl border border-border bg-card divide-y divide-border">
+              {recentNotifications.slice(0, 5).map(n => (
+                <div key={n.id} className="flex items-start gap-3 p-4">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{n.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{timeAgo(n.created_at)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recommended */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-heading text-lg font-600">Explore More</h2>
+            <Button asChild variant="ghost" size="sm"><Link to="/explore">Browse All</Link></Button>
+          </div>
+          <p className="text-sm text-muted-foreground">Discover new courses on the <Link to="/explore" className="text-primary hover:underline">Explore page</Link>.</p>
         </div>
       </div>
     </DashboardLayout>

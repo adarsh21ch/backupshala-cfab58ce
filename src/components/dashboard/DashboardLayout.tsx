@@ -1,15 +1,24 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
+import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const navItems = [
+const studentNav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/courses', label: 'Courses', icon: BookOpen },
-  { to: '/certificate', label: 'Certificate', icon: Award },
+  { to: '/courses', label: 'My Courses', icon: BookOpen },
+  { to: '/dashboard/certificates', label: 'Certificates', icon: Award },
   { to: '/refer', label: 'Refer & Earn', icon: Users },
+  { to: '/dashboard/payouts', label: 'Payouts', icon: Wallet },
+  { to: '/profile', label: 'Profile', icon: User },
+];
+
+const mobileNav = [
+  { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { to: '/courses', label: 'Courses', icon: BookOpen },
+  { to: '/dashboard/certificates', label: 'Certs', icon: Award },
+  { to: '/refer', label: 'Refer', icon: Users },
   { to: '/profile', label: 'Profile', icon: User },
 ];
 
@@ -47,21 +56,25 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     navigate('/');
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <div className="dark min-h-screen bg-background text-foreground">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center gap-1 border-b border-border px-6">
-          <span className="font-heading text-xl font-800 text-primary">Backup</span>
-          <span className="font-heading text-xl font-800 text-accent">shala</span>
+          <Link to="/" className="flex items-center gap-1">
+            <span className="font-heading text-xl font-800 text-primary">Backup</span>
+            <span className="font-heading text-xl font-800 text-accent">shala</span>
+          </Link>
         </div>
         <nav className="p-4 space-y-1">
-          {navItems.map(item => (
+          {studentNav.map(item => (
             <Link
               key={item.to}
               to={item.to}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                location.pathname === item.to
+                isActive(item.to)
                   ? 'bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               }`}
@@ -70,6 +83,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               {item.label}
             </Link>
           ))}
+          {profile?.is_creator && profile?.creator_approved && (
+            <Link
+              to="/creator/dashboard"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-accent hover:bg-secondary hover:text-foreground transition-colors"
+            >
+              <PenTool className="h-4 w-4" />
+              Creator Dashboard
+            </Link>
+          )}
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           <Button variant="ghost" onClick={handleLogout} className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground">
@@ -85,7 +107,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
         <div className="hidden lg:block">
-          <p className="text-sm text-muted-foreground">Welcome back</p>
+          <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}</p>
         </div>
         <div className="flex items-center gap-3">
           <Link to="/notifications" className="relative">
@@ -96,9 +118,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </span>
             )}
           </Link>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
+          <Link to="/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
             {profile?.full_name?.[0]?.toUpperCase() || 'U'}
-          </div>
+          </Link>
         </div>
       </header>
 
@@ -112,13 +134,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               <span className="font-heading text-xl font-800 text-accent">shala</span>
             </div>
             <nav className="space-y-1">
-              {navItems.map(item => (
+              {studentNav.map(item => (
                 <Link
                   key={item.to}
                   to={item.to}
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    location.pathname === item.to
+                    isActive(item.to)
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   }`}
@@ -138,12 +160,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Mobile bottom nav */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card lg:hidden">
-        {navItems.slice(0, 5).map(item => (
+        {mobileNav.map(item => (
           <Link
             key={item.to}
             to={item.to}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${
-              location.pathname === item.to ? 'text-primary' : 'text-muted-foreground'
+              isActive(item.to) ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
             <item.icon className="h-5 w-5" />
