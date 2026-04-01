@@ -53,11 +53,12 @@ const Profile = () => {
     }
     setUploading(true);
     const ext = file.name.split('.').pop();
-    const path = `${profile!.id}/avatar.${ext}`;
+    if (!profile?.id) { toast({ title: 'Profile not loaded yet', variant: 'destructive' }); setUploading(false); return; }
+    const path = `${profile.id}/avatar.${ext}`;
     const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
     if (uploadErr) { toast({ title: 'Upload failed', variant: 'destructive' }); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-    await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', profile!.id);
+    await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', profile.id);
     await refreshProfile();
     toast({ title: 'Avatar updated ✓' });
     setUploading(false);

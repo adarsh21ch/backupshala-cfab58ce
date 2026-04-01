@@ -17,7 +17,7 @@ const Dashboard = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('enrollments')
-        .select('*, courses(title, slug, thumbnail_url, total_modules, creator_id, profiles:courses!inner(creator_id))')
+        .select('*, courses(title, slug, thumbnail_url, total_modules, creator_id)')
         .eq('student_id', user!.id)
         .order('enrolled_at', { ascending: false });
       return data || [];

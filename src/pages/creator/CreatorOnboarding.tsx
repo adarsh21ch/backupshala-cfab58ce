@@ -167,8 +167,7 @@ const CreatorOnboarding = () => {
         {/* Header */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-1">
-            <span className="font-heading text-2xl font-800 text-primary">Backup</span>
-            <span className="font-heading text-2xl font-800 text-accent">shala</span>
+            <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">Become a Creator</h1>
           <p className="mt-1 text-sm text-muted-foreground">Share your expertise, earn from every enrollment</p>
