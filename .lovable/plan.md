@@ -1,115 +1,86 @@
 
 
-# Backupshala Marketplace Upgrade — Phase 1 Plan
+# Backupshala Cleanup & Production-Ready Polish
 
-## What Phase 1 Delivers
-The foundation: new database schema, updated auth, and all public-facing pages. After this phase, visitors can browse courses, view creator profiles, sign up, and log in.
+## Summary
+Fix outdated landing page content, unify brand name as "Backupshala" (one word, no space), remove unused files, and add missing production-quality features across the app.
 
-## Scope
+## Issues Found
 
-### 1. Database: Drop and Rebuild
-Drop all existing tables (profiles, courses, modules, module_completions, payments, commissions, payout_requests, certificates, notifications, user_roles) and the `app_role` enum. Recreate with the new marketplace schema:
+**Brand name:** Currently rendered as two separate spans: "Backup" + "shala" across ~15 files. Must be one word "Backupshala" everywhere.
 
-**New tables (11):**
-- `profiles` — expanded with creator fields (is_creator, creator_approved, creator_slug, bio, social links, wallet_balance, total_earned, etc.)
-- `courses` — now has creator_id, slug, price, commission_percent, platform_fee_percent, status (draft/pending_review/published/suspended), ratings, tags, level, language, is_featured
-- `modules` — adds is_preview flag, course_id
-- `enrollments` — new table replacing the old is_enrolled flag; tracks per-course enrollment with referrer_email
-- `module_completions` — adds course_id column
-- `payments` — expanded: creator_id, platform_fee_amount, commission_amount, creator_payout_amount, gst_amount, base_amount
-- `commissions` — adds course_id, referrer_user_id
-- `creator_payouts` — new table for creator earnings tracking
-- `payout_requests` — adds request_type (student_commission / creator_earnings)
-- `certificates` — now per-course: student_id, course_id, creator_id
-- `course_reviews` — new table
-- `notifications` — adds action_url
-- `platform_settings` — new table for admin config
+**Outdated landing page content:**
+- Hero still says "5 practical digital skill courses for ₹249", "Start Learning — ₹249", "5 courses included"
+- HowItWorks says "Sign up in 30 seconds and pay ₹249", "refer friends for ₹75 each"
+- CoursesSection lists 5 hardcoded courses with "All 5 courses included in one ₹249 enrollment" — should pull from DB
+- FeeBreakdown hardcoded to ₹249 example
+- ReferEarn (landing component) says fixed "₹75" amounts — should reflect variable commissions
+- CertificatePreview says "Complete all courses" — should say "Complete a course"
+- Testimonials reference ₹249 and ₹75 specifically
 
-**Keep:** `user_roles` table and `app_role` enum (already correct). Update `handle_new_user` trigger for new profile fields. Keep `prevent_referrer_email_change` trigger. Update `has_role` function.
+**Unused files (not imported anywhere):**
+- `src/components/NavLink.tsx` — unused
+- `src/components/landing/CertificatePreview.tsx` — not imported in Index.tsx
+- `src/components/landing/Testimonials.tsx` — not imported in Index.tsx
+- `src/components/landing/ReferEarn.tsx` — not imported in Index.tsx (separate from `src/pages/ReferEarn.tsx` which IS used)
 
-**RLS policies:** Full set for all tables as specified. Use `has_role()` security definer function for admin checks.
-
-**Seed data:** platform_settings defaults + 3 sample courses with modules.
-
-### 2. Auth Context Update
-- Update `AuthContext` to fetch new profile shape (creator fields, wallet_balance, etc.)
-- Update `ProtectedRoute` with creator/admin guard variants
-- Add `CreatorRoute` wrapper (checks is_creator + creator_approved)
-- Add `AdminRoute` wrapper (checks via user_roles table)
-
-### 3. Updated Design System
-- Update dark theme background from `#0f172a` to `#0a0f1e`
-- Add new surface colors (`#111827`, `#1f2937`)
-- Add warning color `#eab308`, error `#dc2626`
-- Button border-radius: 6px (changed from current)
-
-### 4. Public Pages (Light Theme)
-
-**Landing Page (/)** — Complete redesign:
-- Two-sided messaging (creators + students)
-- Stats bar with animated counters
-- "For Students" and "For Creators" benefit sections
-- Platform fee breakdown visual
-- Featured courses grid (from DB, is_featured=true)
-- Creator CTA section
-- FAQ accordion
-- Updated footer with 3-column layout
-
-**Explore Courses (/explore)** — New page:
-- Filter sidebar (category, price range, level, language, rating)
-- Course card grid with creator info, ratings, price
-- Sort options, pagination
-
-**Creator Public Profile (/c/[creator-slug])** — New page:
-- Creator banner, avatar, bio, social links, stats
-- Grid of their published courses
-
-**Course Enrollment Page (/c/[creator-slug]/[course-slug])** — New page:
-- Two-column layout: course content + sticky enrollment card
-- Preview video, tabs (What You'll Learn, Course Content, Requirements, Reviews, About Creator)
-- Enrollment CTA with price and commission info
-- Redirects to signup if not logged in
-
-**Signup (/signup)** — Updated:
-- Support `?course=` and `?creator=` and `?ref=` URL params
-- Pre-fill referrer email from `?ref=` param
-- Redirect to course page after signup if params present
-
-**Login (/login)** — Minor updates for new redirect logic
-
-**Certificate Verification (/verify/[certCode])** — Updated:
-- Show course title, creator name (new fields)
-
-### 5. Updated App Router
-- Add new routes: /explore, /c/:creatorSlug, /c/:creatorSlug/:courseSlug
-- Keep existing protected routes (will be updated in Phase 2)
-- Update NotFound page
-
-### 6. Shared Components
-- Updated `DashboardLayout` with new sidebar links
-- `CourseCard` reusable component for explore/landing/creator pages
-- `CreatorCard` component
-- `PriceDisplay` component (₹ Indian format)
+**Missing production features:**
+- Admin panel has no link from student/creator dashboards for admin users
+- Explore page missing language filter and rating filter
+- "Forgot password?" button on login does nothing
+- Creator onboarding "Become a Creator" button on ForCreators links to /signup, should link to /creator/onboarding for logged-in users
+- No "Explore" link in student sidebar
+- No admin link in student dashboard sidebar for admin users
 
 ---
 
-## What's in Later Phases
-- **Phase 2:** Student dashboard, course player, certificates, refer & earn, payouts
-- **Phase 3:** Creator system (onboarding, dashboard, course builder, earnings)
-- **Phase 4:** Admin panel, edge functions, Razorpay integration
+## Plan
+
+### 1. Brand Name Fix — "Backupshala" as One Word
+Update all ~15 files where brand appears as two spans. Replace with single styled span:
+```
+<span className="font-heading text-2xl font-800">
+  <span className="text-primary">Backup</span><span className="text-accent">shala</span>
+</span>
+```
+This keeps the green+orange coloring but renders as one visual word with NO space/gap between spans.
+
+**Files:** Navbar, Footer, DashboardLayout, CreatorDashboardLayout, AdminDashboardLayout, Login, Signup, VerifyCertificate, Certificate, CreatorCTA, FAQ (text), ForCreators (text), FeeBreakdown (text), CourseEnrollment, ReferEarn page.
+
+### 2. Landing Page Content Rewrite
+Update all landing sections to reflect marketplace model:
+
+- **Hero:** "Teach. Learn. Earn." headline. Sub: "Creators host courses. Students learn and earn certificates. Everyone earns commissions." CTAs: "Start Teaching — Free" + "Explore Courses". Right card: "Set your own price", "Earn commissions on referrals", "Verified certificates"
+- **HowItWorks:** 3 steps updated for marketplace: "Browse & Enroll" / "Learn at Your Pace" / "Get Certified & Earn"
+- **CoursesSection:** Replace hardcoded courses with DB-driven featured courses using CourseCard component. Remove "All 5 courses" text.
+- **FeeBreakdown:** Keep visual but use generic example (₹499 course) and note "varies by course"
+- **ForCreators:** Update CTA button — detect auth state, link to /creator/onboarding if logged in, /signup if not
+- **FAQ:** Update answers to remove specific ₹249/₹75 references
+- **Testimonials:** Update testimonials to reflect marketplace model (remove ₹249 references)
+
+### 3. Delete Unused Files
+- `src/components/NavLink.tsx`
+- `src/components/landing/CertificatePreview.tsx`
+- `src/components/landing/Testimonials.tsx`
+- `src/components/landing/ReferEarn.tsx` (the landing component, NOT the page)
+
+### 4. Production Features & Polish
+- **Forgot Password:** Implement actual password reset flow on Login page using `supabase.auth.resetPasswordForEmail()`
+- **Admin link in sidebar:** Show "Admin Panel" link in DashboardLayout sidebar when user has admin role (check via `has_role` RPC)
+- **Explore link in sidebar:** Add "Explore Courses" to student dashboard sidebar
+- **ForCreators smart CTA:** Check auth state — logged in users go to /creator/onboarding, guests go to /signup
+- **Explore page filters:** Add language filter (All/English/Hindi/Hinglish) and rating filter (4★+/3★+/All)
+- **NotFound page:** Polish with Backupshala branding
+
+### 5. Certificate & Verify Page Fix
+- Update certificate rendering to show "Backupshala" as one word
+- Fix VerifyCertificate foreign key references (currently using named FK which may not exist — use positional joins)
 
 ---
 
-## Technical Details
-
-**Database migration:** Single migration that drops all existing tables (preserving user_roles and app_role enum), recreates everything, adds triggers, RLS policies, and seed data.
-
-**File changes (~20 files):**
-- 1 new migration file
-- Update: `AuthContext.tsx`, `ProtectedRoute.tsx`, `App.tsx`, `index.css`, `tailwind.config.ts`
-- New pages: `Explore.tsx`, `CreatorProfile.tsx`, `CourseEnrollment.tsx`
-- Rewrite: `Index.tsx` (landing), `Signup.tsx`, `Login.tsx`, `VerifyCertificate.tsx`
-- Update: all landing components (Navbar, Hero, HowItWorks, etc.)
-- New components: `CourseCard.tsx`, `CreatorCard.tsx`, `PriceDisplay.tsx`
-- Update memory files
+## Files Modified (~20)
+- Delete: 3 unused files
+- Rewrite: Hero, HowItWorks, CoursesSection, FeeBreakdown, ForCreators, FAQ, Testimonials (if kept)
+- Update branding: Navbar, Footer, DashboardLayout, CreatorDashboardLayout, AdminDashboardLayout, Login, Signup, VerifyCertificate, Certificate, CreatorCTA, CourseEnrollment, ReferEarn page
+- Feature additions: Login (forgot password), DashboardLayout (admin+explore links), Explore (filters), NotFound, ForCreators (smart CTA)
 
