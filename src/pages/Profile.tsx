@@ -23,12 +23,13 @@ const Profile = () => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
+    if (!profile?.id) { toast({ title: 'Profile not loaded yet', variant: 'destructive' }); return; }
     setSaving(true);
     const { error } = await supabase.from('profiles').update({
       full_name: fullName.trim(),
       phone: phone.trim(),
       bio: bio.trim(),
-    }).eq('id', profile!.id);
+    }).eq('id', profile.id);
     if (error) toast({ title: 'Failed to update', variant: 'destructive' });
     else { toast({ title: 'Profile updated ✓' }); await refreshProfile(); }
     setSaving(false);
