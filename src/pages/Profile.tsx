@@ -13,14 +13,32 @@ import { Link } from 'react-router-dom';
 const Profile = () => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const [fullName, setFullName] = useState(profile?.full_name || '');
-  const [phone, setPhone] = useState(profile?.phone || '');
-  const [bio, setBio] = useState(profile?.bio || '');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [changingPw, setChangingPw] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Sync form state when profile loads
+  useState(() => {
+    if (profile) {
+      setFullName(profile.full_name || '');
+      setPhone(profile.phone || '');
+      setBio(profile.bio || '');
+    }
+  });
+
+  // Also update when profile changes
+  const [lastProfileId, setLastProfileId] = useState('');
+  if (profile && profile.id !== lastProfileId) {
+    setFullName(profile.full_name || '');
+    setPhone(profile.phone || '');
+    setBio(profile.bio || '');
+    setLastProfileId(profile.id);
+  }
 
   const handleSave = async () => {
     if (!profile?.id) { toast({ title: 'Profile not loaded yet', variant: 'destructive' }); return; }
