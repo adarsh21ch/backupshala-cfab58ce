@@ -1,144 +1,115 @@
 
 
-# Backupshala — Phase 1 Implementation Plan
+# Backupshala Marketplace Upgrade — Phase 1 Plan
 
-## Overview
-Build the core foundation: landing page, authentication, database schema, course system, and student dashboard. This phase establishes the brand, data layer, and primary learning experience.
+## What Phase 1 Delivers
+The foundation: new database schema, updated auth, and all public-facing pages. After this phase, visitors can browse courses, view creator profiles, sign up, and log in.
 
----
+## Scope
 
-## 1. Database & Auth Setup
+### 1. Database: Drop and Rebuild
+Drop all existing tables (profiles, courses, modules, module_completions, payments, commissions, payout_requests, certificates, notifications, user_roles) and the `app_role` enum. Recreate with the new marketplace schema:
 
-**Tables to create (with RLS):**
-- `profiles` — user data, referrer_email (immutable after creation), wallet_balance, enrollment status
-- `user_roles` — separate table for admin roles (security best practice — replaces `is_admin` on profiles)
-- `courses` — title, description, thumbnail, what_you_learn array, order
-- `modules` — video lessons per course, with ordering
-- `module_completions` — tracks which modules each user has completed
-- `notifications` — in-app notification system
+**New tables (11):**
+- `profiles` — expanded with creator fields (is_creator, creator_approved, creator_slug, bio, social links, wallet_balance, total_earned, etc.)
+- `courses` — now has creator_id, slug, price, commission_percent, platform_fee_percent, status (draft/pending_review/published/suspended), ratings, tags, level, language, is_featured
+- `modules` — adds is_preview flag, course_id
+- `enrollments` — new table replacing the old is_enrolled flag; tracks per-course enrollment with referrer_email
+- `module_completions` — adds course_id column
+- `payments` — expanded: creator_id, platform_fee_amount, commission_amount, creator_payout_amount, gst_amount, base_amount
+- `commissions` — adds course_id, referrer_user_id
+- `creator_payouts` — new table for creator earnings tracking
+- `payout_requests` — adds request_type (student_commission / creator_earnings)
+- `certificates` — now per-course: student_id, course_id, creator_id
+- `course_reviews` — new table
+- `notifications` — adds action_url
+- `platform_settings` — new table for admin config
 
-**Auth trigger:** Auto-create profile on signup with referrer_email permanently locked via RLS policy (no UPDATE allowed on that column).
+**Keep:** `user_roles` table and `app_role` enum (already correct). Update `handle_new_user` trigger for new profile fields. Keep `prevent_referrer_email_change` trigger. Update `has_role` function.
 
-**Seed data:** 5 courses with 4-5 modules each, using placeholder YouTube embeds.
+**RLS policies:** Full set for all tables as specified. Use `has_role()` security definer function for admin checks.
 
----
+**Seed data:** platform_settings defaults + 3 sample courses with modules.
 
-## 2. Design System & Brand
+### 2. Auth Context Update
+- Update `AuthContext` to fetch new profile shape (creator fields, wallet_balance, etc.)
+- Update `ProtectedRoute` with creator/admin guard variants
+- Add `CreatorRoute` wrapper (checks is_creator + creator_approved)
+- Add `AdminRoute` wrapper (checks via user_roles table)
 
-- **Fonts:** Plus Jakarta Sans (headings), DM Sans (body), JetBrains Mono (codes)
-- **Colors:** Primary green (#16a34a), accent orange (#f97316), warm white background for public pages, dark theme (#0f172a) for dashboard
-- **Components:** shadcn/ui with custom Tailwind config for brand colors, rounded corners (12px cards, 8px inputs)
+### 3. Updated Design System
+- Update dark theme background from `#0f172a` to `#0a0f1e`
+- Add new surface colors (`#111827`, `#1f2937`)
+- Add warning color `#eab308`, error `#dc2626`
+- Button border-radius: 6px (changed from current)
 
----
+### 4. Public Pages (Light Theme)
 
-## 3. Landing Page (/)
+**Landing Page (/)** — Complete redesign:
+- Two-sided messaging (creators + students)
+- Stats bar with animated counters
+- "For Students" and "For Creators" benefit sections
+- Platform fee breakdown visual
+- Featured courses grid (from DB, is_featured=true)
+- Creator CTA section
+- FAQ accordion
+- Updated footer with 3-column layout
 
-Conversion-focused, light theme page with:
-- **Navbar** — Logo, nav links, orange "Get Started" CTA
-- **Hero** — "Learn. Earn. Grow." headline, subheadline, dual CTAs, floating product highlight card
-- **How It Works** — 3-step visual flow
-- **Courses Section** — 5 course cards with icons and module counts
-- **Certificate Preview** — premium certificate mockup
-- **Refer & Earn** — referral math explained visually
-- **Testimonials** — 3 placeholder cards
-- **Final CTA** — full-width enrollment prompt
-- **Footer** — links, logo, tagline
+**Explore Courses (/explore)** — New page:
+- Filter sidebar (category, price range, level, language, rating)
+- Course card grid with creator info, ratings, price
+- Sort options, pagination
 
----
+**Creator Public Profile (/c/[creator-slug])** — New page:
+- Creator banner, avatar, bio, social links, stats
+- Grid of their published courses
 
-## 4. Authentication Pages
+**Course Enrollment Page (/c/[creator-slug]/[course-slug])** — New page:
+- Two-column layout: course content + sticky enrollment card
+- Preview video, tabs (What You'll Learn, Course Content, Requirements, Reviews, About Creator)
+- Enrollment CTA with price and commission info
+- Redirects to signup if not logged in
 
-**Signup (/signup):**
-- Fields: Full Name, Email, Phone (10-digit Indian validation), Password with strength indicator, Confirm Password, Referrer Email
-- Referrer email helper text and self-referral prevention
-- Creates auth user + profile, redirects to /dashboard (payment page in Phase 2)
+**Signup (/signup)** — Updated:
+- Support `?course=` and `?creator=` and `?ref=` URL params
+- Pre-fill referrer email from `?ref=` param
+- Redirect to course page after signup if params present
 
-**Login (/login):**
-- Email + password, forgot password link
-- Redirects to /dashboard on success
+**Login (/login)** — Minor updates for new redirect logic
 
----
+**Certificate Verification (/verify/[certCode])** — Updated:
+- Show course title, creator name (new fields)
 
-## 5. Student Dashboard (/dashboard)
+### 5. Updated App Router
+- Add new routes: /explore, /c/:creatorSlug, /c/:creatorSlug/:courseSlug
+- Keep existing protected routes (will be updated in Phase 2)
+- Update NotFound page
 
-Dark theme. Protected route (must be logged in).
-- Welcome header with user's first name
-- Overall progress indicator (% of all modules completed)
-- Course cards grid with individual progress bars and Continue/Start buttons
-- Quick stats row: modules completed, courses in progress, days since enrolled
-- Recent activity feed (last 5 completions)
-
----
-
-## 6. Course Pages
-
-**Course Library (/courses):**
-- Grid of all published courses with progress
-- Filter: All / In Progress / Completed
-
-**Course Detail (/courses/:id):**
-- Module sidebar (desktop) / accordion (mobile)
-- Course progress bar, "Continue Learning" button
-- Module list with completion checkmarks
-
-**Module Player (/courses/:id/module/:moduleId):**
-- Responsive YouTube embed
-- Module title & description
-- "Mark as Complete ✓" button with animation
-- Next/Previous module navigation
-- Celebration modal when all courses completed
-
----
-
-## 7. Certificate Page (/certificate)
-
-- **Not yet earned:** Progress breakdown by course, motivational message, "Continue Learning" button
-- **Earned:** Premium certificate display with student name, course list, completion date, certificate code (CERT-2025-XXXX)
-- Download as PNG (html2canvas), Share on WhatsApp button
-
-**Public Verification (/verify/:certCode):**
-- No login required
-- Shows valid/invalid status with student name and completion date
+### 6. Shared Components
+- Updated `DashboardLayout` with new sidebar links
+- `CourseCard` reusable component for explore/landing/creator pages
+- `CreatorCard` component
+- `PriceDisplay` component (₹ Indian format)
 
 ---
 
-## 8. Profile Page (/profile)
-
-- Editable: name, phone, profile photo (Supabase Storage)
-- Read-only (locked): email, referrer email
-- Change password section
-
----
-
-## 9. Notifications (/notifications)
-
-- Notification bell in navbar with unread count (Supabase Realtime)
-- Notification list page with mark-all-as-read
-- Type-based icons
+## What's in Later Phases
+- **Phase 2:** Student dashboard, course player, certificates, refer & earn, payouts
+- **Phase 3:** Creator system (onboarding, dashboard, course builder, earnings)
+- **Phase 4:** Admin panel, edge functions, Razorpay integration
 
 ---
 
-## 10. Edge Function: check-and-issue-certificate
+## Technical Details
 
-- Called after each module completion
-- Checks if all published modules are completed
-- Generates unique certificate code and creates certificate record
-- Creates notification for the student
+**Database migration:** Single migration that drops all existing tables (preserving user_roles and app_role enum), recreates everything, adds triggers, RLS policies, and seed data.
 
----
-
-## 11. Mobile Experience
-
-- Bottom tab bar navigation on mobile (Dashboard, Courses, Certificate, Refer, Profile)
-- All pages responsive down to 375px width
-- Touch-friendly interactions
-
----
-
-## What's in Phase 2 (later)
-- Razorpay payment integration (edge functions + payment page)
-- Refer & Earn dashboard with wallet & payout system
-- Admin panel (overview, students, courses, commissions, revenue)
-- Email notifications (Lovable built-in emails)
-- GST invoice generation
+**File changes (~20 files):**
+- 1 new migration file
+- Update: `AuthContext.tsx`, `ProtectedRoute.tsx`, `App.tsx`, `index.css`, `tailwind.config.ts`
+- New pages: `Explore.tsx`, `CreatorProfile.tsx`, `CourseEnrollment.tsx`
+- Rewrite: `Index.tsx` (landing), `Signup.tsx`, `Login.tsx`, `VerifyCertificate.tsx`
+- Update: all landing components (Navbar, Hero, HowItWorks, etc.)
+- New components: `CourseCard.tsx`, `CreatorCard.tsx`, `PriceDisplay.tsx`
+- Update memory files
 
