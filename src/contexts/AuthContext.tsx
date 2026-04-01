@@ -32,12 +32,13 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  isReady: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null, session: null, profile: null, loading: true,
+  user: null, session: null, profile: null, loading: true, isReady: false,
   signOut: async () => {}, refreshProfile: async () => {},
 });
 
@@ -48,14 +49,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
-    setProfile(data as Profile | null);
+      .maybeSingle();
+    if (error) {
+      console.error('Error fetching profile:', error.message);
+      setProfile(null);
+    } else {
+      setProfile(data as Profile | null);
+    }
   };
 
   const refreshProfile = async () => {
@@ -63,24 +70,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          // Use setTimeout to avoid blocking the callback
           setTimeout(() => fetchProfile(session.user.id), 0);
         } else {
           setProfile(null);
         }
-        setLoading(false);
       }
     );
 
+    // Then check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      setLoading(false);
+      if (session?.user) {
+        fetchProfile(session.user.id).finally(() => {
+          setLoading(false);
+          setIsReady(true);
+        });
+      } else {
+        setLoading(false);
+        setIsReady(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -92,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, isReady, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
