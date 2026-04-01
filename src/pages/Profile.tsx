@@ -23,12 +23,13 @@ const Profile = () => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
+    if (!profile?.id) { toast({ title: 'Profile not loaded yet', variant: 'destructive' }); return; }
     setSaving(true);
     const { error } = await supabase.from('profiles').update({
       full_name: fullName.trim(),
       phone: phone.trim(),
       bio: bio.trim(),
-    }).eq('id', profile!.id);
+    }).eq('id', profile.id);
     if (error) toast({ title: 'Failed to update', variant: 'destructive' });
     else { toast({ title: 'Profile updated ✓' }); await refreshProfile(); }
     setSaving(false);
@@ -52,11 +53,12 @@ const Profile = () => {
     }
     setUploading(true);
     const ext = file.name.split('.').pop();
-    const path = `${profile!.id}/avatar.${ext}`;
+    if (!profile?.id) { toast({ title: 'Profile not loaded yet', variant: 'destructive' }); setUploading(false); return; }
+    const path = `${profile.id}/avatar.${ext}`;
     const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
     if (uploadErr) { toast({ title: 'Upload failed', variant: 'destructive' }); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-    await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', profile!.id);
+    await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', profile.id);
     await refreshProfile();
     toast({ title: 'Avatar updated ✓' });
     setUploading(false);
