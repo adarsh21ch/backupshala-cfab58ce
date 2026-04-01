@@ -1,4 +1,7 @@
-export const formatPrice = (amount: number): string => {
+export const formatINR = (amount: number): string => {
+export const formatPrice = formatINR;
+// Legacy alias
+export const formatPriceLegacy = (amount: number): string => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
