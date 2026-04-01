@@ -1,7 +1,4 @@
 export const formatINR = (amount: number): string => {
-export const formatPrice = formatINR;
-// Legacy alias
-export const formatPriceLegacy = (amount: number): string => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -9,6 +6,8 @@ export const formatPriceLegacy = (amount: number): string => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
+
+export const formatPrice = formatINR;
 
 export const timeAgo = (date: string): string => {
   const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
