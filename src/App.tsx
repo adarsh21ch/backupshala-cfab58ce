@@ -30,6 +30,10 @@ import CreatorEarnings from "./pages/creator/CreatorEarnings";
 import CreatorPayouts from "./pages/creator/CreatorPayouts";
 import CreatorProfileEdit from "./pages/creator/CreatorProfileEdit";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
+import RefundPolicy from "./pages/RefundPolicy";
+import Contact from "./pages/Contact";
 import AdminDashboardHome from "./pages/admin/AdminDashboardHome";
 import AdminCreators from "./pages/admin/AdminCreators";
 import AdminCourses from "./pages/admin/AdminCourses";
@@ -38,6 +42,7 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminCommissions from "./pages/admin/AdminCommissions";
 import AdminPayouts from "./pages/admin/AdminPayouts";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSupport from "./pages/admin/AdminSupport";
 
 const queryClient = new QueryClient();
 
