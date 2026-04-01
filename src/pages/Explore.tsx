@@ -11,6 +11,12 @@ import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/format';
 
 const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+const LANGUAGES = ['All', 'English', 'Hindi', 'Hinglish'];
+const RATINGS = [
+  { label: 'All Ratings', value: 0 },
+  { label: '3★ & above', value: 3 },
+  { label: '4★ & above', value: 4 },
+];
 const SORT_OPTIONS = [
   { label: 'Most Popular', value: 'popular' },
   { label: 'Newest', value: 'newest' },
@@ -22,6 +28,8 @@ const Explore = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [level, setLevel] = useState('All');
+  const [language, setLanguage] = useState('All');
+  const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState('popular');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -38,16 +46,18 @@ const Explore = () => {
 
   const filtered = courses
     ?.filter(c => {
-      if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.short_description.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.short_description?.toLowerCase().includes(search.toLowerCase())) return false;
       if (category !== 'All' && c.category !== category) return false;
       if (level !== 'All' && c.level !== level) return false;
+      if (language !== 'All' && c.language !== language) return false;
+      if (minRating > 0 && (c.rating || 0) < minRating) return false;
       return true;
     })
     .sort((a, b) => {
       if (sort === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sort === 'price_asc') return a.price - b.price;
       if (sort === 'price_desc') return b.price - a.price;
-      return b.total_students - a.total_students;
+      return (b.total_students || 0) - (a.total_students || 0);
     }) || [];
 
   return (
@@ -62,22 +72,13 @@ const Explore = () => {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search courses..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-9 rounded-lg"
-            />
+            <Input placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-lg" />
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="md:hidden rounded-md" onClick={() => setShowFilters(!showFilters)}>
               <SlidersHorizontal className="h-4 w-4 mr-1" /> Filters
             </Button>
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-            >
+            <select value={sort} onChange={e => setSort(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
@@ -89,11 +90,8 @@ const Explore = () => {
               <p className="text-xs font-semibold text-muted-foreground mb-2">CATEGORY</p>
               <div className="space-y-1">
                 {['All', ...CATEGORIES].map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setCategory(c)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${category === c ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
+                  <button key={c} onClick={() => setCategory(c)}
+                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${category === c ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
                     {c}
                   </button>
                 ))}
@@ -103,12 +101,31 @@ const Explore = () => {
               <p className="text-xs font-semibold text-muted-foreground mb-2">LEVEL</p>
               <div className="space-y-1">
                 {LEVELS.map(l => (
-                  <button
-                    key={l}
-                    onClick={() => setLevel(l)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${level === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
+                  <button key={l} onClick={() => setLevel(l)}
+                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${level === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
                     {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">LANGUAGE</p>
+              <div className="space-y-1">
+                {LANGUAGES.map(l => (
+                  <button key={l} onClick={() => setLanguage(l)}
+                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${language === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">RATING</p>
+              <div className="space-y-1">
+                {RATINGS.map(r => (
+                  <button key={r.value} onClick={() => setMinRating(r.value)}
+                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${minRating === r.value ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+                    {r.label}
                   </button>
                 ))}
               </div>

@@ -1,9 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck } from 'lucide-react';
+import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 
 const adminNav = [
   { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -28,10 +27,9 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="dark min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
-        <div className="flex h-16 items-center gap-1 border-b border-border px-6">
-          <Link to="/" className="flex items-center gap-1">
-            <span className="font-heading text-xl font-800 text-primary">Backup</span>
-            <span className="font-heading text-xl font-800 text-accent">shala</span>
+        <div className="flex h-16 items-center border-b border-border px-6">
+          <Link to="/" className="flex items-center">
+            <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>
         </div>
@@ -73,9 +71,8 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
-            <div className="mb-6 flex items-center gap-1 px-3">
-              <span className="font-heading text-xl font-800 text-primary">Backup</span>
-              <span className="font-heading text-xl font-800 text-accent">shala</span>
+            <div className="mb-6 flex items-center px-3">
+              <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
               <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>
             </div>
             <nav className="space-y-1">

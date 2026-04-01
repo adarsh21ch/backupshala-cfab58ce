@@ -52,12 +52,10 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
   return (
     <div className="dark min-h-screen bg-background text-foreground">
-      {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
-        <div className="flex h-16 items-center gap-1 border-b border-border px-6">
-          <Link to="/" className="flex items-center gap-1">
-            <span className="font-heading text-xl font-800 text-primary">Backup</span>
-            <span className="font-heading text-xl font-800 text-accent">shala</span>
+        <div className="flex h-16 items-center border-b border-border px-6">
+          <Link to="/" className="flex items-center">
+            <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">Creator</span>
         </div>
@@ -80,7 +78,6 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
         </div>
       </aside>
 
-      {/* Top bar */}
       <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:pl-72">
         <button className="lg:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -102,14 +99,12 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
         </div>
       </header>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
-            <div className="mb-6 flex items-center gap-1 px-3">
-              <span className="font-heading text-xl font-800 text-primary">Backup</span>
-              <span className="font-heading text-xl font-800 text-accent">shala</span>
+            <div className="mb-6 flex items-center px-3">
+              <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
               <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">Creator</span>
             </div>
             <nav className="space-y-1">
@@ -127,7 +122,6 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
         </div>
       )}
 
-      {/* Mobile bottom nav */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card lg:hidden">
         {mobileNav.map(item => (
           <Link key={item.to} to={item.to}
