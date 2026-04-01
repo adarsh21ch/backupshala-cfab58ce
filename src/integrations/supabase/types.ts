@@ -14,16 +14,394 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certificates: {
+        Row: {
+          certificate_code: string
+          id: string
+          issued_at: string
+          user_id: string
+        }
+        Insert: {
+          certificate_code: string
+          id?: string
+          issued_at?: string
+          user_id: string
+        }
+        Update: {
+          certificate_code?: string
+          id?: string
+          issued_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commissions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          payment_id: string | null
+          referrer_email: string
+          status: string
+          student_user_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          referrer_email: string
+          status?: string
+          student_user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          referrer_email?: string
+          status?: string
+          student_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_student_user_id_fkey"
+            columns: ["student_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_published: boolean
+          order_index: number
+          thumbnail_url: string | null
+          title: string
+          what_you_learn: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          thumbnail_url?: string | null
+          title: string
+          what_you_learn?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          thumbnail_url?: string | null
+          title?: string
+          what_you_learn?: string[] | null
+        }
+        Relationships: []
+      }
+      module_completions: {
+        Row: {
+          completed_at: string
+          id: string
+          module_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          module_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          module_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_completions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modules: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          order_index: number
+          title: string
+          video_url: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          order_index?: number
+          title: string
+          video_url: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          order_index?: number
+          title?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_number: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_requests: {
+        Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          admin_note: string | null
+          amount: number
+          bank_name: string | null
+          id: string
+          ifsc_code: string | null
+          processed_at: string | null
+          referrer_user_id: string | null
+          requested_at: string
+          status: string
+          upi_id: string | null
+        }
+        Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          admin_note?: string | null
+          amount: number
+          bank_name?: string | null
+          id?: string
+          ifsc_code?: string | null
+          processed_at?: string | null
+          referrer_user_id?: string | null
+          requested_at?: string
+          status?: string
+          upi_id?: string | null
+        }
+        Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          admin_note?: string | null
+          amount?: number
+          bank_name?: string | null
+          id?: string
+          ifsc_code?: string | null
+          processed_at?: string | null
+          referrer_user_id?: string | null
+          requested_at?: string
+          status?: string
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_requests_referrer_user_id_fkey"
+            columns: ["referrer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          enrolled_at: string | null
+          full_name: string
+          id: string
+          is_enrolled: boolean
+          phone: string
+          profile_photo_url: string | null
+          referrer_email: string
+          wallet_balance: number
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          enrolled_at?: string | null
+          full_name: string
+          id: string
+          is_enrolled?: boolean
+          phone: string
+          profile_photo_url?: string | null
+          referrer_email?: string
+          wallet_balance?: number
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          enrolled_at?: string | null
+          full_name?: string
+          id?: string
+          is_enrolled?: boolean
+          phone?: string
+          profile_photo_url?: string | null
+          referrer_email?: string
+          wallet_balance?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +528,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
