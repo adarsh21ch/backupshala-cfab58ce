@@ -16,6 +16,7 @@ import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import ModulePlayer from "./pages/ModulePlayer";
 import Certificate from "./pages/Certificate";
+import Payouts from "./pages/Payouts";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
