@@ -12,6 +12,7 @@ const adminNav = [
   { to: '/admin/payments', label: 'Payments', icon: CreditCard },
   { to: '/admin/commissions', label: 'Commissions', icon: IndianRupee },
   { to: '/admin/payouts', label: 'Payouts', icon: Wallet },
+  { to: '/admin/support', label: 'Support', icon: MessageSquare },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

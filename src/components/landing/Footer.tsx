@@ -25,9 +25,10 @@ const Footer = () => (
         <div>
           <p className="font-heading text-sm font-600 mb-3">Legal</p>
           <div className="flex flex-col gap-2">
-            <span className="text-sm text-muted-foreground">Privacy Policy</span>
-            <span className="text-sm text-muted-foreground">Refund Policy</span>
-            <span className="text-sm text-muted-foreground">Terms of Service</span>
+            <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
+            <Link to="/refund-policy" className="text-sm text-muted-foreground hover:text-foreground">Refund Policy</Link>
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">Terms of Service</Link>
+            <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact Us</Link>
           </div>
         </div>
       </div>
