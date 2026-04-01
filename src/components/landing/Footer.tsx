@@ -5,17 +5,13 @@ const Footer = () => (
     <div className="container mx-auto px-4">
       <div className="grid gap-8 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-1">
-            <span className="font-heading text-xl font-800 text-primary">Backup</span>
-            <span className="font-heading text-xl font-800 text-accent">shala</span>
-          </div>
+          <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           <p className="mt-2 text-sm text-muted-foreground">Your backup plan starts here.</p>
         </div>
         <div>
           <p className="font-heading text-sm font-600 mb-3">Platform</p>
           <div className="flex flex-col gap-2">
-            <a href="#courses" className="text-sm text-muted-foreground hover:text-foreground">Courses</a>
-            <a href="#refer" className="text-sm text-muted-foreground hover:text-foreground">Refer & Earn</a>
+            <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground">Explore Courses</Link>
             <Link to="/verify" className="text-sm text-muted-foreground hover:text-foreground">Verify Certificate</Link>
           </div>
         </div>

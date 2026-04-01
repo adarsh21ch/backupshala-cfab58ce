@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -88,9 +88,8 @@ const Signup = () => {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link to="/" className="inline-flex items-center gap-1">
-            <span className="font-heading text-2xl font-800 text-primary">Backup</span>
-            <span className="font-heading text-2xl font-800 text-accent">shala</span>
+          <Link to="/" className="inline-flex items-center">
+            <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">Create your account</h1>
           <p className="mt-1 text-sm text-muted-foreground">Start learning and earning on Backupshala</p>

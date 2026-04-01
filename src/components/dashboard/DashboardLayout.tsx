@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool } from 'lucide-react';
+import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Compass, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 const studentNav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/courses', label: 'My Courses', icon: BookOpen },
+  { to: '/explore', label: 'Explore Courses', icon: Compass },
   { to: '/dashboard/certificates', label: 'Certificates', icon: Award },
   { to: '/refer', label: 'Refer & Earn', icon: Users },
   { to: '/dashboard/payouts', label: 'Payouts', icon: Wallet },
@@ -17,7 +18,7 @@ const studentNav = [
 const mobileNav = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/courses', label: 'Courses', icon: BookOpen },
-  { to: '/dashboard/certificates', label: 'Certs', icon: Award },
+  { to: '/explore', label: 'Explore', icon: Compass },
   { to: '/refer', label: 'Refer', icon: Users },
   { to: '/profile', label: 'Profile', icon: User },
 ];
@@ -28,6 +29,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -40,6 +42,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       setUnreadCount(count || 0);
     };
     fetchUnread();
+
+    // Check admin role
+    supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' }).then(({ data }) => {
+      setIsAdmin(!!data);
+    });
 
     const channel = supabase
       .channel('notifications-count')
@@ -62,10 +69,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="dark min-h-screen bg-background text-foreground">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
-        <div className="flex h-16 items-center gap-1 border-b border-border px-6">
-          <Link to="/" className="flex items-center gap-1">
-            <span className="font-heading text-xl font-800 text-primary">Backup</span>
-            <span className="font-heading text-xl font-800 text-accent">shala</span>
+        <div className="flex h-16 items-center border-b border-border px-6">
+          <Link to="/" className="flex items-center">
+            <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
         </div>
         <nav className="p-4 space-y-1">
@@ -90,6 +96,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             >
               <PenTool className="h-4 w-4" />
               Creator Dashboard
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              to="/admin/dashboard"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-secondary hover:text-foreground transition-colors"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Admin Panel
             </Link>
           )}
         </nav>
@@ -129,9 +144,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
-            <div className="mb-6 flex items-center gap-1 px-3">
-              <span className="font-heading text-xl font-800 text-primary">Backup</span>
-              <span className="font-heading text-xl font-800 text-accent">shala</span>
+            <div className="mb-6 flex items-center px-3">
+              <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
             </div>
             <nav className="space-y-1">
               {studentNav.map(item => (
@@ -149,6 +163,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   {item.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link to="/admin/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-secondary hover:text-foreground transition-colors">
+                  <ShieldCheck className="h-4 w-4" /> Admin Panel
+                </Link>
+              )}
             </nav>
             <Button variant="ghost" onClick={handleLogout} className="mt-4 w-full justify-start gap-3 text-muted-foreground">
               <LogOut className="h-4 w-4" />

@@ -12,10 +12,16 @@ const VerifyCertificate = () => {
       if (!certCode) return null;
       const { data } = await supabase
         .from('certificates')
-        .select('*, profiles!certificates_student_id_fkey(full_name), courses(title), creator:profiles!certificates_creator_id_fkey(full_name, creator_display_name)')
+        .select('*, courses(title)')
         .eq('certificate_code', certCode)
         .maybeSingle();
-      return data;
+      if (!data) return null;
+      // Fetch student and creator names separately
+      const [student, creator] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', data.student_id).single(),
+        supabase.from('profiles').select('full_name, creator_display_name').eq('id', data.creator_id).single(),
+      ]);
+      return { ...data, student_name: student.data?.full_name, creator_name: creator.data?.creator_display_name || creator.data?.full_name };
     },
     enabled: !!certCode,
   });
@@ -23,9 +29,8 @@ const VerifyCertificate = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md text-center">
-        <Link to="/" className="inline-flex items-center gap-1 mb-8">
-          <span className="font-heading text-2xl font-800 text-primary">Backup</span>
-          <span className="font-heading text-2xl font-800 text-accent">shala</span>
+        <Link to="/" className="inline-flex items-center mb-8">
+          <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
         </Link>
 
         <h1 className="font-heading text-xl font-700 mb-2">Certificate Verification</h1>
@@ -38,13 +43,13 @@ const VerifyCertificate = () => {
             <CheckCircle className="mx-auto h-12 w-12 text-primary mb-3" />
             <p className="font-heading text-lg font-700 text-primary">✓ Authentic Certificate</p>
             <p className="mt-2 text-sm">
-              Issued to: <span className="font-semibold">{(certificate as any).profiles?.full_name}</span>
+              Issued to: <span className="font-semibold">{certificate.student_name}</span>
             </p>
             <p className="text-sm text-muted-foreground">
               Course: <span className="font-medium">{(certificate as any).courses?.title}</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              By: {(certificate as any).creator?.creator_display_name || (certificate as any).creator?.full_name}
+              By: {certificate.creator_name}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               Completed on {new Date(certificate.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}

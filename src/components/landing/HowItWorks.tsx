@@ -1,16 +1,16 @@
-import { UserPlus, Play, Award } from 'lucide-react';
+import { Search, Play, Award } from 'lucide-react';
 
 const steps = [
-  { icon: UserPlus, title: 'Create Account', desc: 'Sign up in 30 seconds and pay ₹249', color: 'bg-primary/10 text-primary' },
-  { icon: Play, title: 'Learn at Your Own Pace', desc: 'Watch video modules anytime, anywhere', color: 'bg-accent/10 text-accent' },
-  { icon: Award, title: 'Get Certified & Earn', desc: 'Download your certificate and refer friends for ₹75 each', color: 'bg-primary/10 text-primary' },
+  { icon: Search, title: 'Browse & Enroll', desc: 'Explore courses from expert creators and enroll at your pace', color: 'bg-primary/10 text-primary' },
+  { icon: Play, title: 'Learn at Your Pace', desc: 'Watch video modules anytime, anywhere on any device', color: 'bg-accent/10 text-accent' },
+  { icon: Award, title: 'Get Certified & Earn', desc: 'Download your certificate and earn commissions by referring friends', color: 'bg-primary/10 text-primary' },
 ];
 
 const HowItWorks = () => (
   <section id="how-it-works" className="border-t border-border py-16 md:py-24">
     <div className="container mx-auto px-4 text-center">
       <h2 className="font-heading text-3xl font-700 md:text-4xl">How It Works</h2>
-      <p className="mt-2 text-muted-foreground">Three simple steps to your digital future</p>
+      <p className="mt-2 text-muted-foreground">Three simple steps to start learning and earning</p>
       <div className="mt-12 grid gap-8 md:grid-cols-3">
         {steps.map((s, i) => (
           <div key={i} className="flex flex-col items-center gap-4">
