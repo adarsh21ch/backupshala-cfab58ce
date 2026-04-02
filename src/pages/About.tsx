@@ -3,6 +3,7 @@ import LandingNavbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 import { Target, Scale, Users } from 'lucide-react';
+import BackButton from '@/components/BackButton';
 
 const values = [
   { icon: Target, title: 'Affordable', desc: 'World-class skills at Indian prices' },
