@@ -166,24 +166,35 @@ const CourseBuilder = () => {
   };
 
   const saveModule = async () => {
-    if (!mTitle.trim() || !mVideoUrl.trim()) {
-      toast({ title: 'Title and video URL required', variant: 'destructive' });
+    if (!mTitle.trim()) {
+      toast({ title: 'Title required', variant: 'destructive' });
+      return;
+    }
+    if (mModuleType === 'video' && !mVideoUrl.trim()) {
+      toast({ title: 'Video URL required for video modules', variant: 'destructive' });
       return;
     }
     const courseId = isNew ? await saveCourse() : id;
     if (!courseId) return;
 
     try {
+      const moduleData: any = {
+        title: mTitle.trim(),
+        description: mDesc.trim() || null,
+        video_url: mModuleType === 'video' ? mVideoUrl.trim() : 'placeholder',
+        duration_minutes: Number(mDuration) || 0,
+        is_preview: mIsPreview,
+        module_type: mModuleType,
+        resources: mModuleType !== 'video' ? mResources : [],
+      };
+
       if (editingModule) {
-        await supabase.from('modules').update({
-          title: mTitle.trim(), description: mDesc.trim() || null,
-          video_url: mVideoUrl.trim(), duration_minutes: Number(mDuration) || 0, is_preview: mIsPreview,
-        }).eq('id', editingModule.id);
+        await supabase.from('modules').update(moduleData).eq('id', editingModule.id);
       } else {
         await supabase.from('modules').insert({
-          course_id: courseId, title: mTitle.trim(), description: mDesc.trim() || null,
-          video_url: mVideoUrl.trim(), duration_minutes: Number(mDuration) || 0,
-          is_preview: mIsPreview, order_index: modules.length,
+          ...moduleData,
+          course_id: courseId,
+          order_index: modules.length,
         });
       }
       queryClient.invalidateQueries({ queryKey: ['creator-course-edit'] });
