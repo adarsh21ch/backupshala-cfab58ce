@@ -52,6 +52,7 @@ const Contact = () => {
         </div>
       </header>
       <main className="container mx-auto max-w-lg px-4 py-12">
+        <BackButton fallback="/" />
         <h1 className="font-heading text-3xl font-800 mb-2">Contact Us</h1>
         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
           <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> support@backupshala.com</span>
