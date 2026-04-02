@@ -7,11 +7,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
+import { Save, AlertTriangle } from 'lucide-react';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: settings } = useQuery({
     queryKey: ['admin-settings'],
@@ -29,6 +30,21 @@ const AdminSettings = () => {
     }
   }, [settings]);
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    const fee = Number(values.platform_fee_percent);
+    if (isNaN(fee) || fee < 1 || fee > 49) errs.platform_fee_percent = 'Must be 1–49%';
+    const comm = Number(values.default_commission_percent);
+    if (isNaN(comm) || comm < 0 || comm > 99) errs.default_commission_percent = 'Must be 0–99%';
+    const payout = Number(values.min_payout_amount);
+    if (isNaN(payout) || payout < 1) errs.min_payout_amount = 'Must be at least ₹1';
+    if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
+    if (!['true', 'false'].includes(values.razorpay_enabled)) errs.razorpay_enabled = 'Must be true or false';
+    if (!['true', 'false'].includes(values.maintenance_mode)) errs.maintenance_mode = 'Must be true or false';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       for (const [key, value] of Object.entries(values)) {
@@ -41,25 +57,46 @@ const AdminSettings = () => {
       }
     },
     onSuccess: () => {
-      toast.success('Settings saved');
+      const fee = values.platform_fee_percent;
+      toast.success(`Settings saved. Platform fee is ${fee}%. This applies to all new courses going forward.`);
       qc.invalidateQueries({ queryKey: ['admin-settings'] });
+      qc.invalidateQueries({ queryKey: ['platform-settings'] });
     },
     onError: () => toast.error('Failed to save'),
   });
 
+  const getLastUpdated = (key: string) => {
+    const s = settings?.find(s => s.key === key);
+    return s ? new Date(s.updated_at).toLocaleString('en-IN') : null;
+  };
+
   const settingsConfig = [
     { key: 'platform_name', label: 'Platform Name', type: 'text' },
+    { key: 'platform_fee_percent', label: 'Platform Fee %', type: 'number' },
     { key: 'default_commission_percent', label: 'Default Commission %', type: 'number' },
-    { key: 'default_platform_fee_percent', label: 'Default Platform Fee %', type: 'number' },
     { key: 'min_payout_amount', label: 'Minimum Payout Amount (₹)', type: 'number' },
     { key: 'support_email', label: 'Support Email', type: 'email' },
     { key: 'razorpay_enabled', label: 'Razorpay Enabled (true/false)', type: 'text' },
+    { key: 'maintenance_mode', label: 'Maintenance Mode (true/false)', type: 'text' },
   ];
 
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-heading font-bold">Platform Settings</h1>
+
+        {/* Warning about platform fee */}
+        <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 max-w-2xl">
+          <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-yellow-400">Important</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Changing the platform fee only affects <strong>NEW courses</strong> created after this change.
+              All existing published courses will retain their original locked-in fee rate.
+            </p>
+          </div>
+        </div>
+
         <Card className="bg-card border-border max-w-2xl">
           <CardHeader><CardTitle className="text-base">General Settings</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -69,12 +106,23 @@ const AdminSettings = () => {
                 <Input
                   type={cfg.type}
                   value={values[cfg.key] || ''}
-                  onChange={e => setValues(prev => ({ ...prev, [cfg.key]: e.target.value }))}
-                  className="bg-secondary border-border"
+                  onChange={e => {
+                    setValues(prev => ({ ...prev, [cfg.key]: e.target.value }));
+                    setErrors(prev => { const n = { ...prev }; delete n[cfg.key]; return n; });
+                  }}
+                  className={`bg-secondary border-border ${errors[cfg.key] ? 'border-destructive' : ''}`}
                 />
+                {errors[cfg.key] && <p className="text-xs text-destructive">{errors[cfg.key]}</p>}
+                {getLastUpdated(cfg.key) && (
+                  <p className="text-[10px] text-muted-foreground">Last updated: {getLastUpdated(cfg.key)}</p>
+                )}
               </div>
             ))}
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="bg-primary hover:bg-primary/90">
+            <Button
+              onClick={() => { if (validate()) saveMutation.mutate(); }}
+              disabled={saveMutation.isPending}
+              className="bg-primary hover:bg-primary/90"
+            >
               <Save className="h-4 w-4 mr-2" /> Save Settings
             </Button>
           </CardContent>

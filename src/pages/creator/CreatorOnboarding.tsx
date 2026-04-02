@@ -6,10 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import PriceBreakdown from '@/components/PriceBreakdown';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { Loader2, ChevronRight, ChevronLeft, Check, AlertTriangle } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -19,10 +22,12 @@ const CreatorOnboarding = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { data: platformSettings } = usePlatformSettings();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [showMaxCommissionConfirm, setShowMaxCommissionConfirm] = useState(false);
 
-  // Step 1 — About You
+  // Step 1
   const [displayName, setDisplayName] = useState('');
   const [category, setCategory] = useState('');
   const [bio, setBio] = useState('');
@@ -30,7 +35,7 @@ const CreatorOnboarding = () => {
   const [instagram, setInstagram] = useState('');
   const [youtube, setYoutube] = useState('');
 
-  // Step 2 — Course Info
+  // Step 2
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDesc, setCourseDesc] = useState('');
   const [courseCategory, setCourseCategory] = useState('');
@@ -39,9 +44,24 @@ const CreatorOnboarding = () => {
   const [whatYouLearn, setWhatYouLearn] = useState<string[]>(['']);
   const [requirements, setRequirements] = useState<string[]>(['']);
 
-  // Step 3 — Pricing
+  // Step 3
   const [price, setPrice] = useState('249');
   const [commissionPercent, setCommissionPercent] = useState(30);
+
+  const platformFeePercent = platformSettings?.platform_fee_percent ?? 15;
+  const maxCommission = 100 - platformFeePercent;
+
+  // Clamp commission if platformFee changes
+  useEffect(() => {
+    if (commissionPercent > maxCommission) setCommissionPercent(maxCommission);
+  }, [maxCommission]);
+
+  // Set default commission from platform settings
+  useEffect(() => {
+    if (platformSettings?.default_commission_percent != null) {
+      setCommissionPercent(Math.min(platformSettings.default_commission_percent, maxCommission));
+    }
+  }, [platformSettings?.default_commission_percent]);
 
   // Load from localStorage
   useEffect(() => {
@@ -63,13 +83,12 @@ const CreatorOnboarding = () => {
         if (d.whatYouLearn) setWhatYouLearn(d.whatYouLearn);
         if (d.requirements) setRequirements(d.requirements);
         if (d.price) setPrice(d.price);
-        if (d.commissionPercent) setCommissionPercent(d.commissionPercent);
+        if (d.commissionPercent != null) setCommissionPercent(d.commissionPercent);
         if (d.step) setStep(d.step);
       } catch {}
     }
   }, []);
 
-  // Save to localStorage on change
   useEffect(() => {
     localStorage.setItem('creator-onboarding', JSON.stringify({
       displayName, category, bio, website, instagram, youtube,
@@ -79,11 +98,18 @@ const CreatorOnboarding = () => {
   }, [displayName, category, bio, website, instagram, youtube, courseTitle, courseDesc, courseCategory, courseLanguage, courseLevel, whatYouLearn, requirements, price, commissionPercent, step]);
 
   const priceNum = Number(price) || 0;
-  const platformFee = Math.round(priceNum * 0.15);
-  const commissionAmt = Math.round(priceNum * (commissionPercent / 100));
-  const creatorReceives = priceNum - platformFee - commissionAmt;
+  const creatorReceives = priceNum - Math.round(priceNum * (platformFeePercent / 100)) - Math.round(priceNum * (commissionPercent / 100));
 
   const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+
+  const handleGoToStep4 = () => {
+    if (priceNum < 99 || priceNum > 9999) { toast({ title: 'Price must be ₹99-₹9,999', variant: 'destructive' }); return; }
+    if (commissionPercent >= maxCommission && creatorReceives <= 0) {
+      setShowMaxCommissionConfirm(true);
+      return;
+    }
+    setStep(4);
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -91,7 +117,6 @@ const CreatorOnboarding = () => {
       const creatorSlug = generateSlug(displayName || profile?.full_name || 'creator');
       const courseSlug = generateSlug(courseTitle);
 
-      // Update profile to creator
       const { error: profileErr } = await supabase.from('profiles').update({
         is_creator: true,
         creator_approved: false,
@@ -105,7 +130,6 @@ const CreatorOnboarding = () => {
       }).eq('id', user!.id);
       if (profileErr) throw profileErr;
 
-      // Create course
       const { error: courseErr } = await supabase.from('courses').insert({
         creator_id: user!.id,
         title: courseTitle.trim(),
@@ -116,6 +140,7 @@ const CreatorOnboarding = () => {
         level: courseLevel,
         price: priceNum,
         commission_percent: commissionPercent,
+        platform_fee_percent: platformFeePercent, // Lock in current platform fee
         what_you_learn: whatYouLearn.filter(w => w.trim()),
         requirements: requirements.filter(r => r.trim()),
         status: 'pending_review',
@@ -133,7 +158,6 @@ const CreatorOnboarding = () => {
     }
   };
 
-  // If already a creator
   if (profile?.is_creator && profile?.creator_approved) {
     return (
       <div className="dark min-h-screen bg-background text-foreground flex items-center justify-center p-4">
@@ -163,8 +187,29 @@ const CreatorOnboarding = () => {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground">
+      {/* Max commission confirmation dialog */}
+      <Dialog open={showMaxCommissionConfirm} onOpenChange={setShowMaxCommissionConfirm}>
+        <DialogContent className="dark bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Confirm Maximum Referral Mode
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            You have set commission to {commissionPercent}%, which means you will earn <strong>₹0</strong> from each enrollment.
+            Your entire earnings (after Backupshala's platform fee) will go to referrers. Are you sure?
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowMaxCommissionConfirm(false)}>Go back and adjust</Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => { setShowMaxCommissionConfirm(false); setStep(4); }}>
+              Yes, I want maximum referrals
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="container mx-auto max-w-2xl px-4 py-8">
-        {/* Header */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-1">
             <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
@@ -173,7 +218,6 @@ const CreatorOnboarding = () => {
           <p className="mt-1 text-sm text-muted-foreground">Share your expertise, earn from every enrollment</p>
         </div>
 
-        {/* Step indicator */}
         <div className="flex items-center justify-center gap-2 mb-8">
           {[1, 2, 3, 4].map(s => (
             <div key={s} className="flex items-center gap-2">
@@ -299,35 +343,53 @@ const CreatorOnboarding = () => {
           {step === 3 && (
             <div className="space-y-4">
               <h2 className="font-heading text-lg font-600">Pricing & Commission</h2>
+
+              <div className="rounded-lg border border-border bg-secondary/30 p-3">
+                <p className="text-xs text-muted-foreground">Platform Fee: <span className="font-semibold text-foreground">{platformFeePercent}%</span> (set by Backupshala)</p>
+              </div>
+
               <div>
                 <Label>Course Price (₹) *</Label>
-                <Input type="number" value={price} onChange={e => setPrice(e.target.value)} min={99} max={9999} className="mt-1 rounded-lg" />
-                <p className="mt-1 text-xs text-muted-foreground">Min ₹99, Max ₹9,999</p>
+                <Input
+                  type="number"
+                  value={price}
+                  onChange={e => setPrice(e.target.value)}
+                  min={99} max={9999}
+                  className="mt-1 rounded-lg"
+                />
+                {(priceNum < 99 || priceNum > 9999) && priceNum > 0 && (
+                  <p className="mt-1 text-xs text-destructive">Price must be ₹99–₹9,999</p>
+                )}
               </div>
               <div>
-                <Label>Referral Commission: {commissionPercent}%</Label>
-                <input type="range" min={10} max={50} value={commissionPercent} onChange={e => setCommissionPercent(Number(e.target.value))}
-                  className="mt-2 w-full accent-primary" />
+                <div className="flex items-center justify-between">
+                  <Label>Referral Commission: {commissionPercent}%</Label>
+                  <span className="text-xs text-muted-foreground">Referrer earns {formatPrice(Math.round(priceNum * (commissionPercent / 100)))} per enrollment</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={maxCommission}
+                  value={commissionPercent}
+                  onChange={e => setCommissionPercent(Number(e.target.value))}
+                  className="mt-2 w-full accent-primary"
+                />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>10%</span><span>50%</span>
+                  <span>0%</span><span>{maxCommission}%</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Higher commission = more referrals = more students</p>
               </div>
-              {priceNum >= 99 && (
-                <div className="rounded-lg border border-border bg-secondary/30 p-4 space-y-2">
-                  <h3 className="text-sm font-medium">Price Breakdown</h3>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Student pays</span><span className="font-semibold">{formatPrice(priceNum)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Platform fee (15%)</span><span className="text-destructive">-{formatPrice(platformFee)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Referrer commission ({commissionPercent}%)</span><span className="text-destructive">-{formatPrice(commissionAmt)}</span></div>
-                  <div className="border-t border-border pt-2 flex justify-between text-sm"><span className="font-medium">You receive</span><span className="font-bold text-primary">{formatPrice(creatorReceives)}</span></div>
-                </div>
+              {priceNum >= 99 && priceNum <= 9999 && (
+                <PriceBreakdown price={priceNum} platformFeePercent={platformFeePercent} commissionPercent={commissionPercent} />
               )}
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep(2)} className="rounded-md"><ChevronLeft className="h-4 w-4 mr-1" /> Back</Button>
-                <Button onClick={() => {
-                  if (priceNum < 99 || priceNum > 9999) { toast({ title: 'Price must be ₹99-₹9,999', variant: 'destructive' }); return; }
-                  setStep(4);
-                }} className="rounded-md">Review <ChevronRight className="h-4 w-4 ml-1" /></Button>
+                <Button
+                  onClick={handleGoToStep4}
+                  disabled={priceNum < 99 || priceNum > 9999}
+                  className="rounded-md"
+                >
+                  Review <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
           )}
@@ -350,8 +412,11 @@ const CreatorOnboarding = () => {
                 </div>
                 <div className="rounded-lg border border-border p-4">
                   <h3 className="text-xs text-muted-foreground mb-1">Pricing</h3>
-                  <p className="text-sm font-medium">{formatPrice(priceNum)} • Commission {commissionPercent}%</p>
+                  <p className="text-sm font-medium">{formatPrice(priceNum)} • Platform {platformFeePercent}% • Commission {commissionPercent}%</p>
                   <p className="text-xs text-primary">You receive {formatPrice(creatorReceives)} per enrollment</p>
+                  {creatorReceives <= 0 && (
+                    <p className="text-xs text-yellow-500 mt-1">🎯 Maximum Referral Mode — ₹0 creator earnings</p>
+                  )}
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Our team reviews applications within 24-48 hours. You'll be notified by email.</p>

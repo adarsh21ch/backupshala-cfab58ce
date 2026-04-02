@@ -33,6 +33,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
   const creator = course.profiles;
   const creatorName = creator?.creator_display_name || creator?.full_name || 'Creator';
   const creatorSlug = creator?.creator_slug || course.creator_id;
+  const commissionAmount = Math.round(course.price * (course.commission_percent / 100));
 
   return (
     <div className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:shadow-md hover:border-primary/20">
@@ -80,7 +81,12 @@ const CourseCard = ({ course }: CourseCardProps) => {
           )}
         </div>
         <div className="flex items-center justify-between pt-1">
-          <span className="font-heading text-lg font-700 text-accent">{formatPrice(course.price)}</span>
+          <div>
+            <span className="font-heading text-lg font-700 text-accent">{formatPrice(course.price)}</span>
+            {commissionAmount > 0 && (
+              <p className="text-[10px] text-primary">Refer & earn {formatPrice(commissionAmount)}</p>
+            )}
+          </div>
           <Button asChild size="sm" className="rounded-md text-xs h-8 px-3">
             <Link to={`/c/${creatorSlug}/${course.slug}`}>View Course</Link>
           </Button>
