@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, BookOpen } from 'lucide-react';
+import { Star, Clock, BookOpen, Trophy, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/format';
 
@@ -20,23 +20,32 @@ interface CourseCardProps {
     rating: number;
     total_reviews: number;
     creator_id: string;
+    is_featured?: boolean;
     profiles?: {
       full_name: string;
       avatar_url: string | null;
       creator_display_name: string | null;
       creator_slug: string | null;
     };
+    modules?: any[];
   };
+  isPlatformCourse?: boolean;
+  pinned?: boolean;
 }
 
-const CourseCard = ({ course }: CourseCardProps) => {
+const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
   const creator = course.profiles;
   const creatorName = creator?.creator_display_name || creator?.full_name || 'Creator';
   const creatorSlug = creator?.creator_slug || course.creator_id;
   const commissionAmount = Math.round(course.price * (course.commission_percent / 100));
 
+  // Detect module types from modules array if available
+  const mods = course.modules || [];
+  const hasResourceModules = mods.some((m: any) => m.module_type === 'resource');
+  const hasCommunityModule = mods.some((m: any) => m.module_type === 'community');
+
   return (
-    <div className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:shadow-md hover:border-primary/20">
+    <div className={`group rounded-xl border bg-card overflow-hidden transition-all hover:shadow-md ${pinned ? 'border-accent/40 ring-1 ring-accent/20' : 'border-border hover:border-primary/20'}`}>
       <div className="aspect-video bg-muted relative overflow-hidden">
         {course.thumbnail_url ? (
           <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
@@ -45,9 +54,17 @@ const CourseCard = ({ course }: CourseCardProps) => {
             <BookOpen className="h-10 w-10 text-primary/30" />
           </div>
         )}
-        <div className="absolute top-2 left-2 rounded-md bg-background/90 px-2 py-0.5 text-xs font-medium backdrop-blur-sm">
-          {course.category}
+        <div className="absolute top-2 left-2 flex gap-1.5">
+          <span className="rounded-md bg-background/90 px-2 py-0.5 text-xs font-medium backdrop-blur-sm">{course.category}</span>
         </div>
+        {pinned && (
+          <div className="absolute top-0 left-0 bg-primary text-primary-foreground px-3 py-1 text-[10px] font-bold rounded-br-lg">Start Here</div>
+        )}
+        {isPlatformCourse && (
+          <div className="absolute top-2 right-2 rounded-md bg-accent/90 px-2 py-0.5 text-[10px] font-bold text-accent-foreground backdrop-blur-sm flex items-center gap-1">
+            <Trophy className="h-3 w-3" /> Official
+          </div>
+        )}
       </div>
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-2">
@@ -62,6 +79,19 @@ const CourseCard = ({ course }: CourseCardProps) => {
         </div>
         <h3 className="font-heading text-sm font-600 leading-snug line-clamp-2">{course.title}</h3>
         <p className="text-xs text-muted-foreground line-clamp-2">{course.short_description}</p>
+
+        {/* Type badges */}
+        <div className="flex flex-wrap gap-1">
+          {hasCommunityModule && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary flex items-center gap-0.5">
+              <Users className="h-2.5 w-2.5" /> Community
+            </span>
+          )}
+          {hasResourceModules && (
+            <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">📚 Resources</span>
+          )}
+        </div>
+
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           {course.rating > 0 && (
             <span className="flex items-center gap-0.5">

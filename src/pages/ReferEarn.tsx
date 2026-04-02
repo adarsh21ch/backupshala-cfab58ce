@@ -3,10 +3,12 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight } from 'lucide-react';
+import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { formatPrice, timeAgo } from '@/lib/format';
 import { Link } from 'react-router-dom';
+
+const BUNDLE_SLUG = 'backupshala-standard-bundle';
 
 const ReferEarn = () => {
   const { user, profile } = useAuth();
@@ -23,6 +25,14 @@ const ReferEarn = () => {
       return data || [];
     },
     enabled: !!user && !!profile,
+  });
+
+  const { data: publishedCourses } = useQuery({
+    queryKey: ['published-courses-refer'],
+    queryFn: async () => {
+      const { data } = await supabase.from('courses').select('id, title, slug, price, commission_percent').eq('status', 'published');
+      return data || [];
+    },
   });
 
   const { data: referralCount } = useQuery({
@@ -52,10 +62,34 @@ const ReferEarn = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const bundleCourse = publishedCourses?.find(c => c.slug === BUNDLE_SLUG);
+  const bundleCommission = bundleCourse ? Math.round(bundleCourse.price * (bundleCourse.commission_percent / 100)) : 75;
+  const bundleShareMsg = `Hey! I just enrolled in the Backupshala Standard Bundle — ₹${bundleCourse?.price || 249} for digital skills resources on video editing, content creation, personal branding and more. Plus a certificate and community access! When you sign up at backupshala.com, enter my email ${profile?.email} as your referrer. Here's the link: ${window.location.origin}/c/backupshala/${BUNDLE_SLUG} 🚀`;
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl">
         <h1 className="font-heading text-2xl font-700">Refer & Earn</h1>
+
+        {/* Best to Refer Card */}
+        {bundleCourse && (
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-accent" />
+              <h2 className="font-heading text-sm font-600 text-accent">Best Course to Refer</h2>
+            </div>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-sm font-medium">{bundleCourse.title}</p>
+                <p className="text-xs text-muted-foreground">Price: {formatPrice(bundleCourse.price)} | You earn: <span className="text-primary font-semibold">{formatPrice(bundleCommission)}</span> per referral</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Why? Most affordable + most trusted + official</p>
+              </div>
+              <Button size="sm" variant="outline" className="rounded-md text-xs" onClick={() => copyToClipboard(bundleShareMsg, 'whatsapp')}>
+                {copied === 'whatsapp' ? <><Check className="h-3 w-3 mr-1 text-primary" /> Copied!</> : <><Copy className="h-3 w-3 mr-1" /> Copy Share Message</>}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Referral email box */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
@@ -119,7 +153,33 @@ const ReferEarn = () => {
           </div>
         </div>
 
-        {/* Share messages */}
+        {/* Courses you can refer */}
+        {publishedCourses && publishedCourses.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+            <h2 className="font-heading text-base font-600">Courses You Can Refer</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="px-3 py-2 font-medium text-muted-foreground text-xs">Course</th>
+                    <th className="px-3 py-2 font-medium text-muted-foreground text-xs">Price</th>
+                    <th className="px-3 py-2 font-medium text-muted-foreground text-xs">You Earn</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {publishedCourses.map(c => (
+                    <tr key={c.id}>
+                      <td className="px-3 py-2 text-xs">{c.title}</td>
+                      <td className="px-3 py-2 text-xs">{formatPrice(c.price)}</td>
+                      <td className="px-3 py-2 text-xs font-semibold text-primary">{formatPrice(Math.round(c.price * (c.commission_percent / 100)))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-heading text-base font-600">Share Messages</h2>
           <div>

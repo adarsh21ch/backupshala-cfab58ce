@@ -24,6 +24,8 @@ const SORT_OPTIONS = [
   { label: 'Price: High to Low', value: 'price_desc' },
 ];
 
+const BUNDLE_SLUG = 'backupshala-standard-bundle';
+
 const Explore = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
@@ -32,13 +34,14 @@ const Explore = () => {
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState('popular');
   const [showFilters, setShowFilters] = useState(false);
+  const [courseType, setCourseType] = useState('All');
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ['explore-courses'],
     queryFn: async () => {
       const { data } = await supabase
         .from('courses')
-        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug)')
+        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug), modules(module_type)')
         .eq('status', 'published');
       return data || [];
     },
@@ -51,9 +54,16 @@ const Explore = () => {
       if (level !== 'All' && c.level !== level) return false;
       if (language !== 'All' && c.language !== language) return false;
       if (minRating > 0 && (c.rating || 0) < minRating) return false;
+      if (courseType === 'Standard Bundle' && c.slug !== BUNDLE_SLUG) return false;
+      if (courseType === 'Resource Bundles' && !(c as any).modules?.some((m: any) => m.module_type === 'resource')) return false;
+      if (courseType === 'Video Courses' && (c as any).modules?.every((m: any) => m.module_type !== 'video')) return false;
       return true;
     })
     .sort((a, b) => {
+      // Pin Standard Bundle first
+      const aBundle = a.slug === BUNDLE_SLUG ? 1 : 0;
+      const bBundle = b.slug === BUNDLE_SLUG ? 1 : 0;
+      if (aBundle !== bBundle) return bBundle - aBundle;
       if (sort === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sort === 'price_asc') return a.price - b.price;
       if (sort === 'price_desc') return b.price - a.price;
@@ -130,6 +140,17 @@ const Explore = () => {
                 ))}
               </div>
             </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">COURSE TYPE</p>
+              <div className="space-y-1">
+                {['All', 'Video Courses', 'Resource Bundles', 'Standard Bundle'].map(t => (
+                  <button key={t} onClick={() => setCourseType(t)}
+                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${courseType === t ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
           </aside>
 
           <div className="flex-1">
@@ -144,7 +165,7 @@ const Explore = () => {
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((course: any) => (
-                  <CourseCard key={course.id} course={course} />
+                  <CourseCard key={course.id} course={course} isPlatformCourse={course.slug === BUNDLE_SLUG} pinned={course.slug === BUNDLE_SLUG} />
                 ))}
               </div>
             )}

@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { BookOpen, CheckCircle, Award, IndianRupee, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatPrice, timeAgo } from '@/lib/format';
+import CommunityDashboardCard from '@/components/module/CommunityDashboardCard';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -93,6 +94,8 @@ const Dashboard = () => {
           ))}
         </div>
 
+        {/* Community Card - visible if enrolled in any course */}
+        {enrollments && enrollments.length > 0 && <CommunityDashboardCard />}
         {/* Continue Learning */}
         {inProgressEnrollments.length > 0 && (
           <div>

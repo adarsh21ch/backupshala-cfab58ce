@@ -6,9 +6,17 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, Lock } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import ResourceModuleView from '@/components/module/ResourceModuleView';
+import CommunityModuleView from '@/components/module/CommunityModuleView';
+
+const moduleTypeIcon = (type: string) => {
+  if (type === 'resource') return <BookOpen className="h-3 w-3" />;
+  if (type === 'community') return <Users className="h-3 w-3" />;
+  return <Play className="h-3 w-3" />;
+};
 
 const ModulePlayer = () => {
   const { id: courseId, moduleId } = useParams<{ id: string; moduleId: string }>();
@@ -40,7 +48,7 @@ const ModulePlayer = () => {
   const completedModuleIds = new Set(completions?.map(c => c.module_id) || []);
   const modules = course?.modules || [];
   const currentIndex = modules.findIndex((m: any) => m.id === moduleId);
-  const currentModule = modules[currentIndex];
+  const currentModule = modules[currentIndex] as any;
   const prevModule = currentIndex > 0 ? modules[currentIndex - 1] : null;
   const nextModule = currentIndex < modules.length - 1 ? modules[currentIndex + 1] : null;
   const isCompleted = moduleId ? completedModuleIds.has(moduleId) : false;
@@ -70,12 +78,17 @@ const ModulePlayer = () => {
         } catch {}
         setTimeout(() => navigate('/dashboard/certificates'), 4000);
       } else if (nextModule) {
-        // Auto-advance after 1.5s
-        setTimeout(() => navigate(`/courses/${courseId}/module/${nextModule.id}`), 1500);
+        setTimeout(() => navigate(`/courses/${courseId}/module/${(nextModule as any).id}`), 1500);
       }
     },
     onError: () => toast({ title: 'Failed to mark complete', variant: 'destructive' }),
   });
+
+  const handleAutoComplete = useCallback(() => {
+    if (!isCompleted && !markComplete.isPending) {
+      markComplete.mutate();
+    }
+  }, [isCompleted, markComplete]);
 
   if (courseLoading) return (
     <DashboardLayout>
@@ -106,69 +119,92 @@ const ModulePlayer = () => {
     </DashboardLayout>
   );
 
+  const moduleType = (currentModule as any).module_type || 'video';
+  const resources = (currentModule as any).resources || [];
+
   return (
     <DashboardLayout>
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-        {/* Main content */}
         <div className="space-y-4">
           <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
           </Link>
 
-          {/* Progress bar */}
           <div className="flex items-center gap-3">
             <Progress value={overallProgress} className="h-1.5 flex-1" />
             <span className="text-xs font-medium text-muted-foreground">{overallProgress}%</span>
           </div>
 
-          {/* Video */}
-          <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-card">
-            <iframe
-              src={currentModule.video_url}
+          {/* Content based on module type */}
+          {moduleType === 'resource' ? (
+            <ResourceModuleView
               title={currentModule.title}
-              className="h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+              description={currentModule.description}
+              resources={resources}
+              onAutoComplete={handleAutoComplete}
+              isCompleted={isCompleted}
             />
-          </div>
+          ) : moduleType === 'community' ? (
+            <CommunityModuleView
+              title={currentModule.title}
+              description={currentModule.description}
+              resources={resources}
+              onAutoComplete={handleAutoComplete}
+              isCompleted={isCompleted}
+            />
+          ) : (
+            <>
+              <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-card">
+                <iframe
+                  src={currentModule.video_url}
+                  title={currentModule.title}
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              <div>
+                <h1 className="font-heading text-xl font-700">{currentModule.title}</h1>
+                {currentModule.description && <p className="mt-2 text-sm text-muted-foreground">{currentModule.description}</p>}
+                <p className="mt-1 text-xs text-muted-foreground">{currentModule.duration_minutes} minutes</p>
+              </div>
+              {isCompleted ? (
+                <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-4">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium text-primary">Module completed!</span>
+                </div>
+              ) : (
+                <Button onClick={() => markComplete.mutate()} disabled={markComplete.isPending} className="rounded-md bg-primary hover:bg-primary/90 font-semibold">
+                  <CheckCircle className="h-4 w-4 mr-2" /> Mark as Complete ✓
+                </Button>
+              )}
+            </>
+          )}
 
-          {/* Module info */}
-          <div>
-            <h1 className="font-heading text-xl font-700">{currentModule.title}</h1>
-            {currentModule.description && (
-              <p className="mt-2 text-sm text-muted-foreground">{currentModule.description}</p>
-            )}
-            <p className="mt-1 text-xs text-muted-foreground">{currentModule.duration_minutes} minutes</p>
-          </div>
-
-          {/* Mark complete / completed badge */}
-          {isCompleted ? (
+          {/* Completed badge for resource/community */}
+          {moduleType !== 'video' && isCompleted && (
             <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-4">
               <CheckCircle className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-primary">Module completed!</span>
             </div>
-          ) : (
-            <Button onClick={() => markComplete.mutate()} disabled={markComplete.isPending} className="rounded-md bg-primary hover:bg-primary/90 font-semibold">
-              <CheckCircle className="h-4 w-4 mr-2" /> Mark as Complete ✓
-            </Button>
           )}
 
           {/* Prev / Next */}
           <div className="flex items-center justify-between pt-2">
             {prevModule ? (
               <Button asChild variant="outline" size="sm" className="rounded-md">
-                <Link to={`/courses/${courseId}/module/${prevModule.id}`}><ChevronLeft className="h-4 w-4 mr-1" /> Previous</Link>
+                <Link to={`/courses/${courseId}/module/${(prevModule as any).id}`}><ChevronLeft className="h-4 w-4 mr-1" /> Previous</Link>
               </Button>
             ) : <div />}
             {nextModule && (
               <Button asChild size="sm" className="rounded-md bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Link to={`/courses/${courseId}/module/${nextModule.id}`}>Next <ChevronRight className="h-4 w-4 ml-1" /></Link>
+                <Link to={`/courses/${courseId}/module/${(nextModule as any).id}`}>Next <ChevronRight className="h-4 w-4 ml-1" /></Link>
               </Button>
             )}
           </div>
         </div>
 
-        {/* Sidebar module list (desktop) */}
+        {/* Sidebar */}
         <div className="hidden lg:block">
           <div className="sticky top-20 rounded-xl border border-border bg-card">
             <div className="border-b border-border p-4">
@@ -179,6 +215,7 @@ const ModulePlayer = () => {
               {modules.map((m: any, i: number) => {
                 const done = completedModuleIds.has(m.id);
                 const isCurrent = m.id === moduleId;
+                const mType = m.module_type || 'video';
                 return (
                   <Link
                     key={m.id}
@@ -186,11 +223,13 @@ const ModulePlayer = () => {
                     className={`flex items-center gap-3 p-3 text-xs transition-colors hover:bg-secondary/50 ${isCurrent ? 'bg-primary/5 border-l-2 border-primary' : ''}`}
                   >
                     <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold ${done ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>
-                      {done ? '✓' : i + 1}
+                      {done ? '✓' : moduleTypeIcon(mType)}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className={`truncate font-medium ${isCurrent ? 'text-primary' : ''}`}>{m.title}</p>
-                      <p className="text-muted-foreground">{m.duration_minutes}m</p>
+                      <p className="text-muted-foreground">
+                        {mType === 'resource' ? '📚 Resources' : mType === 'community' ? '👥 Community' : `${m.duration_minutes}m`}
+                      </p>
                     </div>
                   </Link>
                 );

@@ -163,6 +163,12 @@ const CourseEnrollment = () => {
           <Button onClick={() => navigate('/courses')} className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold">
             Start Learning Now
           </Button>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
+            <p className="text-xs text-primary font-medium">🎉 You're in! As an enrolled student, you now have access to our private community.</p>
+            <Button variant="outline" size="sm" className="mt-2 rounded-md text-xs" onClick={() => window.open('https://t.me/backupshala', '_blank')}>
+              📱 Join Telegram Community
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">Redirecting in a few seconds…</p>
         </div>
       </div>
@@ -207,6 +213,12 @@ const CourseEnrollment = () => {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
+            {course.slug === 'backupshala-standard-bundle' && (
+              <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 p-4">
+                <span className="text-lg">🏆</span>
+                <p className="text-sm font-medium text-accent">Backupshala's Official Starter Bundle</p>
+              </div>
+            )}
             <div>
               <h1 className="font-heading text-2xl font-700 md:text-3xl">{course.title}</h1>
               <p className="mt-2 text-muted-foreground">{course.short_description}</p>
@@ -272,16 +284,23 @@ const CourseEnrollment = () => {
               <TabsContent value="content" className="mt-4">
                 <p className="text-xs text-muted-foreground mb-3">{modules.length} modules • {course.total_duration_minutes} min total</p>
                 <div className="space-y-1">
-                  {modules.map((m: any, i: number) => (
-                    <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-xs font-semibold">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{m.title}</p>
-                        <p className="text-xs text-muted-foreground">{m.duration_minutes} min</p>
+                  {modules.map((m: any, i: number) => {
+                    const mType = m.module_type || 'video';
+                    return (
+                      <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-xs font-semibold">
+                          {mType === 'resource' ? '📚' : mType === 'community' ? '👥' : i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{m.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {mType === 'resource' ? 'Resource Library' : mType === 'community' ? 'Community Access' : `${m.duration_minutes} min`}
+                          </p>
+                        </div>
+                        {m.is_preview ? <Play className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground/40" />}
                       </div>
-                      {m.is_preview ? <Play className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground/40" />}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </TabsContent>
               <TabsContent value="reviews" className="mt-4">
