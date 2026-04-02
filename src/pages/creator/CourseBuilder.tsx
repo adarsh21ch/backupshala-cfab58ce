@@ -220,8 +220,9 @@ const CourseBuilder = () => {
 
   const openEditModule = (m: any) => {
     setEditingModule(m);
-    setMTitle(m.title); setMDesc(m.description || ''); setMVideoUrl(m.video_url);
+    setMTitle(m.title); setMDesc(m.description || ''); setMVideoUrl(m.video_url || '');
     setMDuration(String(m.duration_minutes || '')); setMIsPreview(m.is_preview || false);
+    setMModuleType(m.module_type || 'video'); setMResources(m.resources || []);
     setModuleDialogOpen(true);
   };
 
