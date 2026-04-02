@@ -7,6 +7,7 @@ import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight, Trophy } fro
 import { useState } from 'react';
 import { formatPrice, timeAgo } from '@/lib/format';
 import { Link } from 'react-router-dom';
+import BackButton from '@/components/BackButton';
 
 const BUNDLE_SLUG = 'backupshala-standard-bundle';
 
