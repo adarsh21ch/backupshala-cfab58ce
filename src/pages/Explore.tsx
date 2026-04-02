@@ -24,6 +24,8 @@ const SORT_OPTIONS = [
   { label: 'Price: High to Low', value: 'price_desc' },
 ];
 
+const BUNDLE_SLUG = 'backupshala-standard-bundle';
+
 const Explore = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
@@ -32,6 +34,7 @@ const Explore = () => {
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState('popular');
   const [showFilters, setShowFilters] = useState(false);
+  const [courseType, setCourseType] = useState('All');
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ['explore-courses'],
