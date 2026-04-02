@@ -473,7 +473,9 @@ const CourseBuilder = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{m.title}</p>
                         <div className="flex gap-2 text-xs text-muted-foreground">
-                          <span>{m.duration_minutes || 0}m</span>
+                          <span className={`${m.module_type === 'resource' ? 'text-primary' : m.module_type === 'community' ? 'text-accent' : ''}`}>
+                            {m.module_type === 'resource' ? '📚 Resource' : m.module_type === 'community' ? '👥 Community' : `▶️ ${m.duration_minutes || 0}m`}
+                          </span>
                           {m.is_preview && <span className="text-accent">Preview</span>}
                         </div>
                       </div>

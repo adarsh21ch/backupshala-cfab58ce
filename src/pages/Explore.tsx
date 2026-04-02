@@ -54,9 +54,16 @@ const Explore = () => {
       if (level !== 'All' && c.level !== level) return false;
       if (language !== 'All' && c.language !== language) return false;
       if (minRating > 0 && (c.rating || 0) < minRating) return false;
+      if (courseType === 'Standard Bundle' && c.slug !== BUNDLE_SLUG) return false;
+      if (courseType === 'Resource Bundles' && !(c as any).modules?.some((m: any) => m.module_type === 'resource')) return false;
+      if (courseType === 'Video Courses' && (c as any).modules?.every((m: any) => m.module_type !== 'video')) return false;
       return true;
     })
     .sort((a, b) => {
+      // Pin Standard Bundle first
+      const aBundle = a.slug === BUNDLE_SLUG ? 1 : 0;
+      const bBundle = b.slug === BUNDLE_SLUG ? 1 : 0;
+      if (aBundle !== bBundle) return bBundle - aBundle;
       if (sort === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sort === 'price_asc') return a.price - b.price;
       if (sort === 'price_desc') return b.price - a.price;
