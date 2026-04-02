@@ -278,16 +278,23 @@ const CourseEnrollment = () => {
               <TabsContent value="content" className="mt-4">
                 <p className="text-xs text-muted-foreground mb-3">{modules.length} modules • {course.total_duration_minutes} min total</p>
                 <div className="space-y-1">
-                  {modules.map((m: any, i: number) => (
-                    <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-xs font-semibold">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{m.title}</p>
-                        <p className="text-xs text-muted-foreground">{m.duration_minutes} min</p>
+                  {modules.map((m: any, i: number) => {
+                    const mType = m.module_type || 'video';
+                    return (
+                      <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-xs font-semibold">
+                          {mType === 'resource' ? '📚' : mType === 'community' ? '👥' : i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{m.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {mType === 'resource' ? 'Resource Library' : mType === 'community' ? 'Community Access' : `${m.duration_minutes} min`}
+                          </p>
+                        </div>
+                        {m.is_preview ? <Play className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground/40" />}
                       </div>
-                      {m.is_preview ? <Play className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground/40" />}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </TabsContent>
               <TabsContent value="reviews" className="mt-4">
