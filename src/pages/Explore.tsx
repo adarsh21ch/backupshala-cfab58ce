@@ -75,6 +75,7 @@ const Explore = () => {
     <div className="min-h-screen flex flex-col">
       <LandingNavbar />
       <div className="flex-1 container mx-auto px-4 py-8">
+        <BackButton fallback="/" />
         <div className="mb-8">
           <h1 className="font-heading text-3xl font-700">Explore Courses</h1>
           <p className="mt-1 text-muted-foreground">Browse courses from expert creators across India</p>

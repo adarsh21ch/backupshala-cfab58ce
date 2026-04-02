@@ -30,6 +30,7 @@ const Notifications = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-2xl">
+        <BackButton fallback="/dashboard" />
         <div className="flex items-center justify-between">
           <h1 className="font-heading text-2xl font-700">Notifications</h1>
           {notifications?.some(n => !n.is_read) && (

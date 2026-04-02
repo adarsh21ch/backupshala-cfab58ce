@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, Play, Lock, Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, useEffect } from 'react';
+import BackButton from '@/components/BackButton';
 
 const CourseDetail = () => {
   const { id } = useParams<{ id: string }>();
