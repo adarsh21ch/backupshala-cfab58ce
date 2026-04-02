@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Wallet, Loader2, IndianRupee } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
+import BackButton from '@/components/BackButton';
 
 const Payouts = () => {
   const { user, profile, refreshProfile } = useAuth();
