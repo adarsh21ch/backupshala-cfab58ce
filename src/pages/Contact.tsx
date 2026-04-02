@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Mail, Clock } from 'lucide-react';
+import BackButton from '@/components/BackButton';
 
 const subjects = ['Payment Issue', 'Course Issue', 'Creator Support', 'Technical Issue', 'Other'];
 
