@@ -82,6 +82,7 @@ const Certificate = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <BackButton fallback="/dashboard" />
         <h1 className="font-heading text-2xl font-700">My Certificates 🎓</h1>
 
         {isLoading ? (

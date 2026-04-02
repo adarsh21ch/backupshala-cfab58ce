@@ -70,6 +70,7 @@ const ReferEarn = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl">
+        <BackButton fallback="/dashboard" />
         <h1 className="font-heading text-2xl font-700">Refer & Earn</h1>
 
         {/* Best to Refer Card */}

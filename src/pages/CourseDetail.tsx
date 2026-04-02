@@ -96,6 +96,7 @@ const CourseDetail = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <BackButton fallback="/courses" />
         {/* Header */}
         <div>
           <h1 className="font-heading text-2xl font-700">{course.title}</h1>

@@ -86,6 +86,7 @@ const Profile = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-lg">
+        <BackButton fallback="/dashboard" />
         <h1 className="font-heading text-2xl font-700">Profile</h1>
 
         {/* Avatar */}

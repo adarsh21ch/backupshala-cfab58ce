@@ -211,6 +211,7 @@ const CourseEnrollment = () => {
     <div className="min-h-screen flex flex-col">
       <LandingNavbar />
       <div className="flex-1 container mx-auto px-4 py-8">
+        <BackButton fallback="/explore" />
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
