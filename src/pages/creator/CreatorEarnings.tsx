@@ -84,6 +84,15 @@ const CreatorEarnings = () => {
           ))}
         </div>
 
+        {/* Self-referral tip */}
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <p className="text-sm font-medium text-primary mb-1">💡 Pro Tip: Maximize Your Income</p>
+          <p className="text-xs text-muted-foreground">
+            When you personally share your course with someone, tell them to enter YOUR email when they sign up on Backupshala. 
+            You'll earn both your creator payout AND the referral commission — maximizing your income per enrollment.
+          </p>
+        </div>
+
         {/* Transactions */}
         <div>
           <h2 className="font-heading text-base font-600 mb-4">Transaction History</h2>

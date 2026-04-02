@@ -321,8 +321,18 @@ const CourseEnrollment = () => {
                 <li className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> {modules.length} video modules</li>
                 <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> Full lifetime access</li>
                 <li className="flex items-center gap-2"><Award className="h-4 w-4 text-primary" /> Certificate of completion</li>
-                <li className="flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Refer friends & earn {formatPrice(commissionAmount)}</li>
+                {commissionAmount > 0 && (
+                  <li className="flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Refer friends & earn {formatPrice(commissionAmount)}</li>
+                )}
               </ul>
+              {commissionAmount > 0 && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
+                  <p className="text-xs text-primary font-medium">
+                    Refer friends, earn {formatPrice(commissionAmount)} per enrollment
+                    {course.commission_percent >= (100 - course.platform_fee_percent) ? ' — maximum referral course!' : ''}
+                  </p>
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. Invoice emailed on enrollment.</p>
               <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => {
                 const msg = encodeURIComponent(`Check out "${course.title}" on Backupshala: ${window.location.href}`);

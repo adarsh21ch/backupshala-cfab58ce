@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import PriceBreakdown from '@/components/PriceBreakdown';
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft } from 'lucide-react';
+import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -27,10 +29,10 @@ const CourseBuilder = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: platformSettings } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  // Course fields
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDesc, setShortDesc] = useState('');
@@ -47,7 +49,6 @@ const CourseBuilder = () => {
   const [commissionPercent, setCommissionPercent] = useState(30);
   const [status, setStatus] = useState('draft');
 
-  // Modules
   const [modules, setModules] = useState<any[]>([]);
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<any>(null);
@@ -57,7 +58,9 @@ const CourseBuilder = () => {
   const [mDuration, setMDuration] = useState('');
   const [mIsPreview, setMIsPreview] = useState(false);
 
-  // Load existing course
+  const platformFeePercent = platformSettings?.platform_fee_percent ?? 15;
+  const maxCommission = 100 - platformFeePercent;
+
   const { data: course } = useQuery({
     queryKey: ['creator-course-edit', id],
     queryFn: async () => {
@@ -90,6 +93,10 @@ const CourseBuilder = () => {
     }
   }, [course]);
 
+  useEffect(() => {
+    if (commissionPercent > maxCommission) setCommissionPercent(maxCommission);
+  }, [maxCommission]);
+
   const generateSlug = (t: string) => t.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
 
   useEffect(() => {
@@ -97,9 +104,6 @@ const CourseBuilder = () => {
   }, [title, isNew]);
 
   const priceNum = Number(price) || 0;
-  const platformFee = Math.round(priceNum * 0.15);
-  const commissionAmt = Math.round(priceNum * (commissionPercent / 100));
-  const creatorReceives = priceNum - platformFee - commissionAmt;
 
   const saveCourse = async () => {
     if (!title.trim() || !shortDesc.trim() || !slug.trim()) {
@@ -108,14 +112,12 @@ const CourseBuilder = () => {
     }
     setSaving(true);
     try {
-      const courseData = {
+      const courseData: any = {
         title: title.trim(),
         slug: slug.trim(),
         short_description: shortDesc.trim(),
         full_description: fullDesc.trim() || null,
-        category,
-        language,
-        level,
+        category, language, level,
         thumbnail_url: thumbnailUrl.trim() || null,
         preview_video_url: previewVideoUrl.trim() || null,
         what_you_learn: whatYouLearn.filter(w => w.trim()),
@@ -126,6 +128,11 @@ const CourseBuilder = () => {
         total_modules: modules.length,
       };
 
+      // Lock in platform fee for new courses
+      if (isNew) {
+        courseData.platform_fee_percent = platformFeePercent;
+      }
+
       if (isNew) {
         const { data, error } = await supabase.from('courses').insert({ ...courseData, creator_id: user!.id }).select().single();
         if (error) throw error;
@@ -133,6 +140,15 @@ const CourseBuilder = () => {
         navigate(`/creator/courses/${data.id}/edit`, { replace: true });
         return data.id;
       } else {
+        // For published courses changing price/commission -> trigger review
+        if (status === 'published' && course) {
+          const priceChanged = priceNum !== course.price;
+          const commChanged = commissionPercent !== course.commission_percent;
+          if (priceChanged || commChanged) {
+            courseData.status = 'pending_review';
+            courseData.rejection_reason = 'Price/commission updated by creator — please review';
+          }
+        }
         const { error } = await supabase.from('courses').update(courseData).eq('id', id!);
         if (error) throw error;
         toast({ title: 'Course saved ✓' });
@@ -209,7 +225,6 @@ const CourseBuilder = () => {
     toast({ title: 'Submitted for review! ✓' });
   };
 
-  // Checklist
   const checks = [
     { label: 'Title and description added', ok: !!title.trim() && !!shortDesc.trim() },
     { label: 'Thumbnail added', ok: !!thumbnailUrl.trim() },
@@ -375,23 +390,34 @@ const CourseBuilder = () => {
           {/* Pricing */}
           <TabsContent value="pricing" className="mt-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              {status === 'published' && (
+                <div className="flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
+                  <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-yellow-400">This course is live. Changing the price or commission will set status back to pending review for admin approval.</p>
+                </div>
+              )}
+
+              <div className="rounded-lg border border-border bg-secondary/30 p-3">
+                <p className="text-xs text-muted-foreground">Platform Fee: <span className="font-semibold text-foreground">{platformFeePercent}%</span> (set by Backupshala)</p>
+              </div>
+
               <div>
                 <Label>Price (₹)</Label>
                 <Input type="number" value={price} onChange={e => setPrice(e.target.value)} min={99} max={9999} className="mt-1 rounded-lg" />
-                <p className="mt-1 text-xs text-muted-foreground">Min ₹99, Max ₹9,999</p>
+                {(priceNum < 99 || priceNum > 9999) && priceNum > 0 && (
+                  <p className="mt-1 text-xs text-destructive">Price must be ₹99–₹9,999</p>
+                )}
               </div>
               <div>
-                <Label>Referral Commission: {commissionPercent}%</Label>
-                <input type="range" min={10} max={50} value={commissionPercent} onChange={e => setCommissionPercent(Number(e.target.value))} className="mt-2 w-full accent-primary" />
-                <div className="flex justify-between text-xs text-muted-foreground"><span>10%</span><span>50%</span></div>
-              </div>
-              {priceNum >= 99 && (
-                <div className="rounded-lg border border-border bg-secondary/30 p-4 space-y-2">
-                  <h3 className="text-sm font-medium">For a {formatPrice(priceNum)} enrollment:</h3>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Platform keeps (15%)</span><span>{formatPrice(platformFee)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Referrer earns ({commissionPercent}%)</span><span>{formatPrice(commissionAmt)}</span></div>
-                  <div className="border-t border-border pt-2 flex justify-between text-sm"><span className="font-medium">You receive</span><span className="font-bold text-primary">{formatPrice(creatorReceives)}</span></div>
+                <div className="flex items-center justify-between">
+                  <Label>Referral Commission: {commissionPercent}%</Label>
+                  <span className="text-xs text-muted-foreground">Referrer earns {formatPrice(Math.round(priceNum * (commissionPercent / 100)))} per enrollment</span>
                 </div>
+                <input type="range" min={0} max={maxCommission} value={commissionPercent} onChange={e => setCommissionPercent(Number(e.target.value))} className="mt-2 w-full accent-primary" />
+                <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>{maxCommission}%</span></div>
+              </div>
+              {priceNum >= 99 && priceNum <= 9999 && (
+                <PriceBreakdown price={priceNum} platformFeePercent={platformFeePercent} commissionPercent={commissionPercent} />
               )}
               <Button onClick={saveCourse} disabled={saving} className="rounded-md bg-primary hover:bg-primary/90">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
