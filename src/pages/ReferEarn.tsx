@@ -3,10 +3,12 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight } from 'lucide-react';
+import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { formatPrice, timeAgo } from '@/lib/format';
 import { Link } from 'react-router-dom';
+
+const BUNDLE_SLUG = 'backupshala-standard-bundle';
 
 const ReferEarn = () => {
   const { user, profile } = useAuth();
