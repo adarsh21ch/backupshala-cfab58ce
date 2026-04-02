@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Bell, CheckCheck, Info, Award, IndianRupee, UserPlus } from 'lucide-react';
 import { timeAgo } from '@/lib/format';
+import BackButton from '@/components/BackButton';
 
 const typeIcons: Record<string, any> = { info: Info, success: Award, warning: Info, payout: IndianRupee, commission: IndianRupee, enrollment: UserPlus, certificate: Award };
 
@@ -29,6 +30,7 @@ const Notifications = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-2xl">
+        <BackButton fallback="/dashboard" />
         <div className="flex items-center justify-between">
           <h1 className="font-heading text-2xl font-700">Notifications</h1>
           {notifications?.some(n => !n.is_read) && (

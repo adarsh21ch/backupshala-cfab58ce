@@ -11,6 +11,7 @@ import { CheckCircle, Lock, Play, Star, BookOpen, Clock, Award, Users, Share2, L
 import { formatPrice } from '@/lib/format';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useCallback } from 'react';
+import BackButton from '@/components/BackButton';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -210,6 +211,7 @@ const CourseEnrollment = () => {
     <div className="min-h-screen flex flex-col">
       <LandingNavbar />
       <div className="flex-1 container mx-auto px-4 py-8">
+        <BackButton fallback="/explore" />
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">

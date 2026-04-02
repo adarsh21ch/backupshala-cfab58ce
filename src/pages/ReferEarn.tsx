@@ -7,6 +7,7 @@ import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight, Trophy } fro
 import { useState } from 'react';
 import { formatPrice, timeAgo } from '@/lib/format';
 import { Link } from 'react-router-dom';
+import BackButton from '@/components/BackButton';
 
 const BUNDLE_SLUG = 'backupshala-standard-bundle';
 
@@ -69,6 +70,7 @@ const ReferEarn = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl">
+        <BackButton fallback="/dashboard" />
         <h1 className="font-heading text-2xl font-700">Refer & Earn</h1>
 
         {/* Best to Refer Card */}

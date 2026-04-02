@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Award, Download, Share2, ExternalLink } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import BackButton from '@/components/BackButton';
 
 const Certificate = () => {
   const { user, profile } = useAuth();
@@ -81,6 +82,7 @@ const Certificate = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <BackButton fallback="/dashboard" />
         <h1 className="font-heading text-2xl font-700">My Certificates 🎓</h1>
 
         {isLoading ? (

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useRef } from 'react';
 import { Lock, Loader2, Upload, Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BackButton from '@/components/BackButton';
 
 const Profile = () => {
   const { profile, refreshProfile } = useAuth();
@@ -85,6 +86,7 @@ const Profile = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-lg">
+        <BackButton fallback="/dashboard" />
         <h1 className="font-heading text-2xl font-700">Profile</h1>
 
         {/* Avatar */}
