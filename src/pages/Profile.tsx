@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useRef } from 'react';
 import { Lock, Loader2, Upload, Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BackButton from '@/components/BackButton';
 
 const Profile = () => {
   const { profile, refreshProfile } = useAuth();
