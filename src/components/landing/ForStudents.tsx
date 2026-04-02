@@ -1,9 +1,10 @@
-import { BookOpen, Award, IndianRupee } from 'lucide-react';
+import { BookOpen, GraduationCap, IndianRupee, Users } from 'lucide-react';
 
 const benefits = [
-  { icon: BookOpen, title: 'Learn Practical Skills', desc: 'Video editing, content creation, freelancing, and more from expert creators.' },
-  { icon: Award, title: 'Earn Verified Certificate', desc: 'Get a certificate with a unique verification code your network can validate.' },
-  { icon: IndianRupee, title: 'Refer & Earn Commission', desc: 'Share with friends and earn commission on every enrollment they make.' },
+  { icon: BookOpen, title: 'Curated Digital Skills', desc: 'Video editing, content creation, personal branding, sales, and freelancing — practical skills that earn money, not just theory.' },
+  { icon: GraduationCap, title: 'Verified Certificate', desc: 'Complete your course and earn a certificate with a unique verification code. Share on LinkedIn, WhatsApp, and Instagram.' },
+  { icon: IndianRupee, title: 'Earn ₹75 Per Referral', desc: 'Tell your friends about Backupshala. When they enroll using your email, you earn commission automatically — no limits.' },
+  { icon: Users, title: 'Private Community Access', desc: 'Every enrolled student gets access to our private Telegram community — tips, networking, and daily digital skills content.' },
 ];
 
 const ForStudents = () => (
@@ -13,7 +14,7 @@ const ForStudents = () => (
         <p className="text-sm font-semibold text-primary mb-1">FOR STUDENTS</p>
         <h2 className="font-heading text-3xl font-700">Learn. Get Certified. Earn.</h2>
       </div>
-      <div className="grid gap-6 sm:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {benefits.map((b, i) => (
           <div key={i} className="rounded-xl border border-border bg-card p-6 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">

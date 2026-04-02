@@ -15,11 +15,12 @@ const LandingNavbar = () => {
 
         <div className="hidden items-center gap-6 md:flex">
           <Link to="/explore" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Explore Courses</Link>
-          <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+          <a href="#standard-bundle" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Standard Bundle</a>
           <a href="#for-creators" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">For Creators</a>
+          <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
           <Link to="/login" className="text-sm font-medium text-foreground">Login</Link>
           <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md px-6">
-            <Link to="/signup">Get Started</Link>
+            <Link to="/signup">Get Started Free</Link>
           </Button>
         </div>
 
@@ -32,11 +33,12 @@ const LandingNavbar = () => {
         <div className="border-t border-border bg-background px-4 py-4 md:hidden">
           <div className="flex flex-col gap-3">
             <Link to="/explore" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">Explore Courses</Link>
-            <a href="#how-it-works" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">How It Works</a>
+            <a href="#standard-bundle" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">Standard Bundle</a>
             <a href="#for-creators" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">For Creators</a>
+            <a href="#how-it-works" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">How It Works</a>
             <Link to="/login" onClick={() => setOpen(false)} className="text-sm font-medium text-foreground">Login</Link>
             <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md w-full">
-              <Link to="/signup">Get Started</Link>
+              <Link to="/signup">Get Started Free</Link>
             </Button>
           </div>
         </div>

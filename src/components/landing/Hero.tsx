@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Award, IndianRupee, BookOpen } from 'lucide-react';
+import { BookOpen, IndianRupee, GraduationCap } from 'lucide-react';
 
 const Hero = () => {
   return (
@@ -10,24 +10,23 @@ const Hero = () => {
           <div className="animate-fade-in">
             <div className="mb-4 inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-primary/5 px-4 py-1.5">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              <span className="text-sm font-medium text-primary">India's creator-powered learning marketplace</span>
+              <span className="text-sm font-medium text-primary">India's #1 Learn, Earn & Teach Platform</span>
             </div>
             <h1 className="font-heading text-4xl font-800 leading-tight md:text-6xl">
-              Teach. Learn.{' '}
-              <span className="text-primary">Earn.</span>
+              Teach. Learn. Earn.
             </h1>
-            <p className="mt-2 font-heading text-xl text-muted-foreground md:text-2xl">
+            <p className="mt-2 font-heading text-xl text-primary md:text-2xl font-700">
               Your Digital Backup Starts Here.
             </p>
             <p className="mt-4 max-w-lg text-base text-muted-foreground md:text-lg">
-              Creators host courses. Students learn practical digital skills and earn certificates. Everyone earns commissions through referrals — all with transparent pricing.
+              Whether you want to learn digital skills, teach your expertise, or earn by referring friends — Backupshala is built for you. Start for just ₹249.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-pill px-8 text-base font-semibold shadow-lg shadow-accent/25">
-                <Link to="/signup">Get Started Free</Link>
+                <Link to="/c/backupshala/backupshala-standard-bundle">Start Learning — ₹249</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-pill px-8 text-base">
-                <Link to="/explore">Explore Courses</Link>
+                <a href="#for-creators">Become a Creator</a>
               </Button>
             </div>
           </div>
@@ -39,8 +38,8 @@ const Hero = () => {
                   <BookOpen className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-heading text-sm font-semibold">Courses from expert creators</p>
-                  <p className="text-xs text-muted-foreground">Set your own price & commission</p>
+                  <p className="font-heading text-sm font-semibold">📚 Standard Bundle at ₹249</p>
+                  <p className="text-xs text-muted-foreground">Curated resources + certificate</p>
                 </div>
               </div>
               <div className="mb-4 flex items-center gap-3">
@@ -48,17 +47,17 @@ const Hero = () => {
                   <IndianRupee className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <p className="font-heading text-sm font-semibold">Earn commissions on referrals</p>
-                  <p className="text-xs text-muted-foreground">Share & earn on every enrollment</p>
+                  <p className="font-heading text-sm font-semibold">₹ Earn ₹75 per referral</p>
+                  <p className="text-xs text-muted-foreground">Share and earn automatically</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <Award className="h-5 w-5 text-primary" />
+                  <GraduationCap className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-heading text-sm font-semibold">Verified certificates</p>
-                  <p className="text-xs text-muted-foreground">Shareable on LinkedIn & WhatsApp</p>
+                  <p className="font-heading text-sm font-semibold">🎓 Creator Marketplace</p>
+                  <p className="text-xs text-muted-foreground">Sell your own course, set your price</p>
                 </div>
               </div>
             </div>
