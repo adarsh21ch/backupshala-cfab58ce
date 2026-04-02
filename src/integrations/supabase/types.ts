@@ -158,6 +158,63 @@ export type Database = {
         }
         Relationships: []
       }
+      course_overrides: {
+        Row: {
+          admin_id: string
+          applied_at: string | null
+          course_id: string
+          id: string
+          new_commission: number | null
+          new_platform_fee: number | null
+          new_price: number | null
+          old_commission: number | null
+          old_platform_fee: number | null
+          old_price: number | null
+          reason: string
+        }
+        Insert: {
+          admin_id: string
+          applied_at?: string | null
+          course_id: string
+          id?: string
+          new_commission?: number | null
+          new_platform_fee?: number | null
+          new_price?: number | null
+          old_commission?: number | null
+          old_platform_fee?: number | null
+          old_price?: number | null
+          reason: string
+        }
+        Update: {
+          admin_id?: string
+          applied_at?: string | null
+          course_id?: string
+          id?: string
+          new_commission?: number | null
+          new_platform_fee?: number | null
+          new_price?: number | null
+          old_commission?: number | null
+          old_platform_fee?: number | null
+          old_price?: number | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_overrides_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_overrides_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_reviews: {
         Row: {
           course_id: string
