@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Bell, CheckCheck, Info, Award, IndianRupee, UserPlus } from 'lucide-react';
 import { timeAgo } from '@/lib/format';
+import BackButton from '@/components/BackButton';
 
 const typeIcons: Record<string, any> = { info: Info, success: Award, warning: Info, payout: IndianRupee, commission: IndianRupee, enrollment: UserPlus, certificate: Award };
 
