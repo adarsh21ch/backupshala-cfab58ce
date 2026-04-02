@@ -215,6 +215,7 @@ const CourseBuilder = () => {
   const resetModuleForm = () => {
     setEditingModule(null);
     setMTitle(''); setMDesc(''); setMVideoUrl(''); setMDuration(''); setMIsPreview(false);
+    setMModuleType('video'); setMResources([]);
   };
 
   const openEditModule = (m: any) => {
