@@ -11,6 +11,7 @@ import { CheckCircle, Lock, Play, Star, BookOpen, Clock, Award, Users, Share2, L
 import { formatPrice } from '@/lib/format';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useCallback } from 'react';
+import BackButton from '@/components/BackButton';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
