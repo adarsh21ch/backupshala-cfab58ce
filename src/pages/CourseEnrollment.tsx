@@ -7,13 +7,29 @@ import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, Lock, Play, Star, BookOpen, Clock, Award, Users, Share2 } from 'lucide-react';
+import { CheckCircle, Lock, Play, Star, BookOpen, Clock, Award, Users, Share2, Loader2 } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
+import { useToast } from '@/hooks/use-toast';
+import { useState, useCallback } from 'react';
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if ((window as any).Razorpay) { resolve(true); return; }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const CourseEnrollment = () => {
   const { creatorSlug, courseSlug } = useParams<{ creatorSlug: string; courseSlug: string }>();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [paying, setPaying] = useState(false);
+  const [showSuccess, setShowSuccess] = useState<{ courseName: string; invoiceNumber: string } | null>(null);
 
   const { data: course, isLoading } = useQuery({
     queryKey: ['course-enroll', courseSlug],
@@ -30,7 +46,7 @@ const CourseEnrollment = () => {
     enabled: !!courseSlug,
   });
 
-  const { data: enrollment } = useQuery({
+  const { data: enrollment, refetch: refetchEnrollment } = useQuery({
     queryKey: ['enrollment-check', user?.id, course?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -57,16 +73,101 @@ const CourseEnrollment = () => {
     enabled: !!course?.id,
   });
 
-  const handleEnroll = () => {
+  const handleEnroll = useCallback(async () => {
     if (!user) {
-      navigate(`/signup?course=${courseSlug}&creator=${creatorSlug}`);
-    } else if (enrollment) {
-      navigate(`/dashboard/courses/${enrollment.id}`);
-    } else {
-      // Payment flow (Phase 4) - for now just show info
-      navigate(`/signup?course=${courseSlug}&creator=${creatorSlug}`);
+      navigate(`/signup?redirect=/c/${creatorSlug}/${courseSlug}`);
+      return;
     }
-  };
+    if (enrollment) {
+      navigate('/courses');
+      return;
+    }
+    if (!course) return;
+
+    setPaying(true);
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) throw new Error('Failed to load payment gateway');
+
+      const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
+        body: { course_id: course.id },
+      });
+
+      if (orderError || orderData?.error) {
+        throw new Error(orderData?.error || orderError?.message || 'Failed to create order');
+      }
+
+      const options = {
+        key: orderData.razorpay_key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Backupshala',
+        description: orderData.course_title,
+        order_id: orderData.razorpay_order_id,
+        prefill: {
+          name: profile?.full_name || '',
+          email: profile?.email || user.email || '',
+          contact: profile?.phone || '',
+        },
+        theme: { color: '#16a34a' },
+        handler: async (response: any) => {
+          try {
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
+              body: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                course_id: course.id,
+              },
+            });
+
+            if (verifyError || !verifyData?.success) {
+              throw new Error(verifyData?.error || 'Verification failed');
+            }
+
+            setShowSuccess({ courseName: course.title, invoiceNumber: verifyData.invoice_number });
+            refetchEnrollment();
+            setTimeout(() => navigate('/courses'), 6000);
+          } catch (err: any) {
+            toast({ title: 'Payment verification failed', description: err.message, variant: 'destructive' });
+          } finally {
+            setPaying(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setPaying(false),
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', (response: any) => {
+        toast({ title: 'Payment failed', description: response.error?.description || 'Please try again.', variant: 'destructive' });
+        setPaying(false);
+      });
+      rzp.open();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      setPaying(false);
+    }
+  }, [user, enrollment, course, profile, navigate, toast, creatorSlug, courseSlug, refetchEnrollment]);
+
+  // Success overlay
+  if (showSuccess) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95">
+        <div className="text-center space-y-4 p-8 max-w-md">
+          <div className="text-6xl">🎉</div>
+          <h1 className="font-heading text-3xl font-800 text-primary">Enrollment Confirmed!</h1>
+          <p className="text-muted-foreground">{showSuccess.courseName}</p>
+          <p className="text-xs text-muted-foreground">Invoice: {showSuccess.invoiceNumber}</p>
+          <Button onClick={() => navigate('/courses')} className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold">
+            Start Learning Now
+          </Button>
+          <p className="text-xs text-muted-foreground">Redirecting in a few seconds…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -212,8 +313,9 @@ const CourseEnrollment = () => {
                 <img src={course.thumbnail_url} alt={course.title} className="w-full rounded-lg aspect-video object-cover" />
               )}
               <p className="font-heading text-3xl font-800 text-accent">{formatPrice(course.price)}</p>
-              <Button onClick={handleEnroll} size="lg" className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold text-base">
-                {enrollment ? 'Continue Learning' : 'Enroll Now'}
+              <Button onClick={handleEnroll} disabled={paying} size="lg" className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold text-base">
+                {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {enrollment ? 'Continue Learning' : paying ? 'Processing…' : 'Enroll Now'}
               </Button>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> {modules.length} video modules</li>
