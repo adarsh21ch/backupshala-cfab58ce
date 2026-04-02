@@ -43,6 +43,7 @@ import AdminCommissions from "./pages/admin/AdminCommissions";
 import AdminPayouts from "./pages/admin/AdminPayouts";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
+import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
 
 const queryClient = new QueryClient();
 
