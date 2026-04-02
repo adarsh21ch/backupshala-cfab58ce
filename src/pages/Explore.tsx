@@ -41,7 +41,7 @@ const Explore = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('courses')
-        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug)')
+        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug), modules(module_type)')
         .eq('status', 'published');
       return data || [];
     },
