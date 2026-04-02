@@ -359,16 +359,102 @@ const CourseBuilder = () => {
                   <DialogTrigger asChild>
                     <Button size="sm" className="rounded-md" disabled={isNew && !id}><Plus className="h-4 w-4 mr-1" /> Add Module</Button>
                   </DialogTrigger>
-                  <DialogContent className="dark bg-card border-border">
+                  <DialogContent className="dark bg-card border-border max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>{editingModule ? 'Edit Module' : 'Add Module'}</DialogTitle></DialogHeader>
                     <div className="space-y-3">
+                      {/* Module Type Selector */}
+                      <div>
+                        <Label>Module Type</Label>
+                        <div className="flex gap-2 mt-1">
+                          {[
+                            { value: 'video' as const, label: '▶️ Video Lesson' },
+                            { value: 'resource' as const, label: '📚 Resource Library' },
+                            { value: 'community' as const, label: '👥 Community Module' },
+                          ].map(t => (
+                            <button key={t.value} onClick={() => setMModuleType(t.value)}
+                              className={`flex-1 rounded-lg border p-2 text-xs font-medium transition-colors ${mModuleType === t.value ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-foreground/20'}`}>
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div><Label>Title *</Label><Input value={mTitle} onChange={e => setMTitle(e.target.value)} className="mt-1 rounded-lg" /></div>
                       <div><Label>Description</Label><Textarea value={mDesc} onChange={e => setMDesc(e.target.value)} className="mt-1 rounded-lg" /></div>
-                      <div><Label>YouTube Embed URL *</Label><Input value={mVideoUrl} onChange={e => setMVideoUrl(e.target.value)} placeholder="https://www.youtube.com/embed/..." className="mt-1 rounded-lg" /></div>
-                      <div><Label>Duration (minutes)</Label><Input type="number" value={mDuration} onChange={e => setMDuration(e.target.value)} className="mt-1 rounded-lg" /></div>
+
+                      {mModuleType === 'video' && (
+                        <>
+                          <div><Label>YouTube Embed URL *</Label><Input value={mVideoUrl} onChange={e => setMVideoUrl(e.target.value)} placeholder="https://www.youtube.com/embed/..." className="mt-1 rounded-lg" /></div>
+                          <div><Label>Duration (minutes)</Label><Input type="number" value={mDuration} onChange={e => setMDuration(e.target.value)} className="mt-1 rounded-lg" /></div>
+                        </>
+                      )}
+
+                      {mModuleType === 'resource' && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>Resources ({mResources.length}/20)</Label>
+                            {mResources.length < 20 && (
+                              <Button variant="ghost" size="sm" onClick={() => setMResources([...mResources, { id: crypto.randomUUID(), title: '', url: '', type: 'youtube', description: '' }])}>
+                                <Plus className="h-3 w-3 mr-1" /> Add Resource
+                              </Button>
+                            )}
+                          </div>
+                          {mResources.map((r: any, i: number) => (
+                            <div key={r.id} className="rounded-lg border border-border p-3 space-y-2">
+                              <div className="flex gap-2">
+                                <Input value={r.title} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], title: e.target.value }; setMResources(a); }} placeholder="Title" className="rounded-lg text-xs" />
+                                <select value={r.type} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], type: e.target.value }; setMResources(a); }}
+                                  className="rounded-lg border border-input bg-background px-2 text-xs">
+                                  <option value="youtube">YouTube</option>
+                                  <option value="podcast">Podcast</option>
+                                  <option value="article">Article</option>
+                                  <option value="tool">Tool</option>
+                                  <option value="other">Other</option>
+                                </select>
+                                <Button variant="ghost" size="sm" onClick={() => setMResources(mResources.filter((_: any, j: number) => j !== i))} className="text-destructive shrink-0">
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <Input value={r.url} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], url: e.target.value }; setMResources(a); }} placeholder="URL" className="rounded-lg text-xs" />
+                              <Input value={r.description || ''} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], description: e.target.value }; setMResources(a); }} placeholder="Description (optional)" className="rounded-lg text-xs" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {mModuleType === 'community' && (
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">Add community links for this module. Leave empty to use platform defaults.</p>
+                          {[
+                            { label: 'Telegram Link', key: 'telegram' },
+                            { label: 'WhatsApp Link', key: 'whatsapp' },
+                            { label: 'Discord Link', key: 'discord' },
+                          ].map(cl => {
+                            const existing = mResources.find((r: any) => r.title?.toLowerCase().includes(cl.key));
+                            return (
+                              <div key={cl.key}>
+                                <Label className="text-xs">{cl.label}</Label>
+                                <Input
+                                  value={existing?.url || ''}
+                                  onChange={e => {
+                                    const filtered = mResources.filter((r: any) => !r.title?.toLowerCase().includes(cl.key));
+                                    if (e.target.value) {
+                                      filtered.push({ id: crypto.randomUUID(), title: `${cl.label}`, url: e.target.value, type: 'community_link', description: '' });
+                                    }
+                                    setMResources(filtered);
+                                  }}
+                                  placeholder={`https://...`}
+                                  className="mt-1 rounded-lg text-xs"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         <Switch checked={mIsPreview} onCheckedChange={setMIsPreview} />
-                        <Label>Preview module (watchable without enrollment)</Label>
+                        <Label>Preview module (accessible without enrollment)</Label>
                       </div>
                       <Button onClick={saveModule} className="w-full rounded-md">{editingModule ? 'Update Module' : 'Add Module'}</Button>
                     </div>
