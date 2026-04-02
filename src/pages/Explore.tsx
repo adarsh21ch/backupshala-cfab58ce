@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/format';
+import BackButton from '@/components/BackButton';
 
 const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const LANGUAGES = ['All', 'English', 'Hindi', 'Hinglish'];
