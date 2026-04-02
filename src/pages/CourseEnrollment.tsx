@@ -213,6 +213,12 @@ const CourseEnrollment = () => {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
+            {course.slug === 'backupshala-standard-bundle' && (
+              <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 p-4">
+                <span className="text-lg">🏆</span>
+                <p className="text-sm font-medium text-accent">Backupshala's Official Starter Bundle</p>
+              </div>
+            )}
             <div>
               <h1 className="font-heading text-2xl font-700 md:text-3xl">{course.title}</h1>
               <p className="mt-2 text-muted-foreground">{course.short_description}</p>
