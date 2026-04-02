@@ -163,6 +163,12 @@ const CourseEnrollment = () => {
           <Button onClick={() => navigate('/courses')} className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold">
             Start Learning Now
           </Button>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
+            <p className="text-xs text-primary font-medium">🎉 You're in! As an enrolled student, you now have access to our private community.</p>
+            <Button variant="outline" size="sm" className="mt-2 rounded-md text-xs" onClick={() => window.open('https://t.me/backupshala', '_blank')}>
+              📱 Join Telegram Community
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">Redirecting in a few seconds…</p>
         </div>
       </div>

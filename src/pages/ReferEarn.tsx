@@ -62,10 +62,34 @@ const ReferEarn = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const bundleCourse = publishedCourses?.find(c => c.slug === BUNDLE_SLUG);
+  const bundleCommission = bundleCourse ? Math.round(bundleCourse.price * (bundleCourse.commission_percent / 100)) : 75;
+  const bundleShareMsg = `Hey! I just enrolled in the Backupshala Standard Bundle — ₹${bundleCourse?.price || 249} for digital skills resources on video editing, content creation, personal branding and more. Plus a certificate and community access! When you sign up at backupshala.com, enter my email ${profile?.email} as your referrer. Here's the link: ${window.location.origin}/c/backupshala/${BUNDLE_SLUG} 🚀`;
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl">
         <h1 className="font-heading text-2xl font-700">Refer & Earn</h1>
+
+        {/* Best to Refer Card */}
+        {bundleCourse && (
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-accent" />
+              <h2 className="font-heading text-sm font-600 text-accent">Best Course to Refer</h2>
+            </div>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-sm font-medium">{bundleCourse.title}</p>
+                <p className="text-xs text-muted-foreground">Price: {formatPrice(bundleCourse.price)} | You earn: <span className="text-primary font-semibold">{formatPrice(bundleCommission)}</span> per referral</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Why? Most affordable + most trusted + official</p>
+              </div>
+              <Button size="sm" variant="outline" className="rounded-md text-xs" onClick={() => copyToClipboard(bundleShareMsg, 'whatsapp')}>
+                {copied === 'whatsapp' ? <><Check className="h-3 w-3 mr-1 text-primary" /> Copied!</> : <><Copy className="h-3 w-3 mr-1" /> Copy Share Message</>}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Referral email box */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">

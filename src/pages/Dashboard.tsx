@@ -94,6 +94,8 @@ const Dashboard = () => {
           ))}
         </div>
 
+        {/* Community Card - visible if enrolled in any course */}
+        {enrollments && enrollments.length > 0 && <CommunityDashboardCard />}
         {/* Continue Learning */}
         {inProgressEnrollments.length > 0 && (
           <div>

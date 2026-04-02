@@ -140,6 +140,17 @@ const Explore = () => {
                 ))}
               </div>
             </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">COURSE TYPE</p>
+              <div className="space-y-1">
+                {['All', 'Video Courses', 'Resource Bundles', 'Standard Bundle'].map(t => (
+                  <button key={t} onClick={() => setCourseType(t)}
+                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${courseType === t ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
           </aside>
 
           <div className="flex-1">
@@ -154,7 +165,7 @@ const Explore = () => {
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((course: any) => (
-                  <CourseCard key={course.id} course={course} />
+                  <CourseCard key={course.id} course={course} isPlatformCourse={course.slug === BUNDLE_SLUG} pinned={course.slug === BUNDLE_SLUG} />
                 ))}
               </div>
             )}
