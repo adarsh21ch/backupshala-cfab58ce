@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Award, Download, Share2, ExternalLink } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import BackButton from '@/components/BackButton';
 
 const Certificate = () => {
   const { user, profile } = useAuth();
