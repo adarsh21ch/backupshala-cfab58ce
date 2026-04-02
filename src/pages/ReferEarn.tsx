@@ -27,6 +27,14 @@ const ReferEarn = () => {
     enabled: !!user && !!profile,
   });
 
+  const { data: publishedCourses } = useQuery({
+    queryKey: ['published-courses-refer'],
+    queryFn: async () => {
+      const { data } = await supabase.from('courses').select('id, title, slug, price, commission_percent').eq('status', 'published');
+      return data || [];
+    },
+  });
+
   const { data: referralCount } = useQuery({
     queryKey: ['referral-count', profile?.email],
     queryFn: async () => {
