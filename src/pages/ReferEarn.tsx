@@ -153,7 +153,33 @@ const ReferEarn = () => {
           </div>
         </div>
 
-        {/* Share messages */}
+        {/* Courses you can refer */}
+        {publishedCourses && publishedCourses.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+            <h2 className="font-heading text-base font-600">Courses You Can Refer</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="px-3 py-2 font-medium text-muted-foreground text-xs">Course</th>
+                    <th className="px-3 py-2 font-medium text-muted-foreground text-xs">Price</th>
+                    <th className="px-3 py-2 font-medium text-muted-foreground text-xs">You Earn</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {publishedCourses.map(c => (
+                    <tr key={c.id}>
+                      <td className="px-3 py-2 text-xs">{c.title}</td>
+                      <td className="px-3 py-2 text-xs">{formatPrice(c.price)}</td>
+                      <td className="px-3 py-2 text-xs font-semibold text-primary">{formatPrice(Math.round(c.price * (c.commission_percent / 100)))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-heading text-base font-600">Share Messages</h2>
           <div>
