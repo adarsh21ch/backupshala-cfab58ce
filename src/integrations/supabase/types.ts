@@ -512,7 +512,9 @@ export type Database = {
           duration_minutes: number | null
           id: string
           is_preview: boolean | null
+          module_type: string | null
           order_index: number | null
+          resources: Json | null
           title: string
           video_url: string
         }
@@ -523,7 +525,9 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_preview?: boolean | null
+          module_type?: string | null
           order_index?: number | null
+          resources?: Json | null
           title: string
           video_url: string
         }
@@ -534,7 +538,9 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_preview?: boolean | null
+          module_type?: string | null
           order_index?: number | null
+          resources?: Json | null
           title?: string
           video_url?: string
         }
