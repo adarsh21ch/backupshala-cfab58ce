@@ -57,6 +57,8 @@ const CourseBuilder = () => {
   const [mVideoUrl, setMVideoUrl] = useState('');
   const [mDuration, setMDuration] = useState('');
   const [mIsPreview, setMIsPreview] = useState(false);
+  const [mModuleType, setMModuleType] = useState<'video' | 'resource' | 'community'>('video');
+  const [mResources, setMResources] = useState<any[]>([]);
 
   const platformFeePercent = platformSettings?.platform_fee_percent ?? 15;
   const maxCommission = 100 - platformFeePercent;
