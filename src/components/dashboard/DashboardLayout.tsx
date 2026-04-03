@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Compass, ShieldCheck } from 'lucide-react';
+import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Compass, ShieldCheck, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
