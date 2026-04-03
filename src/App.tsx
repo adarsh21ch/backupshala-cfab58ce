@@ -113,6 +113,7 @@ const App = () => (
             <Route path="/admin/standard-bundle" element={<AdminRoute><AdminStandardBundle /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
+            <Route path="/admin/videos" element={<AdminRoute><AdminVideos /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
