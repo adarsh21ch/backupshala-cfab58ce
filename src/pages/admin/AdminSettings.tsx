@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { Save, AlertTriangle, Film } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
@@ -40,8 +41,6 @@ const AdminSettings = () => {
     const payout = Number(values.min_payout_amount);
     if (isNaN(payout) || payout < 1) errs.min_payout_amount = 'Must be at least ₹1';
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
-    if (!['true', 'false'].includes(values.razorpay_enabled)) errs.razorpay_enabled = 'Must be true or false';
-    if (!['true', 'false'].includes(values.maintenance_mode)) errs.maintenance_mode = 'Must be true or false';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -58,18 +57,12 @@ const AdminSettings = () => {
       }
     },
     onSuccess: () => {
-      const fee = values.platform_fee_percent;
-      toast.success(`Settings saved. Platform fee is ${fee}%. This applies to all new courses going forward.`);
+      toast.success('Settings saved successfully.');
       qc.invalidateQueries({ queryKey: ['admin-settings'] });
       qc.invalidateQueries({ queryKey: ['platform-settings'] });
     },
     onError: () => toast.error('Failed to save'),
   });
-
-  const getLastUpdated = (key: string) => {
-    const s = settings?.find(s => s.key === key);
-    return s ? new Date(s.updated_at).toLocaleString('en-IN') : null;
-  };
 
   const settingsConfig = [
     { key: 'platform_name', label: 'Platform Name', type: 'text' },
@@ -81,30 +74,19 @@ const AdminSettings = () => {
     { key: 'maintenance_mode', label: 'Maintenance Mode (true/false)', type: 'text' },
   ];
 
-  const videoSettings = [
-    { key: 'min_watch_percentage_to_complete', label: 'Minimum Watch % to Mark Complete', type: 'number' },
-    { key: 'cloudflare_account_id', label: 'Cloudflare Account ID', type: 'text' },
-    { key: 'cloudflare_stream_customer_subdomain', label: 'Cloudflare Stream Subdomain', type: 'text' },
-  ];
-
-  const videoToggles = [
-    { key: 'allow_video_speed_control', label: 'Allow Speed Control' },
-    { key: 'allow_video_seeking', label: 'Allow Seeking' },
-  ];
+  const watchThreshold = Number(values.min_watch_percentage_to_complete || 80);
 
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-heading font-bold">Platform Settings</h1>
 
-        {/* Warning about platform fee */}
         <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 max-w-2xl">
           <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-yellow-400">Important</p>
             <p className="text-xs text-muted-foreground mt-1">
               Changing the platform fee only affects <strong>NEW courses</strong> created after this change.
-              All existing published courses will retain their original locked-in fee rate.
             </p>
           </div>
         </div>
@@ -125,16 +107,9 @@ const AdminSettings = () => {
                   className={`bg-secondary border-border ${errors[cfg.key] ? 'border-destructive' : ''}`}
                 />
                 {errors[cfg.key] && <p className="text-xs text-destructive">{errors[cfg.key]}</p>}
-                {getLastUpdated(cfg.key) && (
-                  <p className="text-[10px] text-muted-foreground">Last updated: {getLastUpdated(cfg.key)}</p>
-                )}
               </div>
             ))}
-            <Button
-              onClick={() => { if (validate()) saveMutation.mutate(); }}
-              disabled={saveMutation.isPending}
-              className="bg-primary hover:bg-primary/90"
-            >
+            <Button onClick={() => { if (validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending} className="bg-primary hover:bg-primary/90">
               <Save className="h-4 w-4 mr-2" /> Save Settings
             </Button>
           </CardContent>
@@ -147,34 +122,79 @@ const AdminSettings = () => {
               <Film className="h-4 w-4 text-primary" /> Video Settings
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {videoSettings.map(cfg => (
-              <div key={cfg.key} className="space-y-1.5">
-                <Label className="text-sm">{cfg.label}</Label>
-                <Input
-                  type={cfg.type}
-                  value={values[cfg.key] || ''}
-                  onChange={e => {
-                    setValues(prev => ({ ...prev, [cfg.key]: e.target.value }));
-                  }}
-                  className="bg-secondary border-border"
-                />
+          <CardContent className="space-y-5">
+            {/* Completion Threshold */}
+            <div className="space-y-2">
+              <Label className="text-sm">Completion Threshold</Label>
+              <p className="text-xs text-muted-foreground">Students must watch {watchThreshold}% to mark module complete</p>
+              <Slider
+                value={[watchThreshold]}
+                min={50} max={100} step={5}
+                onValueChange={([v]) => setValues(prev => ({ ...prev, min_watch_percentage_to_complete: String(v) }))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Allow Speed Control */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Allow Speed Control</Label>
+                <p className="text-xs text-muted-foreground">Players cannot change playback speed when off</p>
               </div>
-            ))}
-            {videoToggles.map(cfg => (
-              <div key={cfg.key} className="flex items-center justify-between">
-                <Label className="text-sm">{cfg.label}</Label>
-                <Switch
-                  checked={values[cfg.key] === 'true'}
-                  onCheckedChange={checked => setValues(prev => ({ ...prev, [cfg.key]: String(checked) }))}
-                />
+              <Switch
+                checked={values.allow_video_speed_control === 'true'}
+                onCheckedChange={c => setValues(prev => ({ ...prev, allow_video_speed_control: String(c) }))}
+              />
+            </div>
+
+            {/* Allow Forward Seeking */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Allow Forward Seeking</Label>
+                <p className="text-xs text-muted-foreground">Students cannot skip ahead when off</p>
               </div>
-            ))}
-            <Button
-              onClick={() => { if (validate()) saveMutation.mutate(); }}
-              disabled={saveMutation.isPending}
-              className="bg-primary hover:bg-primary/90"
-            >
+              <Switch
+                checked={values.allow_video_seeking_forward === 'true'}
+                onCheckedChange={c => setValues(prev => ({ ...prev, allow_video_seeking_forward: String(c) }))}
+              />
+            </div>
+
+            {/* Video Watermark */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Video Watermark</Label>
+                <p className="text-xs text-muted-foreground">Show "Backupshala" on all videos</p>
+              </div>
+              <Switch
+                checked={values.video_watermark_enabled === 'true'}
+                onCheckedChange={c => setValues(prev => ({ ...prev, video_watermark_enabled: String(c) }))}
+              />
+            </div>
+
+            {/* Request Processing Time */}
+            <div className="space-y-1.5">
+              <Label className="text-sm">Request Processing Time (hours)</Label>
+              <p className="text-xs text-muted-foreground">Tell creators the expected wait time</p>
+              <Input
+                type="number"
+                value={values.video_request_processing_hours || '48'}
+                onChange={e => setValues(prev => ({ ...prev, video_request_processing_hours: e.target.value }))}
+                className="bg-secondary border-border w-32"
+              />
+            </div>
+
+            {/* Max Upload Size */}
+            <div className="space-y-1.5">
+              <Label className="text-sm">Max Upload Size (GB)</Label>
+              <Input
+                type="number"
+                value={values.max_video_upload_size_gb || '2'}
+                onChange={e => setValues(prev => ({ ...prev, max_video_upload_size_gb: e.target.value }))}
+                className="bg-secondary border-border w-32"
+              />
+            </div>
+
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="bg-primary hover:bg-primary/90">
               <Save className="h-4 w-4 mr-2" /> Save Video Settings
             </Button>
           </CardContent>
