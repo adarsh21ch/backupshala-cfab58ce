@@ -1,99 +1,80 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authError || !user) throw new Error("Unauthorized");
+    const { data: { user }, error: authErr } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authErr || !user) throw new Error("Unauthorized");
 
-    // Check admin
     const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
     if (!profile?.is_admin) throw new Error("Admin access required");
 
-    const { request_id, action, admin_note, video_id } = await req.json();
-    if (!request_id || !action) throw new Error("request_id and action are required");
+    const { request_id, action, video_asset_id, admin_note } = await req.json();
+    if (!request_id || !action) throw new Error("request_id and action required");
 
-    // Get the request
-    const { data: request, error: reqError } = await supabase
-      .from("video_requests")
-      .select("*, profiles:requested_by(full_name, email)")
-      .eq("id", request_id)
-      .single();
-    if (reqError || !request) throw new Error("Request not found");
+    const { data: request } = await supabase.from("video_requests").select("*").eq("id", request_id).single();
+    if (!request) throw new Error("Request not found");
 
     const now = new Date().toISOString();
 
     if (action === "start_processing") {
-      await supabase
-        .from("video_requests")
-        .update({ status: "processing", processed_at: now, admin_note })
-        .eq("id", request_id);
-
-      // Notify creator
+      await supabase.from("video_requests").update({
+        status: "processing", reviewed_at: now, admin_note: admin_note || request.admin_note,
+      }).eq("id", request_id);
       await supabase.from("notifications").insert({
         user_id: request.requested_by,
-        title: "Video Request Processing 🎬",
-        message: `Your video request '${request.video_title}' is being processed.`,
-        type: "info",
-        action_url: "/creator/videos",
+        title: "Your video request is being processed 🎬",
+        message: `'${request.video_title}' is now being processed.`,
+        type: "video_request", action_url: "/creator/videos",
       });
-
-    } else if (action === "reject") {
-      await supabase
-        .from("video_requests")
-        .update({ status: "rejected", processed_at: now, admin_note: admin_note || "Request rejected" })
-        .eq("id", request_id);
-
-      await supabase.from("notifications").insert({
-        user_id: request.requested_by,
-        title: "Video Request Update",
-        message: `Your video request '${request.video_title}' was not approved. Reason: ${admin_note || 'Not specified'}`,
-        type: "warning",
-        action_url: "/creator/videos",
-      });
-
     } else if (action === "complete") {
-      if (!video_id) throw new Error("video_id is required to complete a request");
+      if (!video_asset_id) throw new Error("video_asset_id required");
+      const { data: video } = await supabase.from("video_assets").select("*").eq("id", video_asset_id).single();
+      if (!video || video.status !== "ready") throw new Error("Video asset must exist and be ready");
 
-      await supabase
-        .from("video_requests")
-        .update({ status: "completed", completed_at: now, video_id, admin_note })
-        .eq("id", request_id);
-
-      // Get video details for notification
-      const { data: video } = await supabase.from("videos").select("backupshala_video_link, title").eq("id", video_id).single();
-
+      await supabase.from("video_requests").update({
+        status: "completed", video_asset_id, completed_at: now,
+        reviewed_at: request.reviewed_at || now, admin_note: admin_note || request.admin_note,
+      }).eq("id", request_id);
       await supabase.from("notifications").insert({
         user_id: request.requested_by,
-        title: "Your Video is Ready! 🎬",
-        message: `Your video '${request.video_title}' is ready! Check your Video Gallery. Link: ${video?.backupshala_video_link || ''}`,
-        type: "success",
-        action_url: "/creator/videos",
+        title: "✅ Your video request is ready!",
+        message: `'${request.video_title}' is now in the Video Gallery.`,
+        type: "video_request", action_url: "/creator/videos",
+      });
+    } else if (action === "reject") {
+      if (!admin_note) throw new Error("Admin note required for rejection");
+      await supabase.from("video_requests").update({
+        status: "rejected", reviewed_at: now, admin_note,
+      }).eq("id", request_id);
+      await supabase.from("notifications").insert({
+        user_id: request.requested_by,
+        title: "Video request not approved",
+        message: `Reason: ${admin_note}. You can submit a new request.`,
+        type: "video_request", action_url: "/creator/videos",
       });
     } else {
-      throw new Error("Invalid action. Use: start_processing, reject, complete");
+      throw new Error("Invalid action");
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, action, request_id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

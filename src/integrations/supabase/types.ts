@@ -507,6 +507,7 @@ export type Database = {
       modules: {
         Row: {
           backupshala_video_link: string | null
+          bsv_code: string | null
           course_id: string
           created_at: string
           description: string | null
@@ -517,11 +518,13 @@ export type Database = {
           order_index: number | null
           resources: Json | null
           title: string
+          video_asset_id: string | null
           video_id: string | null
           video_url: string
         }
         Insert: {
           backupshala_video_link?: string | null
+          bsv_code?: string | null
           course_id: string
           created_at?: string
           description?: string | null
@@ -532,11 +535,13 @@ export type Database = {
           order_index?: number | null
           resources?: Json | null
           title: string
+          video_asset_id?: string | null
           video_id?: string | null
           video_url: string
         }
         Update: {
           backupshala_video_link?: string | null
+          bsv_code?: string | null
           course_id?: string
           created_at?: string
           description?: string | null
@@ -547,6 +552,7 @@ export type Database = {
           order_index?: number | null
           resources?: Json | null
           title?: string
+          video_asset_id?: string | null
           video_id?: string | null
           video_url?: string
         }
@@ -556,6 +562,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modules_video_asset_id_fkey"
+            columns: ["video_asset_id"]
+            isOneToOne: false
+            referencedRelation: "video_assets"
             referencedColumns: ["id"]
           },
           {
@@ -860,42 +873,187 @@ export type Database = {
         }
         Relationships: []
       }
+      video_asset_usage: {
+        Row: {
+          added_at: string
+          course_id: string
+          creator_id: string
+          id: string
+          module_id: string
+          video_asset_id: string
+        }
+        Insert: {
+          added_at?: string
+          course_id: string
+          creator_id: string
+          id?: string
+          module_id: string
+          video_asset_id: string
+        }
+        Update: {
+          added_at?: string
+          course_id?: string
+          creator_id?: string
+          id?: string
+          module_id?: string
+          video_asset_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_asset_usage_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_asset_usage_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_asset_usage_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_asset_usage_video_asset_id_fkey"
+            columns: ["video_asset_id"]
+            isOneToOne: false
+            referencedRelation: "video_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_assets: {
+        Row: {
+          bsv_code: string
+          category: string
+          created_at: string
+          description: string | null
+          duration_seconds: number
+          file_size_bytes: number
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          language: string
+          mime_type: string
+          r2_object_key: string
+          status: string
+          tags: string[] | null
+          thumbnail_key: string | null
+          title: string
+          total_views: number
+          updated_at: string
+          uploaded_by: string
+          used_in_courses_count: number
+        }
+        Insert: {
+          bsv_code: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number
+          file_size_bytes?: number
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          language?: string
+          mime_type?: string
+          r2_object_key: string
+          status?: string
+          tags?: string[] | null
+          thumbnail_key?: string | null
+          title: string
+          total_views?: number
+          updated_at?: string
+          uploaded_by: string
+          used_in_courses_count?: number
+        }
+        Update: {
+          bsv_code?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number
+          file_size_bytes?: number
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          language?: string
+          mime_type?: string
+          r2_object_key?: string
+          status?: string
+          tags?: string[] | null
+          thumbnail_key?: string | null
+          title?: string
+          total_views?: number
+          updated_at?: string
+          uploaded_by?: string
+          used_in_courses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_assets_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_requests: {
         Row: {
           admin_note: string | null
+          category: string | null
           completed_at: string | null
           id: string
+          language: string | null
           processed_at: string | null
           reason: string | null
           requested_at: string | null
           requested_by: string
+          reviewed_at: string | null
           status: string | null
+          video_asset_id: string | null
           video_id: string | null
           video_title: string
           youtube_url: string
         }
         Insert: {
           admin_note?: string | null
+          category?: string | null
           completed_at?: string | null
           id?: string
+          language?: string | null
           processed_at?: string | null
           reason?: string | null
           requested_at?: string | null
           requested_by: string
+          reviewed_at?: string | null
           status?: string | null
+          video_asset_id?: string | null
           video_id?: string | null
           video_title: string
           youtube_url: string
         }
         Update: {
           admin_note?: string | null
+          category?: string | null
           completed_at?: string | null
           id?: string
+          language?: string | null
           processed_at?: string | null
           reason?: string | null
           requested_at?: string | null
           requested_by?: string
+          reviewed_at?: string | null
           status?: string | null
+          video_asset_id?: string | null
           video_id?: string | null
           video_title?: string
           youtube_url?: string
@@ -906,6 +1064,13 @@ export type Database = {
             columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_requests_video_asset_id_fkey"
+            columns: ["video_asset_id"]
+            isOneToOne: false
+            referencedRelation: "video_assets"
             referencedColumns: ["id"]
           },
           {
@@ -975,38 +1140,50 @@ export type Database = {
       }
       video_watch_progress: {
         Row: {
+          completed_at: string | null
           course_id: string
           id: string
           is_completed: boolean | null
           last_position_seconds: number | null
           last_updated: string | null
+          max_watched_percentage: number | null
+          max_watched_seconds: number | null
           module_id: string
           total_watch_time_seconds: number | null
           user_id: string
+          video_asset_id: string | null
           video_id: string
           watch_percentage: number | null
         }
         Insert: {
+          completed_at?: string | null
           course_id: string
           id?: string
           is_completed?: boolean | null
           last_position_seconds?: number | null
           last_updated?: string | null
+          max_watched_percentage?: number | null
+          max_watched_seconds?: number | null
           module_id: string
           total_watch_time_seconds?: number | null
           user_id: string
+          video_asset_id?: string | null
           video_id: string
           watch_percentage?: number | null
         }
         Update: {
+          completed_at?: string | null
           course_id?: string
           id?: string
           is_completed?: boolean | null
           last_position_seconds?: number | null
           last_updated?: string | null
+          max_watched_percentage?: number | null
+          max_watched_seconds?: number | null
           module_id?: string
           total_watch_time_seconds?: number | null
           user_id?: string
+          video_asset_id?: string | null
           video_id?: string
           watch_percentage?: number | null
         }
@@ -1030,6 +1207,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_watch_progress_video_asset_id_fkey"
+            columns: ["video_asset_id"]
+            isOneToOne: false
+            referencedRelation: "video_assets"
             referencedColumns: ["id"]
           },
           {
