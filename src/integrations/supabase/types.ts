@@ -506,6 +506,7 @@ export type Database = {
       }
       modules: {
         Row: {
+          backupshala_video_link: string | null
           course_id: string
           created_at: string
           description: string | null
@@ -516,9 +517,11 @@ export type Database = {
           order_index: number | null
           resources: Json | null
           title: string
+          video_id: string | null
           video_url: string
         }
         Insert: {
+          backupshala_video_link?: string | null
           course_id: string
           created_at?: string
           description?: string | null
@@ -529,9 +532,11 @@ export type Database = {
           order_index?: number | null
           resources?: Json | null
           title: string
+          video_id?: string | null
           video_url: string
         }
         Update: {
+          backupshala_video_link?: string | null
           course_id?: string
           created_at?: string
           description?: string | null
@@ -542,6 +547,7 @@ export type Database = {
           order_index?: number | null
           resources?: Json | null
           title?: string
+          video_id?: string | null
           video_url?: string
         }
         Relationships: [
@@ -550,6 +556,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modules_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
             referencedColumns: ["id"]
           },
         ]
@@ -846,6 +859,261 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_requests: {
+        Row: {
+          admin_note: string | null
+          completed_at: string | null
+          id: string
+          processed_at: string | null
+          reason: string | null
+          requested_at: string | null
+          requested_by: string
+          status: string | null
+          video_id: string | null
+          video_title: string
+          youtube_url: string
+        }
+        Insert: {
+          admin_note?: string | null
+          completed_at?: string | null
+          id?: string
+          processed_at?: string | null
+          reason?: string | null
+          requested_at?: string | null
+          requested_by: string
+          status?: string | null
+          video_id?: string | null
+          video_title: string
+          youtube_url: string
+        }
+        Update: {
+          admin_note?: string | null
+          completed_at?: string | null
+          id?: string
+          processed_at?: string | null
+          reason?: string | null
+          requested_at?: string | null
+          requested_by?: string
+          status?: string | null
+          video_id?: string | null
+          video_title?: string
+          youtube_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_requests_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_usage: {
+        Row: {
+          added_at: string | null
+          course_id: string
+          creator_id: string
+          id: string
+          module_id: string
+          video_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          course_id: string
+          creator_id: string
+          id?: string
+          module_id: string
+          video_id: string
+        }
+        Update: {
+          added_at?: string | null
+          course_id?: string
+          creator_id?: string
+          id?: string
+          module_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_usage_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_usage_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_usage_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_usage_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_watch_progress: {
+        Row: {
+          course_id: string
+          id: string
+          is_completed: boolean | null
+          last_position_seconds: number | null
+          last_updated: string | null
+          module_id: string
+          total_watch_time_seconds: number | null
+          user_id: string
+          video_id: string
+          watch_percentage: number | null
+        }
+        Insert: {
+          course_id: string
+          id?: string
+          is_completed?: boolean | null
+          last_position_seconds?: number | null
+          last_updated?: string | null
+          module_id: string
+          total_watch_time_seconds?: number | null
+          user_id: string
+          video_id: string
+          watch_percentage?: number | null
+        }
+        Update: {
+          course_id?: string
+          id?: string
+          is_completed?: boolean | null
+          last_position_seconds?: number | null
+          last_updated?: string | null
+          module_id?: string
+          total_watch_time_seconds?: number | null
+          user_id?: string
+          video_id?: string
+          watch_percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_watch_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_watch_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_watch_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_watch_progress_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          backupshala_video_link: string
+          category: string | null
+          cloudflare_playback_url: string
+          cloudflare_stream_id: string
+          cloudflare_thumbnail_url: string | null
+          created_at: string | null
+          description: string | null
+          duration_seconds: number | null
+          file_size_mb: number | null
+          id: string
+          is_active: boolean | null
+          language: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          total_views: number | null
+          updated_at: string | null
+          uploaded_by: string
+          used_in_courses: number | null
+        }
+        Insert: {
+          backupshala_video_link: string
+          category?: string | null
+          cloudflare_playback_url: string
+          cloudflare_stream_id: string
+          cloudflare_thumbnail_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_mb?: number | null
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          total_views?: number | null
+          updated_at?: string | null
+          uploaded_by: string
+          used_in_courses?: number | null
+        }
+        Update: {
+          backupshala_video_link?: string
+          category?: string | null
+          cloudflare_playback_url?: string
+          cloudflare_stream_id?: string
+          cloudflare_thumbnail_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_mb?: number | null
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          total_views?: number | null
+          updated_at?: string | null
+          uploaded_by?: string
+          used_in_courses?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
