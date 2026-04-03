@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Compass, ShieldCheck } from 'lucide-react';
+import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Compass, ShieldCheck, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ const studentNav = [
   { to: '/courses', label: 'My Courses', icon: BookOpen },
   { to: '/explore', label: 'Explore Courses', icon: Compass },
   { to: '/dashboard/certificates', label: 'Certificates', icon: Award },
+  { to: '/dashboard/videos', label: 'Video Gallery', icon: Film },
   { to: '/refer', label: 'Refer & Earn', icon: Users },
   { to: '/dashboard/payouts', label: 'Payouts', icon: Wallet },
   { to: '/profile', label: 'Profile', icon: User },

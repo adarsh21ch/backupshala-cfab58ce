@@ -45,6 +45,10 @@ import AdminPayouts from "./pages/admin/AdminPayouts";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
+import AdminVideos from "./pages/admin/AdminVideos";
+import CreatorVideos from "./pages/creator/CreatorVideos";
+import StudentVideos from "./pages/StudentVideos";
+import WatchVideo from "./pages/WatchVideo";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +68,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/verify/:certCode" element={<VerifyCertificate />} />
+            <Route path="/watch/:bsvCode" element={<WatchVideo />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
@@ -81,6 +86,7 @@ const App = () => (
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/refer" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
+            <Route path="/dashboard/videos" element={<ProtectedRoute><StudentVideos /></ProtectedRoute>} />
 
             {/* Creator onboarding (any logged-in user) */}
             <Route path="/creator/onboarding" element={<ProtectedRoute><CreatorOnboarding /></ProtectedRoute>} />
@@ -94,6 +100,7 @@ const App = () => (
             <Route path="/creator/earnings" element={<CreatorRoute><CreatorEarnings /></CreatorRoute>} />
             <Route path="/creator/payouts" element={<CreatorRoute><CreatorPayouts /></CreatorRoute>} />
             <Route path="/creator/profile" element={<CreatorRoute><CreatorProfileEdit /></CreatorRoute>} />
+            <Route path="/creator/videos" element={<CreatorRoute><CreatorVideos /></CreatorRoute>} />
 
             {/* Admin panel */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
@@ -106,6 +113,7 @@ const App = () => (
             <Route path="/admin/standard-bundle" element={<AdminRoute><AdminStandardBundle /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
+            <Route path="/admin/videos" element={<AdminRoute><AdminVideos /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

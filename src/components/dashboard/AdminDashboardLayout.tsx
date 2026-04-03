@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy } from 'lucide-react';
+import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
@@ -8,6 +8,7 @@ const adminNav = [
   { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/admin/creators', label: 'Creators', icon: UserCheck },
   { to: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { to: '/admin/videos', label: 'Videos', icon: Film },
   { to: '/admin/standard-bundle', label: 'Standard Bundle', icon: Trophy },
   { to: '/admin/students', label: 'Students', icon: Users },
   { to: '/admin/payments', label: 'Payments', icon: CreditCard },
