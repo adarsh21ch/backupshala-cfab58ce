@@ -68,6 +68,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/verify/:certCode" element={<VerifyCertificate />} />
+            <Route path="/watch/:bsvCode" element={<WatchVideo />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
