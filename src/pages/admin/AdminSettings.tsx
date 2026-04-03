@@ -81,6 +81,17 @@ const AdminSettings = () => {
     { key: 'maintenance_mode', label: 'Maintenance Mode (true/false)', type: 'text' },
   ];
 
+  const videoSettings = [
+    { key: 'min_watch_percentage_to_complete', label: 'Minimum Watch % to Mark Complete', type: 'number' },
+    { key: 'cloudflare_account_id', label: 'Cloudflare Account ID', type: 'text' },
+    { key: 'cloudflare_stream_customer_subdomain', label: 'Cloudflare Stream Subdomain', type: 'text' },
+  ];
+
+  const videoToggles = [
+    { key: 'allow_video_speed_control', label: 'Allow Speed Control' },
+    { key: 'allow_video_seeking', label: 'Allow Seeking' },
+  ];
+
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
