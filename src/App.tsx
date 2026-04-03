@@ -45,6 +45,10 @@ import AdminPayouts from "./pages/admin/AdminPayouts";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
+import AdminVideos from "./pages/admin/AdminVideos";
+import CreatorVideos from "./pages/creator/CreatorVideos";
+import StudentVideos from "./pages/StudentVideos";
+import WatchVideo from "./pages/WatchVideo";
 
 const queryClient = new QueryClient();
 
