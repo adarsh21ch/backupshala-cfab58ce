@@ -100,6 +100,7 @@ const App = () => (
             <Route path="/creator/earnings" element={<CreatorRoute><CreatorEarnings /></CreatorRoute>} />
             <Route path="/creator/payouts" element={<CreatorRoute><CreatorPayouts /></CreatorRoute>} />
             <Route path="/creator/profile" element={<CreatorRoute><CreatorProfileEdit /></CreatorRoute>} />
+            <Route path="/creator/videos" element={<CreatorRoute><CreatorVideos /></CreatorRoute>} />
 
             {/* Admin panel */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
