@@ -10,6 +10,7 @@ const studentNav = [
   { to: '/courses', label: 'My Courses', icon: BookOpen },
   { to: '/explore', label: 'Explore Courses', icon: Compass },
   { to: '/dashboard/certificates', label: 'Certificates', icon: Award },
+  { to: '/dashboard/videos', label: 'Video Gallery', icon: Film },
   { to: '/refer', label: 'Refer & Earn', icon: Users },
   { to: '/dashboard/payouts', label: 'Payouts', icon: Wallet },
   { to: '/profile', label: 'Profile', icon: User },

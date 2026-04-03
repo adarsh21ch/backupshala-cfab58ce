@@ -8,6 +8,7 @@ const adminNav = [
   { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/admin/creators', label: 'Creators', icon: UserCheck },
   { to: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { to: '/admin/videos', label: 'Videos', icon: Film },
   { to: '/admin/standard-bundle', label: 'Standard Bundle', icon: Trophy },
   { to: '/admin/students', label: 'Students', icon: Users },
   { to: '/admin/payments', label: 'Payments', icon: CreditCard },

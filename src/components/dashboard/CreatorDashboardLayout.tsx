@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 const creatorNav = [
   { to: '/creator/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/creator/courses', label: 'My Courses', icon: BookOpen },
+  { to: '/creator/videos', label: 'Video Gallery', icon: Film },
   { to: '/creator/students', label: 'Students', icon: Users },
   { to: '/creator/earnings', label: 'Earnings', icon: IndianRupee },
   { to: '/creator/payouts', label: 'Payouts', icon: Wallet },
