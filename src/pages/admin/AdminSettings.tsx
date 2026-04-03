@@ -139,6 +139,46 @@ const AdminSettings = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Video Settings */}
+        <Card className="bg-card border-border max-w-2xl">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Film className="h-4 w-4 text-primary" /> Video Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {videoSettings.map(cfg => (
+              <div key={cfg.key} className="space-y-1.5">
+                <Label className="text-sm">{cfg.label}</Label>
+                <Input
+                  type={cfg.type}
+                  value={values[cfg.key] || ''}
+                  onChange={e => {
+                    setValues(prev => ({ ...prev, [cfg.key]: e.target.value }));
+                  }}
+                  className="bg-secondary border-border"
+                />
+              </div>
+            ))}
+            {videoToggles.map(cfg => (
+              <div key={cfg.key} className="flex items-center justify-between">
+                <Label className="text-sm">{cfg.label}</Label>
+                <Switch
+                  checked={values[cfg.key] === 'true'}
+                  onCheckedChange={checked => setValues(prev => ({ ...prev, [cfg.key]: String(checked) }))}
+                />
+              </div>
+            ))}
+            <Button
+              onClick={() => { if (validate()) saveMutation.mutate(); }}
+              disabled={saveMutation.isPending}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Save className="h-4 w-4 mr-2" /> Save Video Settings
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </AdminDashboardLayout>
   );
