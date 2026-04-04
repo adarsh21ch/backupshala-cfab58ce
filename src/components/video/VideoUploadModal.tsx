@@ -115,7 +115,6 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
         xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`));
         xhr.onerror = () => reject(new Error('Upload failed'));
         xhr.open('PUT', upload_url);
-        xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
         xhr.send(file);
       });
 
