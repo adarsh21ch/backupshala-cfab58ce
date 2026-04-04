@@ -94,13 +94,15 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
       if (urlData?.error) throw new Error(urlData.error);
 
       setProgress(15);
-      const { upload_url, asset_id, bsv_code: code } = urlData;
+      const { asset_id, bsv_code: code } = urlData;
 
-      // Debug: log the exact R2 upload URL
-      console.log('[R2 Upload] Signed URL:', upload_url);
-      console.log('[R2 Upload] Origin:', window.location.origin);
+      // Step 2: Upload via proxy edge function (bypasses R2 CORS entirely)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const proxyUrl = `${supabaseUrl}/functions/v1/r2-proxy-upload`;
 
-      // Step 2: Upload directly to R2 — NO custom headers to keep preflight simple
+      console.log('[Upload] Proxying through edge function:', proxyUrl);
+
       const startTime = Date.now();
       const xhr = new XMLHttpRequest();
       xhr.upload.onprogress = (e) => {
@@ -117,30 +119,30 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
 
       await new Promise<void>((resolve, reject) => {
         xhr.onload = () => {
-          console.log('[R2 Upload] Response status:', xhr.status, 'Response:', xhr.responseText?.substring(0, 200));
+          console.log('[Upload] Response:', xhr.status, xhr.responseText?.substring(0, 300));
           if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const resp = JSON.parse(xhr.responseText);
+              if (resp.error) { reject(new Error(resp.error)); return; }
+            } catch {}
             resolve();
             return;
           }
-          const body = xhr.responseText || '';
-          if (xhr.status === 403) {
-            reject(new Error(`R2 rejected upload (403 Forbidden). Likely a signed-URL mismatch or expired URL. Details: ${body.substring(0, 300)}`));
-          } else if (xhr.status === 0) {
-            reject(new Error('CORS blocked: browser could not reach R2. Ensure your R2 bucket CORS allows PUT from this origin.'));
-          } else {
-            reject(new Error(`R2 upload failed (HTTP ${xhr.status}): ${body.substring(0, 300)}`));
-          }
+          let errMsg = `Upload failed (HTTP ${xhr.status})`;
+          try {
+            const resp = JSON.parse(xhr.responseText);
+            if (resp.error) errMsg = resp.error;
+          } catch {}
+          reject(new Error(errMsg));
         };
         xhr.onerror = () => {
-          console.error('[R2 Upload] XHR onerror fired. Status:', xhr.status, 'readyState:', xhr.readyState);
-          reject(new Error(
-            `CORS/Network error: The browser was blocked from uploading to R2. ` +
-            `Origin "${window.location.origin}" must be allowed in R2 CORS policy with PUT method. ` +
-            `Try in an Incognito window to bypass cached preflight failures.`
-          ));
+          console.error('[Upload] Network error. Status:', xhr.status);
+          reject(new Error('Network error during upload. Please check your connection and try again.'));
         };
-        xhr.open('PUT', upload_url);
-        // Do NOT set Content-Type — avoids extra preflight complexity and signature mismatch
+        xhr.open('PUT', proxyUrl);
+        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+        xhr.setRequestHeader('apikey', supabaseKey);
+        xhr.setRequestHeader('x-asset-id', asset_id);
         xhr.send(file);
       });
 
