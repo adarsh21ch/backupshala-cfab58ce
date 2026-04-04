@@ -94,9 +94,13 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
       if (urlData?.error) throw new Error(urlData.error);
 
       setProgress(15);
-      const { upload_url, asset_id, bsv_code: code, content_type: signedContentType } = urlData;
+      const { upload_url, asset_id, bsv_code: code } = urlData;
 
-      // Step 2: Upload directly to R2
+      // Debug: log the exact R2 upload URL
+      console.log('[R2 Upload] Signed URL:', upload_url);
+      console.log('[R2 Upload] Origin:', window.location.origin);
+
+      // Step 2: Upload directly to R2 — NO custom headers to keep preflight simple
       const startTime = Date.now();
       const xhr = new XMLHttpRequest();
       xhr.upload.onprogress = (e) => {
@@ -113,6 +117,7 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
 
       await new Promise<void>((resolve, reject) => {
         xhr.onload = () => {
+          console.log('[R2 Upload] Response status:', xhr.status, 'Response:', xhr.responseText?.substring(0, 200));
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
             return;
@@ -127,15 +132,15 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
           }
         };
         xhr.onerror = () => {
+          console.error('[R2 Upload] XHR onerror fired. Status:', xhr.status, 'readyState:', xhr.readyState);
           reject(new Error(
             `CORS/Network error: The browser was blocked from uploading to R2. ` +
-            `Your R2 bucket CORS must allow origin "${window.location.origin}" with PUT method. ` +
-            `Check Cloudflare R2 → Bucket Settings → CORS Policy.`
+            `Origin "${window.location.origin}" must be allowed in R2 CORS policy with PUT method. ` +
+            `Try in an Incognito window to bypass cached preflight failures.`
           ));
         };
         xhr.open('PUT', upload_url);
-        // Only send Content-Type — it must match what was signed
-        xhr.setRequestHeader('Content-Type', signedContentType || file.type || 'video/mp4');
+        // Do NOT set Content-Type — avoids extra preflight complexity and signature mismatch
         xhr.send(file);
       });
 
