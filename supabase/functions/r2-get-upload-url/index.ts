@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authErr } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authErr || !user) throw new Error("Unauthorized");
 
-    const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
-    if (!profile?.is_admin) throw new Error("Admin access required");
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    if (!isAdmin) throw new Error("Admin access required");
 
     const body = await req.json();
     const { filename, content_type, file_size_bytes, title, description, category, tags, language } = body;
