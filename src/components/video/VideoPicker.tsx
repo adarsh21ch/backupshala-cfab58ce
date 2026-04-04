@@ -6,27 +6,26 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Check, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatDuration, getR2ThumbnailUrl } from '@/lib/videoTypes';
 import VideoRequestForm from './VideoRequestForm';
 
 interface VideoPickerProps {
-  selectedVideoId?: string;
-  onSelect: (video: { id: string; title: string; backupshala_video_link: string; cloudflare_thumbnail_url?: string }) => void;
+  selectedVideoAssetId?: string;
+  onSelect: (asset: { id: string; title: string; bsv_code: string; thumbnail_key?: string | null; duration_seconds: number }) => void;
 }
 
-const VideoPicker = ({ selectedVideoId, onSelect }: VideoPickerProps) => {
+const VideoPicker = ({ selectedVideoAssetId, onSelect }: VideoPickerProps) => {
   const [search, setSearch] = useState('');
 
-  const { data: videos } = useQuery({
-    queryKey: ['video-picker-list', search],
+  const { data: assets } = useQuery({
+    queryKey: ['video-picker-assets', search],
     queryFn: async () => {
-      let q = supabase.from('videos').select('id, title, backupshala_video_link, cloudflare_thumbnail_url, duration_seconds, category').eq('is_active', true).order('created_at', { ascending: false }).limit(50);
+      let q = supabase.from('video_assets').select('id, title, bsv_code, thumbnail_key, duration_seconds, category').eq('status', 'ready').eq('is_active', true).order('created_at', { ascending: false }).limit(50);
       if (search) q = q.ilike('title', `%${search}%`);
       const { data } = await q;
       return data || [];
     },
   });
-
-  const formatDuration = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <Tabs defaultValue="gallery" className="w-full">
@@ -42,18 +41,18 @@ const VideoPicker = ({ selectedVideoId, onSelect }: VideoPickerProps) => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto">
-          {videos?.map(v => (
+          {assets?.map(a => (
             <button
-              key={v.id}
-              onClick={() => onSelect(v)}
-              className={`relative text-left rounded-lg border p-1.5 transition-colors ${selectedVideoId === v.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+              key={a.id}
+              onClick={() => onSelect(a)}
+              className={`relative text-left rounded-lg border p-1.5 transition-colors ${selectedVideoAssetId === a.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
             >
               <div className="aspect-video bg-secondary rounded overflow-hidden mb-1">
-                {v.cloudflare_thumbnail_url && <img src={v.cloudflare_thumbnail_url} alt="" className="w-full h-full object-cover" />}
+                {a.thumbnail_key && <img src={getR2ThumbnailUrl(a.thumbnail_key) || ''} alt="" className="w-full h-full object-cover" />}
               </div>
-              <p className="text-xs font-medium line-clamp-1">{v.title}</p>
-              <p className="text-[10px] text-muted-foreground">{formatDuration(v.duration_seconds)}</p>
-              {selectedVideoId === v.id && (
+              <p className="text-xs font-medium line-clamp-1">{a.title}</p>
+              <p className="text-[10px] text-muted-foreground">{formatDuration(a.duration_seconds)}</p>
+              {selectedVideoAssetId === a.id && (
                 <div className="absolute top-2 right-2 bg-primary rounded-full p-0.5">
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
@@ -62,7 +61,7 @@ const VideoPicker = ({ selectedVideoId, onSelect }: VideoPickerProps) => {
           ))}
         </div>
 
-        {videos?.length === 0 && (
+        {assets?.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">No videos found.</p>
         )}
 
