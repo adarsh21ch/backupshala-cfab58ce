@@ -1,88 +1,62 @@
 
-Goal: fix the direct video upload to R2, because the app is successfully generating a signed upload URL but the browser PUT to R2 is still failing before confirmation.
+Goal: get the direct R2 upload past 15% and confirm why it is failing.
 
 What I found
-- The admin/auth issue is no longer the blocker. `r2-get-upload-url` now returns 200 and gives a signed URL.
-- The failure happens in `src/components/video/VideoUploadModal.tsx` during the direct `PUT` to R2.
-- The returned signed URL currently contains these query params:
-  - `x-amz-sdk-checksum-algorithm=CRC32`
-  - `x-amz-checksum-crc32=...`
-- That points to the AWS SDK v3 flexible-checksum behavior, which is a known compatibility problem with R2/presigned browser uploads in some setups.
-- The current toast message is generic, so it hides whether the real issue is:
-  1. checksum/signing mismatch,
-  2. bucket CORS preflight mismatch,
-  3. wrong endpoint style.
+- You do not need to create any file or folder in the bucket manually. A successful signed `PUT` creates the object automatically; `videos/...` is just a virtual path.
+- The bucket being empty means the upload never completes, not that setup is missing.
+- The current signed URL is already much cleaner now:
+  - `X-Amz-SignedHeaders=host`
+  - no checksum query params in the latest log
+- So the earlier checksum issue is likely no longer the main blocker.
+- The frontend is still failing via `xhr.onerror` in `src/components/video/VideoUploadModal.tsx`, which usually means the browser is blocked before it can read a normal HTTP response. That points most strongly to R2 CORS/preflight, not a missing object in the bucket.
+- Important detail: the real browser origin in the logs is:
+  `https://ca791d54-8375-4712-8ff2-bec4800191ca.lovableproject.com`
+  If bucket CORS was added only for the `id-preview--...lovable.app` URL, upload will still fail.
 
-Why upload is failing
-- The upload is failing after the signed URL is created because the signed URL itself is likely wrong for this browser upload flow.
-- Specifically, `supabase/functions/r2-get-upload-url/index.ts` signs `PutObjectCommand(...)`, and the generated URL includes checksum-related query params.
-- Browser uploads are very sensitive to signed header/query “contract drift”. If R2/browser/CORS does not match that exact contract, the upload dies with the generic error you are seeing.
-- Your screenshot message “Upload to R2 failed. This is usually a signed URL or bucket CORS issue.” matches exactly where the XHR fails.
-
-Files to fix
-- `supabase/functions/r2-get-upload-url/index.ts`
-- `src/components/video/VideoUploadModal.tsx`
-- Possibly `supabase/functions/r2-get-playback-url/index.ts` too, so read/download signing stays consistent.
-
-Implementation plan
-1. Replace the upload signing approach in `r2-get-upload-url`
-- Stop generating presigned upload URLs with the current `PutObjectCommand` setup that injects checksum query params.
-- Generate a simpler R2-compatible presigned PUT URL without checksum requirements.
-- Keep the same auth + admin checks + DB insert flow.
-
-2. Make the browser upload request match the signed contract exactly
-- In `VideoUploadModal.tsx`, keep the upload method as `PUT`.
-- Only send headers that are truly required by the final signed URL.
-- If the new signed URL is created without `Content-Type` signing, do not manually set it in XHR.
-- If `Content-Type` remains signed, ensure the exact same value is sent.
-
-3. Improve client-side error reporting
-- Capture and surface:
-  - `xhr.status`
-  - response body text
-  - likely failure category (CORS vs signature vs forbidden)
-- This prevents future “15% then failed” dead ends.
-
-4. Verify bucket CORS assumptions in code behavior
-- Since you already added bucket CORS, I will make the app compatible with a strict CORS setup by avoiding unnecessary signed headers/checksum expectations.
-- Recommended stable bucket rule for this flow:
+Plan
+1. Verify/fix the bucket CORS to match the real app origin
+- Use exact origins, not guesses:
 ```text
-AllowedOrigins: [preview origin, published origin]
-AllowedMethods: [PUT, GET, HEAD]
-AllowedHeaders: [Content-Type, *]
+AllowedOrigins:
+- https://ca791d54-8375-4712-8ff2-bec4800191ca.lovableproject.com
+- https://id-preview--ca791d54-8375-4712-8ff2-bec4800191ca.lovable.app
+AllowedMethods:
+- PUT
+- GET
+- HEAD
+AllowedHeaders:
+- *
+ExposeHeaders:
+- ETag
+MaxAgeSeconds:
+- 3600
 ```
-- If needed, I’ll align the upload flow to require fewer headers so the bucket policy can stay simpler.
+- This is the most likely non-code issue remaining.
 
-5. Keep post-upload confirmation unchanged
-- `r2-confirm-upload` runs after the file is stored, and is not the current blocker.
-- I would leave that flow intact unless testing shows the upload succeeds but confirmation fails.
+2. Refine the upload client error handling
+- Update `src/components/video/VideoUploadModal.tsx` so the error message clearly separates:
+  - CORS/preflight blocked
+  - HTTP 403/401 from R2
+  - other network failures
+- This avoids the current generic “check console” dead end.
 
-Most likely root cause
-- The strongest signal is the checksum-enriched presigned URL:
-```text
-X-Amz-SignedHeaders=host
-x-amz-sdk-checksum-algorithm=CRC32
-x-amz-checksum-crc32=...
-```
-- That is the most probable reason the browser PUT is rejected by R2 in this setup, even after CORS was added.
+3. Keep the browser request as minimal as possible
+- Re-check the upload request in `VideoUploadModal.tsx` so it only sends what the signed URL actually needs.
+- Avoid any extra headers unless they are intentionally signed.
 
-Expected result after fix
-- Upload should move past 15%, complete the direct PUT, then call `r2-confirm-upload`, and finally show the BSV code / success step.
+4. Re-check `r2-get-upload-url` endpoint assumptions
+- Keep the current account endpoint style because it matches the signed URL already being returned.
+- No bucket file/folder creation is needed.
+- Only change this if exact-origin CORS is confirmed correct and the PUT still fails.
+
+Expected result
+- Upload should move past 15%, create the object directly in the bucket, then continue to `r2-confirm-upload`.
+- After that, the bucket will finally show the uploaded object and the app should reach the success step.
 
 Technical notes
-- The auth role check is already using `has_role(...)` and is not the current issue.
-- The frontend is currently failing inside:
-```text
-xhr.open('PUT', upload_url)
-xhr.setRequestHeader('Content-Type', signedContentType || file.type || 'video/mp4')
-xhr.send(file)
-```
-- The edge function currently signs with:
-```text
-new PutObjectCommand({
-  Bucket,
-  Key,
-  ContentType: content_type,
-})
-```
-- That is the part I would change first, because the network snapshot proves the URL creation succeeds and the browser upload is where the failure occurs.
+- Relevant files:
+  - `src/components/video/VideoUploadModal.tsx`
+  - `supabase/functions/r2-get-upload-url/index.ts`
+- Strongest current diagnosis:
+  - signed URL generation is now mostly fixed
+  - remaining failure is most likely browser-to-R2 CORS for the exact preview origin
