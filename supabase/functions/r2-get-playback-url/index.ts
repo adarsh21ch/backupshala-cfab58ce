@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { AwsClient } from "https://esm.sh/aws4fetch@1.0.18";
+import { S3Client, GetObjectCommand } from "npm:@aws-sdk/client-s3";
+import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +18,6 @@ Deno.serve(async (req) => {
     const { asset_id, bsv_code, module_id, course_id, is_public_watch } = body;
     if (!asset_id && !bsv_code) throw new Error("Provide asset_id or bsv_code");
 
-    // Find video
     let query = supabase.from("video_assets").select("*");
     if (asset_id) query = query.eq("id", asset_id);
     else query = query.eq("bsv_code", bsv_code);
@@ -25,7 +25,6 @@ Deno.serve(async (req) => {
     if (!video) throw new Error("Video not found");
     if (video.status !== "ready" || !video.is_active) throw new Error("Video not available");
 
-    // Access control
     let userId: string | null = null;
     const authHeader = req.headers.get("Authorization");
     if (authHeader) {
@@ -36,8 +35,7 @@ Deno.serve(async (req) => {
 
     if (!is_public_watch) {
       if (!userId) throw new Error("Authentication required");
-      
-      // Check admin
+
       const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
 
       if (!isAdmin) {
@@ -45,7 +43,6 @@ Deno.serve(async (req) => {
           const { data: enrollment } = await supabase.from("enrollments")
             .select("id").eq("student_id", userId).eq("course_id", course_id).maybeSingle();
           if (!enrollment) {
-            // Check if creator owns the course
             const { data: course } = await supabase.from("courses")
               .select("creator_id").eq("id", course_id).single();
             if (!course || course.creator_id !== userId) throw new Error("Access denied");
@@ -56,29 +53,32 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Generate presigned GET URL
     const R2_ACCOUNT_ID = Deno.env.get("R2_ACCOUNT_ID")!;
     const R2_ACCESS_KEY_ID = Deno.env.get("R2_ACCESS_KEY_ID")!;
     const R2_SECRET_ACCESS_KEY = Deno.env.get("R2_SECRET_ACCESS_KEY")!;
     const R2_BUCKET_NAME = Deno.env.get("R2_BUCKET_NAME") || "backupshala";
     const R2_PUBLIC_URL = Deno.env.get("R2_PUBLIC_URL") || "";
+    const expiry = 14400;
 
-    const r2 = new AwsClient({
-      accessKeyId: R2_ACCESS_KEY_ID,
-      secretAccessKey: R2_SECRET_ACCESS_KEY,
+    const r2 = new S3Client({
       region: "auto",
-      service: "s3",
+      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: R2_ACCESS_KEY_ID,
+        secretAccessKey: R2_SECRET_ACCESS_KEY,
+      },
+      forcePathStyle: true,
     });
 
-    const expiry = 14400; // 4 hours
-    const r2Url = new URL(`https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/${video.r2_object_key}`);
-    r2Url.searchParams.set("X-Amz-Expires", String(expiry));
+    const playbackUrl = await getSignedUrl(
+      r2,
+      new GetObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: video.r2_object_key,
+      }),
+      { expiresIn: expiry },
+    );
 
-    const signed = await r2.sign(new Request(r2Url.toString(), { method: "GET" }), {
-      aws: { signQuery: true },
-    });
-
-    // Increment views
     await supabase.from("video_assets")
       .update({ total_views: (video.total_views || 0) + 1 })
       .eq("id", video.id);
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date(Date.now() + expiry * 1000).toISOString();
 
     return new Response(JSON.stringify({
-      playback_url: signed.url,
+      playback_url: playbackUrl,
       thumbnail_url: thumbnailUrl,
       title: video.title,
       description: video.description,

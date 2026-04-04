@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { AwsClient } from "https://esm.sh/aws4fetch@1.0.18";
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3";
+import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,27 +69,33 @@ Deno.serve(async (req) => {
       throw new Error("R2 credentials not configured");
     }
 
-    const r2 = new AwsClient({
-      accessKeyId: R2_ACCESS_KEY_ID,
-      secretAccessKey: R2_SECRET_ACCESS_KEY,
+    const r2 = new S3Client({
       region: "auto",
-      service: "s3",
+      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: R2_ACCESS_KEY_ID,
+        secretAccessKey: R2_SECRET_ACCESS_KEY,
+      },
+      forcePathStyle: true,
     });
 
-    const r2Endpoint = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/${objectKey}`;
-    const r2Url = new URL(r2Endpoint);
-    r2Url.searchParams.set("X-Amz-Expires", "3600");
-
-    const signed = await r2.sign(new Request(r2Url.toString(), {
-      method: "PUT",
-    }), { aws: { signQuery: true } });
+    const uploadUrl = await getSignedUrl(
+      r2,
+      new PutObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: objectKey,
+        ContentType: content_type,
+      }),
+      { expiresIn: 3600 },
+    );
 
     return new Response(JSON.stringify({
-      upload_url: signed.url,
+      upload_url: uploadUrl,
       object_key: objectKey,
       asset_id: asset.id,
       bsv_code: bsvCode,
       expires_in: 3600,
+      content_type,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {

@@ -94,7 +94,7 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
       if (urlData?.error) throw new Error(urlData.error);
 
       setProgress(15);
-      const { upload_url, asset_id, bsv_code: code } = urlData;
+      const { upload_url, asset_id, bsv_code: code, content_type: signedContentType } = urlData;
 
       // Step 2: Upload directly to R2
       const startTime = Date.now();
@@ -112,9 +112,16 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
       };
 
       await new Promise<void>((resolve, reject) => {
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`));
-        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+            return;
+          }
+          reject(new Error(xhr.responseText || `Upload failed: ${xhr.status}`));
+        };
+        xhr.onerror = () => reject(new Error('Upload to R2 failed. This is usually a signed URL or bucket CORS issue.'));
         xhr.open('PUT', upload_url);
+        xhr.setRequestHeader('Content-Type', signedContentType || file.type || 'video/mp4');
         xhr.send(file);
       });
 
