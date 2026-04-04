@@ -3,96 +3,89 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Copy, Play, Eye, BookOpen, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDuration, getR2ThumbnailUrl } from '@/lib/videoTypes';
 
 interface VideoCardProps {
-  video: {
+  asset: {
     id: string;
     title: string;
-    description?: string;
-    thumbnail_url?: string;
-    cloudflare_thumbnail_url?: string;
+    description?: string | null;
     duration_seconds: number;
-    category?: string;
-    backupshala_video_link: string;
-    used_in_courses?: number;
-    total_views?: number;
-    created_at: string;
+    category: string;
     language?: string;
+    bsv_code: string;
+    thumbnail_key?: string | null;
+    used_in_courses_count?: number;
+    total_views?: number;
     is_active?: boolean;
+    is_featured?: boolean;
   };
   variant?: 'admin' | 'creator' | 'student';
-  onPreview?: (videoId: string) => void;
-  onUseInCourse?: (videoId: string) => void;
-  onEdit?: (videoId: string) => void;
-  onDeactivate?: (videoId: string) => void;
-  onDelete?: (videoId: string) => void;
+  onPreview?: (assetId: string) => void;
+  onUseInCourse?: (assetId: string) => void;
+  onDeactivate?: (assetId: string) => void;
+  onDelete?: (assetId: string) => void;
 }
 
-const formatDuration = (seconds: number) => {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-};
+const VideoCard = ({ asset, variant = 'student', onPreview, onUseInCourse, onDeactivate, onDelete }: VideoCardProps) => {
+  const thumbnail = getR2ThumbnailUrl(asset.thumbnail_key) || '/placeholder.svg';
 
-const VideoCard = ({ video, variant = 'student', onPreview, onUseInCourse, onEdit, onDeactivate, onDelete }: VideoCardProps) => {
-  const thumbnail = video.cloudflare_thumbnail_url || video.thumbnail_url || '/placeholder.svg';
-
-  const copyLink = () => {
-    const shareText = `Watch '${video.title}' on Backupshala: ${window.location.origin}/watch/${video.backupshala_video_link}`;
+  const copyShareLink = () => {
+    const shareText = `Watch '${asset.title}' on Backupshala: ${window.location.origin}/watch/${asset.bsv_code}`;
     navigator.clipboard.writeText(shareText);
     toast.success('Link copied to clipboard!');
   };
 
   const copyBsvCode = () => {
-    navigator.clipboard.writeText(video.backupshala_video_link);
-    toast.success('Video code copied!');
+    navigator.clipboard.writeText(asset.bsv_code);
+    toast.success('BSV code copied!');
   };
 
   return (
     <Card className="bg-card border-border overflow-hidden group hover:border-primary/30 transition-colors">
-      <div className="relative aspect-video bg-secondary">
-        <img src={thumbnail} alt={video.title} className="w-full h-full object-cover" />
+      <div className="relative aspect-video bg-secondary cursor-pointer" onClick={() => onPreview?.(asset.id)}>
+        <img src={thumbnail} alt={asset.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <Button size="sm" variant="secondary" onClick={() => onPreview?.(video.id)} className="gap-2">
-            <Play className="h-4 w-4" /> Preview
-          </Button>
+          <div className="w-10 h-10 rounded-full bg-primary/90 flex items-center justify-center">
+            <Play className="h-5 w-5 text-white ml-0.5" />
+          </div>
         </div>
         <Badge className="absolute top-2 right-2 bg-black/70 text-white text-[10px]">
-          {formatDuration(video.duration_seconds)}
+          {formatDuration(asset.duration_seconds)}
         </Badge>
-        {video.category && (
-          <Badge variant="secondary" className="absolute top-2 left-2 text-[10px]">
-            {video.category}
-          </Badge>
-        )}
+        <Badge variant="secondary" className="absolute top-2 left-2 text-[10px]">
+          {asset.category}
+        </Badge>
+        {asset.is_featured && <Badge className="absolute bottom-2 left-2 bg-accent text-accent-foreground text-[10px]">Featured</Badge>}
       </div>
       <CardContent className="p-3 space-y-2">
-        <h3 className="font-medium text-sm line-clamp-2">{video.title}</h3>
-        
+        <h3 className="font-medium text-sm line-clamp-2">{asset.title}</h3>
+
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <button onClick={copyBsvCode} className="flex items-center gap-1 hover:text-primary transition-colors font-mono">
-            <Copy className="h-3 w-3" /> {video.backupshala_video_link}
+            <Copy className="h-3 w-3" /> {asset.bsv_code}
           </button>
+          {asset.language && <span>• {asset.language}</span>}
         </div>
 
         {variant === 'admin' && (
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {video.used_in_courses || 0} courses</span>
-            <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {video.total_views || 0} views</span>
+            <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {asset.used_in_courses_count || 0} courses</span>
+            <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {asset.total_views || 0} views</span>
           </div>
         )}
 
         <div className="flex items-center gap-1.5 pt-1">
-          <Button size="sm" variant="outline" className="h-7 text-xs flex-1 gap-1" onClick={copyLink}>
+          <Button size="sm" variant="outline" className="h-7 text-xs flex-1 gap-1" onClick={copyShareLink}>
             <Share2 className="h-3 w-3" /> Share
           </Button>
           {variant === 'creator' && onUseInCourse && (
-            <Button size="sm" className="h-7 text-xs flex-1 gap-1 bg-primary hover:bg-primary/90" onClick={() => onUseInCourse(video.id)}>
+            <Button size="sm" className="h-7 text-xs flex-1 gap-1 bg-primary hover:bg-primary/90" onClick={() => onUseInCourse(asset.id)}>
               <BookOpen className="h-3 w-3" /> Use
             </Button>
           )}
           {variant === 'student' && (
-            <Button size="sm" className="h-7 text-xs flex-1 gap-1 bg-primary hover:bg-primary/90" onClick={() => onPreview?.(video.id)}>
+            <Button size="sm" className="h-7 text-xs flex-1 gap-1 bg-primary hover:bg-primary/90" onClick={() => onPreview?.(asset.id)}>
               <Play className="h-3 w-3" /> Watch
             </Button>
           )}
@@ -100,13 +93,16 @@ const VideoCard = ({ video, variant = 'student', onPreview, onUseInCourse, onEdi
 
         {variant === 'admin' && (
           <div className="flex items-center gap-1.5">
-            {onEdit && <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => onEdit(video.id)}>Edit</Button>}
             {onDeactivate && (
-              <Button size="sm" variant="ghost" className="h-6 text-[10px] text-yellow-500" onClick={() => onDeactivate(video.id)}>
-                {video.is_active ? 'Deactivate' : 'Activate'}
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] text-yellow-500" onClick={() => onDeactivate(asset.id)}>
+                {asset.is_active ? 'Suspend' : 'Activate'}
               </Button>
             )}
-            {onDelete && <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive" onClick={() => onDelete(video.id)}>Delete</Button>}
+            {onDelete && (
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive" onClick={() => onDelete(asset.id)}>
+                Delete
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

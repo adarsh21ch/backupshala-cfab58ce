@@ -12,8 +12,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import VideoCard from '@/components/video/VideoCard';
 import VideoUploadModal from '@/components/video/VideoUploadModal';
+import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { VIDEO_CATEGORIES, VIDEO_LANGUAGES } from '@/lib/videoTypes';
 import { Search, Upload, Film, Clock, CheckCircle, XCircle, Loader2, ExternalLink } from 'lucide-react';
 
 const statusColors: Record<string, string> = {
@@ -31,25 +33,26 @@ const AdminVideos = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [requestFilter, setRequestFilter] = useState('all');
+  const [previewAsset, setPreviewAsset] = useState<string | null>(null);
 
-  // Action modals
   const [rejectModal, setRejectModal] = useState<{ open: boolean; requestId: string }>({ open: false, requestId: '' });
   const [completeModal, setCompleteModal] = useState<{ open: boolean; requestId: string }>({ open: false, requestId: '' });
   const [rejectNote, setRejectNote] = useState('');
-  const [completeVideoId, setCompleteVideoId] = useState('');
+  const [completeVideoAssetId, setCompleteVideoAssetId] = useState('');
   const [videoSearchForComplete, setVideoSearchForComplete] = useState('');
 
-  // Fetch videos
-  const { data: videos } = useQuery({
-    queryKey: ['admin-videos', search, categoryFilter, langFilter, sortBy],
+  // Fetch video_assets
+  const { data: assets } = useQuery({
+    queryKey: ['admin-video-assets', search, categoryFilter, langFilter, sortBy],
     queryFn: async () => {
-      let q = supabase.from('videos').select('*');
+      let q = supabase.from('video_assets').select('*');
       if (search) q = q.ilike('title', `%${search}%`);
       if (categoryFilter !== 'all') q = q.eq('category', categoryFilter);
       if (langFilter !== 'all') q = q.eq('language', langFilter);
       if (sortBy === 'newest') q = q.order('created_at', { ascending: false });
-      else if (sortBy === 'most_used') q = q.order('used_in_courses', { ascending: false });
+      else if (sortBy === 'most_used') q = q.order('used_in_courses_count', { ascending: false });
       else if (sortBy === 'most_viewed') q = q.order('total_views', { ascending: false });
+      else if (sortBy === 'longest') q = q.order('duration_seconds', { ascending: false });
       const { data } = await q;
       return data || [];
     },
@@ -66,11 +69,11 @@ const AdminVideos = () => {
     },
   });
 
-  // Fetch videos for complete modal
-  const { data: videoOptions } = useQuery({
-    queryKey: ['video-options-search', videoSearchForComplete],
+  // Video options for complete modal
+  const { data: assetOptions } = useQuery({
+    queryKey: ['asset-options-search', videoSearchForComplete],
     queryFn: async () => {
-      let q = supabase.from('videos').select('id, title, backupshala_video_link').eq('is_active', true).order('created_at', { ascending: false }).limit(20);
+      let q = supabase.from('video_assets').select('id, title, bsv_code').eq('status', 'ready').eq('is_active', true).order('created_at', { ascending: false }).limit(20);
       if (videoSearchForComplete) q = q.ilike('title', `%${videoSearchForComplete}%`);
       const { data } = await q;
       return data || [];
@@ -79,9 +82,9 @@ const AdminVideos = () => {
   });
 
   const processRequest = useMutation({
-    mutationFn: async ({ requestId, action, admin_note, video_id }: { requestId: string; action: string; admin_note?: string; video_id?: string }) => {
+    mutationFn: async ({ requestId, action, admin_note, video_asset_id }: { requestId: string; action: string; admin_note?: string; video_asset_id?: string }) => {
       const { data, error } = await supabase.functions.invoke('process-video-request', {
-        body: { request_id: requestId, action, admin_note, video_id },
+        body: { request_id: requestId, action, admin_note, video_asset_id },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -93,17 +96,22 @@ const AdminVideos = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const handleDeactivate = async (videoId: string) => {
-    const video = videos?.find(v => v.id === videoId);
-    await supabase.from('videos').update({ is_active: !video?.is_active }).eq('id', videoId);
-    qc.invalidateQueries({ queryKey: ['admin-videos'] });
-    toast.success(video?.is_active ? 'Video deactivated' : 'Video activated');
+  const handleDeactivate = async (assetId: string) => {
+    const asset = assets?.find(a => a.id === assetId);
+    await supabase.from('video_assets').update({ is_active: !asset?.is_active }).eq('id', assetId);
+    qc.invalidateQueries({ queryKey: ['admin-video-assets'] });
+    toast.success(asset?.is_active ? 'Video suspended' : 'Video activated');
   };
 
-  const handleDelete = async (videoId: string) => {
+  const handleDelete = async (assetId: string) => {
+    const asset = assets?.find(a => a.id === assetId);
+    if (asset && asset.used_in_courses_count > 0) {
+      toast.error('Cannot delete a video used in courses');
+      return;
+    }
     if (!confirm('Delete this video permanently?')) return;
-    await supabase.from('videos').delete().eq('id', videoId);
-    qc.invalidateQueries({ queryKey: ['admin-videos'] });
+    await supabase.from('video_assets').delete().eq('id', assetId);
+    qc.invalidateQueries({ queryKey: ['admin-video-assets'] });
     toast.success('Video deleted');
   };
 
@@ -114,9 +122,6 @@ const AdminVideos = () => {
     completed: requests?.filter(r => r.status === 'completed').length || 0,
   };
 
-  const categories = [...new Set(videos?.map(v => v.category).filter(Boolean) || [])];
-  const langs = [...new Set(videos?.map(v => v.language).filter(Boolean) || [])];
-
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
@@ -124,14 +129,14 @@ const AdminVideos = () => {
           <h1 className="text-2xl font-heading font-bold flex items-center gap-2">
             <Film className="h-6 w-6 text-primary" /> Video Library
           </h1>
-          <Button onClick={() => setUploadOpen(true)} className="bg-primary hover:bg-primary/90 gap-2">
-            <Upload className="h-4 w-4" /> Upload New Video
+          <Button onClick={() => setUploadOpen(true)} className="bg-accent hover:bg-accent/90 gap-2">
+            <Upload className="h-4 w-4" /> Upload Video
           </Button>
         </div>
 
         <Tabs defaultValue="library">
           <TabsList className="bg-secondary">
-            <TabsTrigger value="library">Video Library ({videos?.length || 0})</TabsTrigger>
+            <TabsTrigger value="library">Video Library ({assets?.length || 0})</TabsTrigger>
             <TabsTrigger value="requests">Video Requests ({requestStats.pending} pending)</TabsTrigger>
           </TabsList>
 
@@ -142,47 +147,52 @@ const AdminVideos = () => {
                 <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search videos..." className="pl-9 bg-secondary border-border" />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[140px] bg-secondary border-border"><SelectValue placeholder="Category" /></SelectTrigger>
+                <SelectTrigger className="w-[160px] bg-secondary border-border"><SelectValue placeholder="Category" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(c => <SelectItem key={c} value={c!}>{c}</SelectItem>)}
+                  {VIDEO_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={langFilter} onValueChange={setLangFilter}>
                 <SelectTrigger className="w-[130px] bg-secondary border-border"><SelectValue placeholder="Language" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Languages</SelectItem>
-                  {langs.map(l => <SelectItem key={l} value={l!}>{l}</SelectItem>)}
+                  {VIDEO_LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[130px] bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-[140px] bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="most_used">Most Used</SelectItem>
                   <SelectItem value="most_viewed">Most Viewed</SelectItem>
+                  <SelectItem value="longest">Longest</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {videos?.map(v => (
+              {assets?.map(a => (
                 <VideoCard
-                  key={v.id}
-                  video={v}
+                  key={a.id}
+                  asset={a}
                   variant="admin"
+                  onPreview={id => setPreviewAsset(id)}
                   onDeactivate={handleDeactivate}
                   onDelete={handleDelete}
                 />
               ))}
             </div>
-            {videos?.length === 0 && (
-              <p className="text-center text-muted-foreground py-12">No videos uploaded yet. Click "Upload New Video" to get started.</p>
+            {assets?.length === 0 && (
+              <div className="text-center py-16 space-y-3">
+                <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
+                <p className="text-muted-foreground">No videos uploaded yet</p>
+                <Button onClick={() => setUploadOpen(true)} className="bg-accent hover:bg-accent/90">Upload Video</Button>
+              </div>
             )}
           </TabsContent>
 
           <TabsContent value="requests" className="space-y-4 mt-4">
-            {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: 'Total', value: requestStats.total, icon: Film },
@@ -202,22 +212,14 @@ const AdminVideos = () => {
               ))}
             </div>
 
-            {/* Filter tabs */}
             <div className="flex gap-2 flex-wrap">
               {['all', 'pending', 'processing', 'completed', 'rejected'].map(f => (
-                <Button
-                  key={f}
-                  size="sm"
-                  variant={requestFilter === f ? 'default' : 'outline'}
-                  onClick={() => setRequestFilter(f)}
-                  className="text-xs capitalize"
-                >
+                <Button key={f} size="sm" variant={requestFilter === f ? 'default' : 'outline'} onClick={() => setRequestFilter(f)} className="text-xs capitalize">
                   {f}
                 </Button>
               ))}
             </div>
 
-            {/* Request list */}
             <div className="space-y-3">
               {requests?.map(req => (
                 <Card key={req.id} className="bg-card border-border">
@@ -226,7 +228,7 @@ const AdminVideos = () => {
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium text-sm">{req.video_title}</h3>
-                          <Badge className={`text-[10px] ${statusColors[req.status] || ''}`}>{req.status}</Badge>
+                          <Badge className={`text-[10px] ${statusColors[req.status || 'pending']}`}>{req.status}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
                           By: {(req.profiles as any)?.full_name || 'Unknown'} ({(req.profiles as any)?.email})
@@ -234,11 +236,10 @@ const AdminVideos = () => {
                         <a href={req.youtube_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
                           <ExternalLink className="h-3 w-3" /> {req.youtube_url}
                         </a>
+                        {req.category && <p className="text-xs text-muted-foreground">Category: {req.category} • {req.language}</p>}
                         {req.reason && <p className="text-xs text-muted-foreground">Reason: {req.reason}</p>}
                         {req.admin_note && <p className="text-xs text-muted-foreground italic">Admin: {req.admin_note}</p>}
-                        <p className="text-[10px] text-muted-foreground">
-                          {new Date(req.requested_at).toLocaleString('en-IN')}
-                        </p>
+                        <p className="text-[10px] text-muted-foreground">{new Date(req.requested_at || '').toLocaleString('en-IN')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {req.status === 'pending' && (
@@ -255,7 +256,7 @@ const AdminVideos = () => {
                         )}
                         {req.status === 'processing' && (
                           <Button size="sm" className="text-xs bg-primary hover:bg-primary/90"
-                            onClick={() => { setCompleteModal({ open: true, requestId: req.id }); setCompleteVideoId(''); }}>
+                            onClick={() => { setCompleteModal({ open: true, requestId: req.id }); setCompleteVideoAssetId(''); }}>
                             <CheckCircle className="h-3 w-3 mr-1" /> Mark Completed
                           </Button>
                         )}
@@ -270,7 +271,18 @@ const AdminVideos = () => {
         </Tabs>
 
         {/* Upload Modal */}
-        <VideoUploadModal open={uploadOpen} onOpenChange={setUploadOpen} onSuccess={() => qc.invalidateQueries({ queryKey: ['admin-videos'] })} />
+        <VideoUploadModal open={uploadOpen} onOpenChange={setUploadOpen} onSuccess={() => qc.invalidateQueries({ queryKey: ['admin-video-assets'] })} />
+
+        {/* Preview Modal */}
+        <Dialog open={!!previewAsset} onOpenChange={() => setPreviewAsset(null)}>
+          <DialogContent className="sm:max-w-2xl bg-card border-border p-0">
+            {previewAsset && (
+              <div className="p-4">
+                <BackupshalaVideoPlayer assetId={previewAsset} isPublicWatch />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Reject Modal */}
         <Dialog open={rejectModal.open} onOpenChange={open => setRejectModal({ ...rejectModal, open })}>
@@ -301,15 +313,15 @@ const AdminVideos = () => {
                 <Input value={videoSearchForComplete} onChange={e => setVideoSearchForComplete(e.target.value)} placeholder="Search videos..." className="pl-9 bg-secondary border-border" />
               </div>
               <div className="max-h-[200px] overflow-y-auto space-y-1.5">
-                {videoOptions?.map(v => (
-                  <button key={v.id} onClick={() => setCompleteVideoId(v.id)}
-                    className={`w-full text-left rounded-lg border p-2 text-sm transition-colors ${completeVideoId === v.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
-                    {v.title} <span className="text-xs text-muted-foreground ml-1">({v.backupshala_video_link})</span>
+                {assetOptions?.map(a => (
+                  <button key={a.id} onClick={() => setCompleteVideoAssetId(a.id)}
+                    className={`w-full text-left rounded-lg border p-2 text-sm transition-colors ${completeVideoAssetId === a.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+                    {a.title} <span className="text-xs text-muted-foreground ml-1">({a.bsv_code})</span>
                   </button>
                 ))}
               </div>
-              <Button className="w-full bg-primary hover:bg-primary/90" disabled={!completeVideoId} onClick={() => {
-                processRequest.mutate({ requestId: completeModal.requestId, action: 'complete', video_id: completeVideoId });
+              <Button className="w-full bg-primary hover:bg-primary/90" disabled={!completeVideoAssetId} onClick={() => {
+                processRequest.mutate({ requestId: completeModal.requestId, action: 'complete', video_asset_id: completeVideoAssetId });
                 setCompleteModal({ open: false, requestId: '' });
               }}>
                 <CheckCircle className="h-4 w-4 mr-2" /> Complete Request

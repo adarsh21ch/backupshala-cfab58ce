@@ -1,31 +1,33 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import VideoPlayer from '@/components/video/VideoPlayer';
+import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
 import VideoCard from '@/components/video/VideoCard';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
+import { formatDuration, getR2ThumbnailUrl } from '@/lib/videoTypes';
 
 const WatchVideo = () => {
   const { bsvCode } = useParams<{ bsvCode: string }>();
 
-  const { data: video, isLoading } = useQuery({
-    queryKey: ['watch-video', bsvCode],
+  const { data: asset, isLoading } = useQuery({
+    queryKey: ['watch-video-asset', bsvCode],
     queryFn: async () => {
-      const { data } = await supabase.from('videos').select('*').eq('backupshala_video_link', bsvCode).eq('is_active', true).single();
+      const { data } = await supabase.from('video_assets').select('*').eq('bsv_code', bsvCode).eq('status', 'ready').eq('is_active', true).single();
       return data;
     },
     enabled: !!bsvCode,
   });
 
   const { data: related } = useQuery({
-    queryKey: ['related-videos', video?.category],
+    queryKey: ['related-video-assets', asset?.category, asset?.id],
     queryFn: async () => {
-      if (!video?.category) return [];
-      const { data } = await supabase.from('videos').select('*').eq('is_active', true).eq('category', video.category).neq('id', video.id).limit(4);
+      if (!asset) return [];
+      const { data } = await supabase.from('video_assets').select('*').eq('status', 'ready').eq('is_active', true).eq('category', asset.category).neq('id', asset.id).limit(4);
       return data || [];
     },
-    enabled: !!video?.category,
+    enabled: !!asset,
   });
 
   if (isLoading) {
@@ -36,7 +38,7 @@ const WatchVideo = () => {
     );
   }
 
-  if (!video) {
+  if (!asset) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <nav className="border-b border-border bg-card px-6 py-4">
@@ -57,7 +59,6 @@ const WatchVideo = () => {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground">
-      {/* Navbar */}
       <nav className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
         <Link to="/" className="font-heading text-xl font-800">
           <span className="text-primary">Backup</span><span className="text-accent">shala</span>
@@ -68,20 +69,19 @@ const WatchVideo = () => {
         </div>
       </nav>
 
-      {/* Video */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <VideoPlayer videoId={video.id} isPublic allowSeeking allowSpeedControl />
+        <BackupshalaVideoPlayer bsvCode={bsvCode} isPublicWatch />
 
         <div className="mt-6 space-y-3">
-          <h1 className="text-2xl font-heading font-bold">{video.title}</h1>
-          {video.description && <p className="text-sm text-muted-foreground">{video.description}</p>}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {video.category && <span className="bg-secondary px-2 py-1 rounded">{video.category}</span>}
-            {video.language && <span className="bg-secondary px-2 py-1 rounded">{video.language}</span>}
+          <h1 className="text-2xl font-heading font-bold">{asset.title}</h1>
+          {asset.description && <p className="text-sm text-muted-foreground">{asset.description}</p>}
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="secondary">{asset.category}</Badge>
+            <Badge variant="secondary">{asset.language}</Badge>
+            <span className="text-muted-foreground">{formatDuration(asset.duration_seconds)}</span>
           </div>
         </div>
 
-        {/* CTA */}
         <div className="mt-8 bg-primary/10 border border-primary/30 rounded-xl p-6 text-center">
           <h2 className="text-lg font-heading font-bold mb-2">Want to learn more?</h2>
           <p className="text-sm text-muted-foreground mb-4">Enroll in full courses on Backupshala and start your learning journey.</p>
@@ -92,14 +92,13 @@ const WatchVideo = () => {
           </Link>
         </div>
 
-        {/* Related videos */}
         {related && related.length > 0 && (
           <div className="mt-12 space-y-4">
             <h2 className="text-lg font-heading font-semibold">Related Videos</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {related.map(v => (
-                <Link key={v.id} to={`/watch/${v.backupshala_video_link}`}>
-                  <VideoCard video={v} variant="student" />
+              {related.map(r => (
+                <Link key={r.id} to={`/watch/${r.bsv_code}`}>
+                  <VideoCard asset={r} variant="student" />
                 </Link>
               ))}
             </div>
