@@ -1,49 +1,88 @@
 
+Goal: fix the direct video upload to R2, because the app is successfully generating a signed upload URL but the browser PUT to R2 is still failing before confirmation.
 
-# Plan: Recreate All Database Schema in New Project
+What I found
+- The admin/auth issue is no longer the blocker. `r2-get-upload-url` now returns 200 and gives a signed URL.
+- The failure happens in `src/components/video/VideoUploadModal.tsx` during the direct `PUT` to R2.
+- The returned signed URL currently contains these query params:
+  - `x-amz-sdk-checksum-algorithm=CRC32`
+  - `x-amz-checksum-crc32=...`
+- That points to the AWS SDK v3 flexible-checksum behavior, which is a known compatibility problem with R2/presigned browser uploads in some setups.
+- The current toast message is generic, so it hides whether the real issue is:
+  1. checksum/signing mismatch,
+  2. bucket CORS preflight mismatch,
+  3. wrong endpoint style.
 
-## What happened
-You connected a new Supabase project, so the database is empty. We need to run a single consolidated migration that creates everything from scratch.
+Why upload is failing
+- The upload is failing after the signed URL is created because the signed URL itself is likely wrong for this browser upload flow.
+- Specifically, `supabase/functions/r2-get-upload-url/index.ts` signs `PutObjectCommand(...)`, and the generated URL includes checksum-related query params.
+- Browser uploads are very sensitive to signed header/query “contract drift”. If R2/browser/CORS does not match that exact contract, the upload dies with the generic error you are seeing.
+- Your screenshot message “Upload to R2 failed. This is usually a signed URL or bucket CORS issue.” matches exactly where the XHR fails.
 
-## What we'll do
+Files to fix
+- `supabase/functions/r2-get-upload-url/index.ts`
+- `src/components/video/VideoUploadModal.tsx`
+- Possibly `supabase/functions/r2-get-playback-url/index.ts` too, so read/download signing stays consistent.
 
-Create **one new migration** that consolidates all 6 existing migrations into a single, clean SQL file. This migration will:
+Implementation plan
+1. Replace the upload signing approach in `r2-get-upload-url`
+- Stop generating presigned upload URLs with the current `PutObjectCommand` setup that injects checksum query params.
+- Generate a simpler R2-compatible presigned PUT URL without checksum requirements.
+- Keep the same auth + admin checks + DB insert flow.
 
-### Tables (14 total)
-1. `profiles` — user profiles with creator fields, wallet, referrer
-2. `courses` — with platform_fee_percent, commission_percent, slug
-3. `modules` — with module_type (video/resource/community), resources JSONB
-4. `payments` — Razorpay fields, fee breakdowns, GST
-5. `enrollments` — student-course link with referrer_email
-6. `module_completions` — progress tracking
-7. `commissions` — referral earnings with status types
-8. `creator_payouts` — creator payment tracking
-9. `payout_requests` — withdrawal requests
-10. `certificates` — per-course certificates
-11. `course_reviews` — ratings 1-5
-12. `notifications` — in-app notifications
-13. `platform_settings` — key-value config
-14. `contact_submissions` — support form
-15. `course_overrides` — admin fee overrides
-16. `user_roles` — admin/moderator/user enum roles
+2. Make the browser upload request match the signed contract exactly
+- In `VideoUploadModal.tsx`, keep the upload method as `PUT`.
+- Only send headers that are truly required by the final signed URL.
+- If the new signed URL is created without `Content-Type` signing, do not manually set it in XHR.
+- If `Content-Type` remains signed, ensure the exact same value is sent.
 
-### Functions & Triggers
-- `has_role()` — security definer for RLS
-- `handle_new_user()` — auto-create profile + welcome notification on signup
-- `prevent_referrer_email_change()` — immutable referrer
-- `protect_admin_fields()` — non-admins can't change sensitive profile fields
+3. Improve client-side error reporting
+- Capture and surface:
+  - `xhr.status`
+  - response body text
+  - likely failure category (CORS vs signature vs forbidden)
+- This prevents future “15% then failed” dead ends.
 
-### RLS Policies
-All existing policies for every table (copied from migration 2 + 3 + 4).
+4. Verify bucket CORS assumptions in code behavior
+- Since you already added bucket CORS, I will make the app compatible with a strict CORS setup by avoiding unnecessary signed headers/checksum expectations.
+- Recommended stable bucket rule for this flow:
+```text
+AllowedOrigins: [preview origin, published origin]
+AllowedMethods: [PUT, GET, HEAD]
+AllowedHeaders: [Content-Type, *]
+```
+- If needed, I’ll align the upload flow to require fewer headers so the bucket policy can stay simpler.
 
-### Seed Data
-- 10 platform_settings rows (fee, commission, community links, etc.)
+5. Keep post-upload confirmation unchanged
+- `r2-confirm-upload` runs after the file is stored, and is not the current blocker.
+- I would leave that flow intact unless testing shows the upload succeeds but confirmation fails.
 
-### Storage
-- `avatars` bucket (public) with upload/read policies
+Most likely root cause
+- The strongest signal is the checksum-enriched presigned URL:
+```text
+X-Amz-SignedHeaders=host
+x-amz-sdk-checksum-algorithm=CRC32
+x-amz-checksum-crc32=...
+```
+- That is the most probable reason the browser PUT is rejected by R2 in this setup, even after CORS was added.
 
-### Approach
-- Delete the 6 old migration files
-- Create one new consolidated migration with everything in correct dependency order
-- The enum `app_role` and `user_roles` table come first, then `has_role()`, then all other tables, then RLS, then triggers, then seed data
+Expected result after fix
+- Upload should move past 15%, complete the direct PUT, then call `r2-confirm-upload`, and finally show the BSV code / success step.
 
+Technical notes
+- The auth role check is already using `has_role(...)` and is not the current issue.
+- The frontend is currently failing inside:
+```text
+xhr.open('PUT', upload_url)
+xhr.setRequestHeader('Content-Type', signedContentType || file.type || 'video/mp4')
+xhr.send(file)
+```
+- The edge function currently signs with:
+```text
+new PutObjectCommand({
+  Bucket,
+  Key,
+  ContentType: content_type,
+})
+```
+- That is the part I would change first, because the network snapshot proves the URL creation succeeds and the browser upload is where the failure occurs.
