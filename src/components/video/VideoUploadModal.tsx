@@ -118,12 +118,24 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
             return;
           }
           const body = xhr.responseText || '';
-          reject(new Error(`R2 upload failed (HTTP ${xhr.status}): ${body.substring(0, 200)}`));
+          if (xhr.status === 403) {
+            reject(new Error(`R2 rejected upload (403 Forbidden). Likely a signed-URL mismatch or expired URL. Details: ${body.substring(0, 300)}`));
+          } else if (xhr.status === 0) {
+            reject(new Error('CORS blocked: browser could not reach R2. Ensure your R2 bucket CORS allows PUT from this origin.'));
+          } else {
+            reject(new Error(`R2 upload failed (HTTP ${xhr.status}): ${body.substring(0, 300)}`));
+          }
         };
-        xhr.onerror = () => reject(new Error('Network error during R2 upload. Check browser console for CORS details.'));
+        xhr.onerror = () => {
+          reject(new Error(
+            `CORS/Network error: The browser was blocked from uploading to R2. ` +
+            `Your R2 bucket CORS must allow origin "${window.location.origin}" with PUT method. ` +
+            `Check Cloudflare R2 → Bucket Settings → CORS Policy.`
+          ));
+        };
         xhr.open('PUT', upload_url);
-        const ct = signedContentType || file.type || 'video/mp4';
-        xhr.setRequestHeader('Content-Type', ct);
+        // Only send Content-Type — it must match what was signed
+        xhr.setRequestHeader('Content-Type', signedContentType || file.type || 'video/mp4');
         xhr.send(file);
       });
 
