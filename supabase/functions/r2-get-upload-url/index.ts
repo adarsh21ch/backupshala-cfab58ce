@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     const command = new PutObjectCommand({
       Bucket: R2_BUCKET_NAME,
       Key: objectKey,
-      ContentType: content_type,
+      // Do NOT set ContentType — keeps signed URL simpler and avoids mismatch
     });
 
     const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
