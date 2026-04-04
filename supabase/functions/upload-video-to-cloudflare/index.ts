@@ -29,8 +29,8 @@ Deno.serve(async (req) => {
     if (authError || !user) throw new Error("Unauthorized");
 
     // Check admin
-    const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
-    if (!profile?.is_admin) throw new Error("Admin access required");
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    if (!isAdmin) throw new Error("Admin access required");
 
     const CLOUDFLARE_ACCOUNT_ID = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
     const CLOUDFLARE_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
