@@ -38,8 +38,7 @@ Deno.serve(async (req) => {
       if (!userId) throw new Error("Authentication required");
       
       // Check admin
-      const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", userId).single();
-      const isAdmin = profile?.is_admin === true;
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
 
       if (!isAdmin) {
         if (module_id && course_id) {
