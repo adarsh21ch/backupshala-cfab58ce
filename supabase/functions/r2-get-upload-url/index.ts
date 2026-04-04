@@ -81,7 +81,6 @@ Deno.serve(async (req) => {
 
     const signed = await r2.sign(new Request(r2Url.toString(), {
       method: "PUT",
-      headers: { "Content-Type": content_type },
     }), { aws: { signQuery: true } });
 
     return new Response(JSON.stringify({
