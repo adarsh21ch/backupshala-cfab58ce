@@ -117,11 +117,13 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
             resolve();
             return;
           }
-          reject(new Error(xhr.responseText || `Upload failed: ${xhr.status}`));
+          const body = xhr.responseText || '';
+          reject(new Error(`R2 upload failed (HTTP ${xhr.status}): ${body.substring(0, 200)}`));
         };
-        xhr.onerror = () => reject(new Error('Upload to R2 failed. This is usually a signed URL or bucket CORS issue.'));
+        xhr.onerror = () => reject(new Error('Network error during R2 upload. Check browser console for CORS details.'));
         xhr.open('PUT', upload_url);
-        xhr.setRequestHeader('Content-Type', signedContentType || file.type || 'video/mp4');
+        const ct = signedContentType || file.type || 'video/mp4';
+        xhr.setRequestHeader('Content-Type', ct);
         xhr.send(file);
       });
 

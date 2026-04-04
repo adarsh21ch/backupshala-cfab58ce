@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3";
-import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3.525.0";
+import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner@3.525.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,17 +77,17 @@ Deno.serve(async (req) => {
         secretAccessKey: R2_SECRET_ACCESS_KEY,
       },
       forcePathStyle: true,
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
 
-    const uploadUrl = await getSignedUrl(
-      r2,
-      new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: objectKey,
-        ContentType: content_type,
-      }),
-      { expiresIn: 3600 },
-    );
+    const command = new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: objectKey,
+      ContentType: content_type,
+    });
+
+    const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
 
     return new Response(JSON.stringify({
       upload_url: uploadUrl,
