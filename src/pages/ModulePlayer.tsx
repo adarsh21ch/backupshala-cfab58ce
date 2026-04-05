@@ -107,7 +107,25 @@ const ModulePlayer = () => {
     }
   }, [isCompleted, markComplete]);
 
-  if (courseLoading) return (
+  const handleMentorContact = useCallback(async (method: string) => {
+    if (!moduleId || !courseId || !currentModule) return;
+    const prevMod = currentIndex > 0 ? modules[currentIndex - 1] : null;
+    await supabase.functions.invoke('request-module-unlock', {
+      body: {
+        module_id: moduleId,
+        completed_module_id: prevMod?.id || moduleId,
+        course_id: courseId,
+        contact_method: method,
+      },
+    });
+    queryClient.invalidateQueries({ queryKey: ['module-access', moduleId] });
+  }, [moduleId, courseId, currentIndex, modules, queryClient, currentModule]);
+
+  const handleAlreadyContacted = useCallback(async () => {
+    await handleMentorContact('manual');
+  }, [handleMentorContact]);
+
+  if (courseLoading || accessLoading) return (
     <DashboardLayout>
       <div className="space-y-4">
         <Skeleton className="h-6 w-48" />
@@ -124,6 +142,70 @@ const ModulePlayer = () => {
       </div>
     </DashboardLayout>
   );
+
+  // Gate screens
+  if (accessCheck && !accessCheck.canAccess) {
+    const gateInfo = accessCheck.gateInfo;
+
+    if (accessCheck.reason === 'previous_incomplete') {
+      return (
+        <DashboardLayout>
+          <div className="max-w-2xl mx-auto">
+            <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+              <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+            </Link>
+            <SequentialLockScreen
+              previousModuleTitle={gateInfo?.previousModuleTitle || 'Previous Module'}
+              previousModuleId={gateInfo?.previousModuleId || ''}
+              courseId={courseId!}
+              currentModuleIndex={currentIndex}
+              totalModules={modules.length}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    if (accessCheck.reason === 'mentor_approval_needed') {
+      return (
+        <DashboardLayout>
+          <div className="max-w-2xl mx-auto">
+            <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+              <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+            </Link>
+            <MentorGateScreen
+              mentorName={gateInfo?.mentorName}
+              mentorPhone={gateInfo?.mentorPhone}
+              mentorEmail={gateInfo?.mentorEmail || ''}
+              gateMessage={gateInfo?.message || ''}
+              contactType={gateInfo?.contactType || 'whatsapp'}
+              zoomLink={gateInfo?.zoomLink}
+              onContact={handleMentorContact}
+              onAlreadyContacted={handleAlreadyContacted}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    if (accessCheck.reason === 'waiting_mentor') {
+      return (
+        <DashboardLayout>
+          <div className="max-w-2xl mx-auto">
+            <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+              <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+            </Link>
+            <WaitingMentorScreen
+              moduleName={currentModule?.title || 'Module'}
+              status={gateInfo?.status || 'waiting'}
+              contactedAt={gateInfo?.contactedAt}
+              courseId={courseId!}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+  }
 
   if (showCelebration) return (
     <DashboardLayout>
