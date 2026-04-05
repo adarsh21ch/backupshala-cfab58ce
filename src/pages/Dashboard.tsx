@@ -6,9 +6,11 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, CheckCircle, Award, IndianRupee, Clock } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { formatPrice, timeAgo } from '@/lib/format';
 import CommunityDashboardCard from '@/components/module/CommunityDashboardCard';
+import KPICard from '@/components/dashboard/KPICard';
+import EmptyState from '@/components/dashboard/EmptyState';
+import { SkeletonKPI, SkeletonCourseCard } from '@/components/dashboard/SkeletonCards';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -59,7 +61,6 @@ const Dashboard = () => {
   }, {}) || {};
 
   const totalModulesCompleted = completions?.length || 0;
-
   const firstName = profile?.full_name?.split(' ')[0] || 'Student';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -74,32 +75,30 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="space-y-8">
         <div>
-          <h1 className="font-heading text-2xl font-700 md:text-3xl">{greeting}, {firstName} 👋</h1>
+          <h1 className="font-heading text-2xl font-800 md:text-3xl">{greeting}, {firstName} 👋</h1>
           <p className="mt-1 text-sm text-muted-foreground">Your learning dashboard</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[
-            { icon: BookOpen, label: 'Enrolled', value: enrollments?.length || 0, color: 'text-primary' },
-            { icon: CheckCircle, label: 'Modules Done', value: totalModulesCompleted, color: 'text-primary' },
-            { icon: Award, label: 'Certificates', value: certificates || 0, color: 'text-accent' },
-            { icon: IndianRupee, label: 'Wallet', value: formatPrice(profile?.wallet_balance || 0), color: 'text-primary' },
-          ].map((stat, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-4">
-              <stat.icon className={`h-5 w-5 ${stat.color} mb-2`} />
-              <p className="font-heading text-xl font-700">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
+        {/* KPI Stats */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {[...Array(4)].map((_, i) => <SkeletonKPI key={i} />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <KPICard icon={BookOpen} label="Enrolled" value={enrollments?.length || 0} color="primary" />
+            <KPICard icon={CheckCircle} label="Modules Done" value={totalModulesCompleted} color="primary" />
+            <KPICard icon={Award} label="Certificates" value={certificates || 0} color="accent" />
+            <KPICard icon={IndianRupee} label="Wallet" value={formatPrice(profile?.wallet_balance || 0)} color="accent" />
+          </div>
+        )}
 
-        {/* Community Card - visible if enrolled in any course */}
         {enrollments && enrollments.length > 0 && <CommunityDashboardCard />}
+
         {/* Continue Learning */}
         {inProgressEnrollments.length > 0 && (
           <div>
-            <h2 className="font-heading text-lg font-600 mb-4">Continue Learning</h2>
+            <h2 className="font-heading text-lg font-700 mb-4">Continue Learning</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {inProgressEnrollments.slice(0, 3).map((enrollment: any) => {
                 const course = enrollment.courses;
@@ -107,14 +106,14 @@ const Dashboard = () => {
                 const completedModules = completionsByCourse[enrollment.course_id] || 0;
                 const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
                 return (
-                  <div key={enrollment.id} className="rounded-xl border border-border bg-card p-5">
+                  <div key={enrollment.id} className="rounded-xl border border-border bg-card p-5 transition-all hover:border-accent/30 hover:-translate-y-0.5">
                     {course?.thumbnail_url && (
                       <img src={course.thumbnail_url} alt={course?.title} className="mb-3 h-32 w-full rounded-lg object-cover" />
                     )}
-                    <h3 className="font-heading text-sm font-600 line-clamp-2">{course?.title}</h3>
+                    <h3 className="font-heading text-sm font-700 line-clamp-2">{course?.title}</h3>
                     <p className="mt-2 text-xs text-muted-foreground">{completedModules} of {totalModules} modules</p>
                     <Progress value={progress} className="mt-2 h-1.5" />
-                    <Button asChild size="sm" className="mt-4 w-full rounded-md">
+                    <Button asChild size="sm" className="mt-4 w-full rounded-lg">
                       <Link to={`/courses/${enrollment.course_id}`}>Continue →</Link>
                     </Button>
                   </div>
@@ -127,12 +126,12 @@ const Dashboard = () => {
         {/* My Courses */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading text-lg font-600">My Courses</h2>
+            <h2 className="font-heading text-lg font-700">My Courses</h2>
             <Button asChild variant="ghost" size="sm"><Link to="/courses">View All</Link></Button>
           </div>
           {isLoading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
+              {[...Array(3)].map((_, i) => <SkeletonCourseCard key={i} />)}
             </div>
           ) : enrollments && enrollments.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -142,16 +141,16 @@ const Dashboard = () => {
                 const completedModules = completionsByCourse[enrollment.course_id] || 0;
                 const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
                 return (
-                  <div key={enrollment.id} className="rounded-xl border border-border bg-card p-5">
-                    <h3 className="font-heading text-sm font-600 line-clamp-2">{course?.title}</h3>
+                  <div key={enrollment.id} className="rounded-xl border border-border bg-card p-5 transition-all hover:border-accent/30 hover:-translate-y-0.5">
+                    <h3 className="font-heading text-sm font-700 line-clamp-2">{course?.title}</h3>
                     <p className="mt-2 text-xs text-muted-foreground">{completedModules} of {totalModules} modules</p>
                     <Progress value={progress} className="mt-2 h-1.5" />
                     <div className="mt-2 flex items-center justify-between">
-                      <span className={`text-xs font-medium ${enrollment.is_completed ? 'text-primary' : 'text-accent'}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${enrollment.is_completed ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'}`}>
                         {enrollment.is_completed ? '✓ Completed' : `${progress}%`}
                       </span>
                     </div>
-                    <Button asChild size="sm" className="mt-3 w-full rounded-md" variant={progress > 0 ? 'default' : 'outline'}>
+                    <Button asChild size="sm" className="mt-3 w-full rounded-lg" variant={progress > 0 ? 'default' : 'outline'}>
                       <Link to={`/courses/${enrollment.course_id}`}>{progress === 100 ? 'Review' : progress > 0 ? 'Continue' : 'Start'}</Link>
                     </Button>
                   </div>
@@ -159,18 +158,20 @@ const Dashboard = () => {
               })}
             </div>
           ) : (
-            <div className="rounded-xl border border-border bg-card p-8 text-center">
-              <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground">You haven't enrolled in any courses yet.</p>
-              <Button asChild className="mt-4 rounded-md"><Link to="/explore">Explore Courses</Link></Button>
-            </div>
+            <EmptyState
+              icon={BookOpen}
+              title="No courses yet"
+              description="You haven't enrolled in any courses yet. Explore and start learning!"
+              actionLabel="Explore Courses"
+              actionTo="/explore"
+            />
           )}
         </div>
 
         {/* Recent Activity */}
         {recentNotifications && recentNotifications.length > 0 && (
           <div>
-            <h2 className="font-heading text-lg font-600 mb-4">Recent Activity</h2>
+            <h2 className="font-heading text-lg font-700 mb-4">Recent Activity</h2>
             <div className="rounded-xl border border-border bg-card divide-y divide-border">
               {recentNotifications.slice(0, 5).map(n => (
                 <div key={n.id} className="flex items-start gap-3 p-4">
@@ -186,10 +187,10 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Recommended */}
+        {/* Explore */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading text-lg font-600">Explore More</h2>
+            <h2 className="font-heading text-lg font-700">Explore More</h2>
             <Button asChild variant="ghost" size="sm"><Link to="/explore">Browse All</Link></Button>
           </div>
           <p className="text-sm text-muted-foreground">Discover new courses on the <Link to="/explore" className="text-primary hover:underline">Explore page</Link>.</p>

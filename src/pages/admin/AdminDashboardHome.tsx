@@ -4,9 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatINR } from '@/lib/format';
 import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp } from 'lucide-react';
+import KPICard from '@/components/dashboard/KPICard';
+import { SkeletonKPI } from '@/components/dashboard/SkeletonCards';
 
 const AdminDashboardHome = () => {
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
       const [profiles, courses, enrollments, payments, creators, payoutReqs] = await Promise.all([
@@ -50,36 +52,29 @@ const AdminDashboardHome = () => {
     },
   });
 
-  const statCards = [
-    { label: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-primary' },
-    { label: 'Creators', value: stats?.totalCreators || 0, icon: UserCheck, color: 'text-accent' },
-    { label: 'Courses', value: stats?.totalCourses || 0, icon: BookOpen, color: 'text-blue-400' },
-    { label: 'Enrollments', value: stats?.totalEnrollments || 0, icon: TrendingUp, color: 'text-emerald-400' },
-    { label: 'Total Revenue', value: formatINR(stats?.totalRevenue || 0), icon: CreditCard, color: 'text-yellow-400' },
-    { label: 'Platform Earnings', value: formatINR(stats?.platformEarnings || 0), icon: IndianRupee, color: 'text-primary' },
-  ];
-
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-heading font-bold">Admin Overview</h1>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {statCards.map(s => (
-            <Card key={s.label} className="bg-card border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <s.icon className={`h-5 w-5 ${s.color}`} />
-                </div>
-                <p className="text-lg font-bold">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <h1 className="text-2xl font-heading font-800">Admin Overview</h1>
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[...Array(6)].map((_, i) => <SkeletonKPI key={i} />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <KPICard icon={Users} label="Total Users" value={stats?.totalUsers || 0} color="primary" />
+            <KPICard icon={UserCheck} label="Creators" value={stats?.totalCreators || 0} color="accent" />
+            <KPICard icon={BookOpen} label="Courses" value={stats?.totalCourses || 0} color="info" />
+            <KPICard icon={TrendingUp} label="Enrollments" value={stats?.totalEnrollments || 0} color="primary" />
+            <KPICard icon={CreditCard} label="Total Revenue" value={formatINR(stats?.totalRevenue || 0)} color="warning" />
+            <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="primary" />
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">Pending Creator Approvals</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base font-heading font-700">Pending Creator Approvals</CardTitle></CardHeader>
             <CardContent>
               {(!pendingCreators || pendingCreators.length === 0) ? (
                 <p className="text-sm text-muted-foreground">No pending approvals</p>
@@ -99,7 +94,7 @@ const AdminDashboardHome = () => {
           </Card>
 
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">Pending Course Reviews</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base font-heading font-700">Pending Course Reviews</CardTitle></CardHeader>
             <CardContent>
               {(!pendingCourses || pendingCourses.length === 0) ? (
                 <p className="text-sm text-muted-foreground">No pending courses</p>

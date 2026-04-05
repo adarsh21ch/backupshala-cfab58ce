@@ -39,8 +39,8 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <nav className="p-4 space-y-1">
           {adminNav.map(item => (
             <Link key={item.to} to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.to) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
-              <item.icon className="h-4 w-4" />{item.label}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.to) ? 'bg-accent/8 text-accent border-l-[3px] border-accent' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
+              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-accent' : ''}`} />{item.label}
             </Link>
           ))}
           <div className="border-t border-border my-3" />

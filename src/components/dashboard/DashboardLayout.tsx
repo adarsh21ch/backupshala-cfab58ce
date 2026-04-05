@@ -82,11 +82,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               to={item.to}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive(item.to)
-                  ? 'bg-primary/10 text-primary border-l-[3px] border-primary'
+                  ? 'bg-accent/8 text-accent border-l-[3px] border-accent'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               }`}
             >
-              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-primary' : ''}`} />
+              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-accent' : ''}`} />
               {item.label}
             </Link>
           ))}
@@ -179,16 +179,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card lg:hidden safe-area-bottom">
         {mobileNav.map(item => (
           <Link
             key={item.to}
             to={item.to}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${
-              isActive(item.to) ? 'text-primary' : 'text-muted-foreground'
+            className={`flex flex-1 flex-col items-center gap-0.5 py-3 text-[10px] font-semibold transition-colors ${
+              isActive(item.to) ? 'text-accent' : 'text-muted-foreground'
             }`}
           >
-            <item.icon className="h-5 w-5" />
+            <item.icon className={`h-5 w-5 ${isActive(item.to) ? 'text-accent' : ''}`} />
             {item.label}
           </Link>
         ))}
