@@ -24,6 +24,10 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      toast({ title: 'Too many attempts. Please wait 30 seconds.', variant: 'destructive' });
+      return;
+    }
     if (!email || !password) {
       toast({ title: 'Please fill in all fields', variant: 'destructive' });
       return;
@@ -32,8 +36,15 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.toLowerCase().trim(), password });
       if (error) throw error;
+      setFailedAttempts(0);
       navigate(redirect);
     } catch (error: any) {
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        setLockedUntil(Date.now() + 30000);
+        setTimeout(() => { setLockedUntil(null); setFailedAttempts(0); }, 30000);
+      }
       toast({ title: 'Login failed', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
