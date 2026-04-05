@@ -16,7 +16,8 @@ import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { VIDEO_CATEGORIES, VIDEO_LANGUAGES } from '@/lib/videoTypes';
-import { Search, Upload, Film, Clock, CheckCircle, XCircle, Loader2, ExternalLink } from 'lucide-react';
+import { Search, Upload, Film, Clock, CheckCircle, XCircle, Loader2, ExternalLink, FolderOpen } from 'lucide-react';
+import AdminFoldersTab from '@/components/admin/AdminFoldersTab';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-500',
