@@ -49,6 +49,12 @@ const CourseBuilder = () => {
   const [commissionPercent, setCommissionPercent] = useState(30);
   const [status, setStatus] = useState('draft');
 
+  // Per-course video settings (null = use creator default)
+  const [vsSpeedControl, setVsSpeedControl] = useState<boolean | null>(null);
+  const [vsForwardSeeking, setVsForwardSeeking] = useState<boolean | null>(null);
+  const [vsWatermark, setVsWatermark] = useState<boolean | null>(null);
+  const [vsWatchPercent, setVsWatchPercent] = useState<number | null>(null);
+
   const [modules, setModules] = useState<any[]>([]);
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<any>(null);
