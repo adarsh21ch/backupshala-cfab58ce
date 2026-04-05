@@ -47,6 +47,7 @@ import AdminSupport from "./pages/admin/AdminSupport";
 import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
 import AdminVideos from "./pages/admin/AdminVideos";
 import CreatorVideos from "./pages/creator/CreatorVideos";
+import CreatorSettings from "./pages/creator/CreatorSettings";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
 
