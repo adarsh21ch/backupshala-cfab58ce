@@ -13,6 +13,7 @@ const creatorNav = [
   { to: '/creator/earnings', label: 'Earnings', icon: IndianRupee },
   { to: '/creator/payouts', label: 'Payouts', icon: Wallet },
   { to: '/creator/profile', label: 'Creator Profile', icon: PenTool },
+  { to: '/creator/settings', label: 'Settings', icon: Settings },
 ];
 
 const mobileNav = [
