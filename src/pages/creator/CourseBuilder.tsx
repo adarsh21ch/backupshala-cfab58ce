@@ -139,6 +139,10 @@ const CourseBuilder = () => {
         price: priceNum,
         commission_percent: commissionPercent,
         total_modules: modules.length,
+        allow_speed_control: vsSpeedControl,
+        allow_forward_seeking: vsForwardSeeking,
+        video_watermark_enabled: vsWatermark,
+        min_watch_percentage_to_complete: vsWatchPercent,
       };
 
       if (isNew) {
