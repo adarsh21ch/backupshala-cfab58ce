@@ -3,12 +3,15 @@ import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3.525.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-asset-id, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -29,10 +32,11 @@ Deno.serve(async (req) => {
     });
     if (!isAdmin) throw new Error("Admin access required");
 
-    const assetId = req.headers.get("x-asset-id");
-    if (!assetId) throw new Error("Missing x-asset-id header");
+    // Get asset_id from query string
+    const url = new URL(req.url);
+    const assetId = url.searchParams.get("asset_id");
+    if (!assetId) throw new Error("Missing asset_id query parameter");
 
-    // Look up the asset record
     const { data: asset, error: assetErr } = await supabase
       .from("video_assets")
       .select("r2_object_key, uploaded_by")
@@ -41,13 +45,11 @@ Deno.serve(async (req) => {
     if (assetErr || !asset) throw new Error("Asset not found");
     if (asset.uploaded_by !== user.id) throw new Error("Not your asset");
 
-    // Read file body
     const body = await req.arrayBuffer();
     if (!body || body.byteLength === 0) throw new Error("Empty file body");
 
     console.log(`[r2-proxy-upload] Uploading ${body.byteLength} bytes to ${asset.r2_object_key}`);
 
-    // Upload to R2 server-side (no CORS issues)
     const R2_ACCOUNT_ID = Deno.env.get("R2_ACCOUNT_ID");
     const R2_ACCESS_KEY_ID = Deno.env.get("R2_ACCESS_KEY_ID");
     const R2_SECRET_ACCESS_KEY = Deno.env.get("R2_SECRET_ACCESS_KEY");
@@ -69,13 +71,11 @@ Deno.serve(async (req) => {
       responseChecksumValidation: "WHEN_REQUIRED",
     });
 
-    const command = new PutObjectCommand({
+    await r2.send(new PutObjectCommand({
       Bucket: R2_BUCKET_NAME,
       Key: asset.r2_object_key,
       Body: new Uint8Array(body),
-    });
-
-    await r2.send(command);
+    }));
 
     console.log(`[r2-proxy-upload] Success: ${asset.r2_object_key}`);
 
