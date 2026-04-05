@@ -13,10 +13,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
+
+  const isLocked = lockedUntil && Date.now() < lockedUntil;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
