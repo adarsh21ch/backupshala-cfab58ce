@@ -15,6 +15,7 @@ const adminNav = [
   { to: '/admin/commissions', label: 'Commissions', icon: IndianRupee },
   { to: '/admin/payouts', label: 'Payouts', icon: Wallet },
   { to: '/admin/support', label: 'Support', icon: MessageSquare },
+  { to: '/admin/creator-pro', label: 'Creator Pro', icon: Star },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
