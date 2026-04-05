@@ -49,8 +49,11 @@ import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
 import AdminVideos from "./pages/admin/AdminVideos";
 import CreatorVideos from "./pages/creator/CreatorVideos";
 import CreatorSettings from "./pages/creator/CreatorSettings";
+import CreatorUnlockRequests from "./pages/creator/CreatorUnlockRequests";
+import CreatorUpgrade from "./pages/creator/CreatorUpgrade";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
+import AdminCreatorPro from "./pages/admin/AdminCreatorPro";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,6 +116,8 @@ const App = () => (
             <Route path="/creator/profile" element={<CreatorRoute><CreatorProfileEdit /></CreatorRoute>} />
             <Route path="/creator/videos" element={<CreatorRoute><CreatorVideos /></CreatorRoute>} />
             <Route path="/creator/settings" element={<CreatorRoute><CreatorSettings /></CreatorRoute>} />
+            <Route path="/creator/unlock-requests" element={<CreatorRoute><CreatorUnlockRequests /></CreatorRoute>} />
+            <Route path="/creator/upgrade" element={<CreatorRoute><CreatorUpgrade /></CreatorRoute>} />
 
             {/* Admin panel */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
@@ -126,6 +131,7 @@ const App = () => (
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
             <Route path="/admin/videos" element={<AdminRoute><AdminVideos /></AdminRoute>} />
+            <Route path="/admin/creator-pro" element={<AdminRoute><AdminCreatorPro /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -15,9 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import PriceBreakdown from '@/components/PriceBreakdown';
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Link2, FolderOpen, Info } from 'lucide-react';
+import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Link2, FolderOpen, Info, Lock } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import GateSettingsForm from '@/components/module/GateSettingsForm';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -67,6 +68,103 @@ const CourseBuilder = () => {
   const [mModuleType, setMModuleType] = useState<'video' | 'resource' | 'community'>('video');
   const [mResources, setMResources] = useState<any[]>([]);
   const [mVideoSource, setMVideoSource] = useState<'youtube' | 'gallery'>('youtube');
+
+  // Gate settings state (per-module, edited in gate tab)
+  const [gateModuleId, setGateModuleId] = useState<string | null>(null);
+  const [gsSequential, setGsSequential] = useState(false);
+  const [gsAudioNote, setGsAudioNote] = useState(false);
+  const [gsAudioLabel, setGsAudioLabel] = useState('Message from your mentor');
+  const [gsAudioPosition, setGsAudioPosition] = useState('before');
+  const [gsMentorGate, setGsMentorGate] = useState(false);
+  const [gsMentorMessage, setGsMentorMessage] = useState('');
+  const [gsContactType, setGsContactType] = useState('whatsapp');
+  const [gsZoomLink, setGsZoomLink] = useState('');
+  const [savingGate, setSavingGate] = useState(false);
+
+  const { data: proSub } = useQuery({
+    queryKey: ['creator-pro-sub', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('creator_pro_subscriptions')
+        .select('plan, status')
+        .eq('creator_id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isPro = !!proSub && (proSub.plan === 'pro' || proSub.plan === 'trial') && proSub.status === 'active';
+
+  const { data: gateSettings } = useQuery({
+    queryKey: ['gate-settings', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('module_gate_settings')
+        .select('*')
+        .eq('course_id', id!);
+      return data || [];
+    },
+    enabled: !!id && isPro,
+  });
+
+  const loadGateForModule = (moduleId: string) => {
+    setGateModuleId(moduleId);
+    const existing = gateSettings?.find((g: any) => g.module_id === moduleId);
+    if (existing) {
+      setGsSequential(existing.is_sequential);
+      setGsAudioNote(existing.has_audio_note);
+      setGsAudioLabel(existing.audio_note_label || 'Message from your mentor');
+      setGsAudioPosition(existing.audio_note_position || 'before');
+      setGsMentorGate(existing.has_mentor_gate);
+      setGsMentorMessage(existing.mentor_gate_message || '');
+      setGsContactType(existing.mentor_contact_type || 'whatsapp');
+      setGsZoomLink(existing.zoom_link || '');
+    } else {
+      setGsSequential(false); setGsAudioNote(false); setGsAudioLabel('Message from your mentor');
+      setGsAudioPosition('before'); setGsMentorGate(false); setGsMentorMessage('');
+      setGsContactType('whatsapp'); setGsZoomLink('');
+    }
+  };
+
+  const saveGateSettings = async () => {
+    if (!gateModuleId || !id) return;
+    setSavingGate(true);
+    try {
+      const gateData = {
+        module_id: gateModuleId,
+        course_id: id,
+        creator_id: user!.id,
+        is_sequential: gsSequential,
+        has_audio_note: gsAudioNote,
+        audio_note_label: gsAudioLabel,
+        audio_note_position: gsAudioPosition,
+        has_mentor_gate: gsMentorGate,
+        mentor_gate_message: gsMentorMessage,
+        mentor_contact_type: gsContactType,
+        zoom_link: gsContactType === 'zoom' ? gsZoomLink : null,
+        updated_at: new Date().toISOString(),
+      };
+
+      await supabase.from('module_gate_settings').upsert(gateData, { onConflict: 'module_id' });
+
+      // Update module is_gated flag
+      const gateType = gsMentorGate && gsSequential ? 'both' : gsMentorGate ? 'mentor' : gsSequential ? 'sequential' : null;
+      await supabase.from('modules').update({
+        is_gated: gsSequential || gsMentorGate,
+        gate_type: gateType,
+      }).eq('id', gateModuleId);
+
+      queryClient.invalidateQueries({ queryKey: ['gate-settings', id] });
+      queryClient.invalidateQueries({ queryKey: ['creator-course-edit', id] });
+      toast({ title: 'Gate settings saved ✓' });
+    } catch (err: any) {
+      toast({ title: 'Failed to save gate settings', variant: 'destructive' });
+    } finally {
+      setSavingGate(false);
+    }
+  };
 
   const platformFeePercent = platformSettings?.platform_fee_percent ?? 15;
   const maxCommission = 100 - platformFeePercent;
@@ -288,6 +386,7 @@ const CourseBuilder = () => {
             <TabsTrigger value="modules" className="rounded-md text-xs">Modules ({modules.length})</TabsTrigger>
             <TabsTrigger value="pricing" className="rounded-md text-xs">Pricing</TabsTrigger>
             <TabsTrigger value="video-settings" className="rounded-md text-xs">Video Settings</TabsTrigger>
+            <TabsTrigger value="gate-settings" className="rounded-md text-xs">🔒 Gate Settings</TabsTrigger>
             <TabsTrigger value="publish" className="rounded-md text-xs">Publish</TabsTrigger>
           </TabsList>
 
@@ -771,6 +870,73 @@ const CourseBuilder = () => {
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Settings'}
               </Button>
             </div>
+          </TabsContent>
+
+          {/* Gate Settings */}
+          <TabsContent value="gate-settings" className="mt-4 space-y-4">
+            {!isNew && modules.length > 0 ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Select a module to configure gates</p>
+                  <div className="space-y-2">
+                    {modules.map((m: any, i: number) => {
+                      const hasGate = gateSettings?.some((g: any) => g.module_id === m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => loadGateForModule(m.id)}
+                          className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                            gateModuleId === m.id
+                              ? 'border-accent bg-accent/5'
+                              : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{m.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {i === 0 ? 'First module (always unlocked)' : hasGate ? '🔒 Has gate settings' : 'No gate'}
+                            </p>
+                          </div>
+                          {hasGate && <Lock className="h-4 w-4 text-accent shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {gateModuleId && modules.findIndex((m: any) => m.id === gateModuleId) === 0 ? (
+                  <div className="rounded-xl border border-border bg-card p-6 text-center">
+                    <p className="text-sm text-muted-foreground">The first module is always accessible — no gate settings needed.</p>
+                  </div>
+                ) : gateModuleId ? (
+                  <div className="space-y-4">
+                    <GateSettingsForm
+                      isPro={isPro}
+                      isSequential={gsSequential} setIsSequential={setGsSequential}
+                      hasAudioNote={gsAudioNote} setHasAudioNote={setGsAudioNote}
+                      audioNoteLabel={gsAudioLabel} setAudioNoteLabel={setGsAudioLabel}
+                      audioNotePosition={gsAudioPosition} setAudioNotePosition={setGsAudioPosition}
+                      hasMentorGate={gsMentorGate} setHasMentorGate={setGsMentorGate}
+                      mentorGateMessage={gsMentorMessage} setMentorGateMessage={setGsMentorMessage}
+                      mentorContactType={gsContactType} setMentorContactType={setGsContactType}
+                      zoomLink={gsZoomLink} setZoomLink={setGsZoomLink}
+                    />
+                    {isPro && (
+                      <Button onClick={saveGateSettings} disabled={savingGate} className="rounded-md bg-primary hover:bg-primary/90">
+                        {savingGate ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Gate Settings'}
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border p-8 text-center">
+                <Lock className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground">Save the course and add modules first</p>
+                <p className="text-xs text-muted-foreground mt-1">Then configure gate settings per module.</p>
+              </div>
+            )}
           </TabsContent>
 
           {/* Publish */}

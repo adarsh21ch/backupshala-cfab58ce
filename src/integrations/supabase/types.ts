@@ -412,6 +412,62 @@ export type Database = {
           },
         ]
       }
+      creator_pro_subscriptions: {
+        Row: {
+          amount_per_month: number | null
+          created_at: string | null
+          creator_id: string
+          currency: string | null
+          id: string
+          plan: string
+          pro_ends_at: string | null
+          pro_started_at: string | null
+          razorpay_subscription_id: string | null
+          status: string
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_per_month?: number | null
+          created_at?: string | null
+          creator_id: string
+          currency?: string | null
+          id?: string
+          plan?: string
+          pro_ends_at?: string | null
+          pro_started_at?: string | null
+          razorpay_subscription_id?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_per_month?: number | null
+          created_at?: string | null
+          creator_id?: string
+          currency?: string | null
+          id?: string
+          plan?: string
+          pro_ends_at?: string | null
+          pro_started_at?: string | null
+          razorpay_subscription_id?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_pro_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_video_settings: {
         Row: {
           allow_forward_seeking: boolean
@@ -569,6 +625,103 @@ export type Database = {
           },
         ]
       }
+      mentor_unlock_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          completed_module_id: string
+          contact_method: string | null
+          course_id: string
+          created_at: string | null
+          id: string
+          locked_module_id: string
+          mentor_email: string
+          mentor_user_id: string | null
+          rejection_reason: string | null
+          status: string
+          student_contacted_at: string | null
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_module_id: string
+          contact_method?: string | null
+          course_id: string
+          created_at?: string | null
+          id?: string
+          locked_module_id: string
+          mentor_email: string
+          mentor_user_id?: string | null
+          rejection_reason?: string | null
+          status?: string
+          student_contacted_at?: string | null
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_module_id?: string
+          contact_method?: string | null
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          locked_module_id?: string
+          mentor_email?: string
+          mentor_user_id?: string | null
+          rejection_reason?: string | null
+          status?: string
+          student_contacted_at?: string | null
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_unlock_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentor_unlock_requests_completed_module_id_fkey"
+            columns: ["completed_module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentor_unlock_requests_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentor_unlock_requests_locked_module_id_fkey"
+            columns: ["locked_module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentor_unlock_requests_mentor_user_id_fkey"
+            columns: ["mentor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentor_unlock_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_completions: {
         Row: {
           completed_at: string
@@ -615,6 +768,85 @@ export type Database = {
           },
         ]
       }
+      module_gate_settings: {
+        Row: {
+          audio_note_duration_seconds: number | null
+          audio_note_label: string | null
+          audio_note_position: string | null
+          audio_note_r2_key: string | null
+          course_id: string
+          created_at: string | null
+          creator_id: string
+          has_audio_note: boolean
+          has_mentor_gate: boolean
+          id: string
+          is_sequential: boolean
+          mentor_contact_type: string | null
+          mentor_gate_message: string | null
+          module_id: string
+          updated_at: string | null
+          zoom_link: string | null
+        }
+        Insert: {
+          audio_note_duration_seconds?: number | null
+          audio_note_label?: string | null
+          audio_note_position?: string | null
+          audio_note_r2_key?: string | null
+          course_id: string
+          created_at?: string | null
+          creator_id: string
+          has_audio_note?: boolean
+          has_mentor_gate?: boolean
+          id?: string
+          is_sequential?: boolean
+          mentor_contact_type?: string | null
+          mentor_gate_message?: string | null
+          module_id: string
+          updated_at?: string | null
+          zoom_link?: string | null
+        }
+        Update: {
+          audio_note_duration_seconds?: number | null
+          audio_note_label?: string | null
+          audio_note_position?: string | null
+          audio_note_r2_key?: string | null
+          course_id?: string
+          created_at?: string | null
+          creator_id?: string
+          has_audio_note?: boolean
+          has_mentor_gate?: boolean
+          id?: string
+          is_sequential?: boolean
+          mentor_contact_type?: string | null
+          mentor_gate_message?: string | null
+          module_id?: string
+          updated_at?: string | null
+          zoom_link?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_gate_settings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_gate_settings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_gate_settings_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: true
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           backupshala_video_link: string | null
@@ -623,7 +855,9 @@ export type Database = {
           created_at: string
           description: string | null
           duration_minutes: number | null
+          gate_type: string | null
           id: string
+          is_gated: boolean | null
           is_preview: boolean | null
           module_type: string | null
           order_index: number | null
@@ -640,7 +874,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          gate_type?: string | null
           id?: string
+          is_gated?: boolean | null
           is_preview?: boolean | null
           module_type?: string | null
           order_index?: number | null
@@ -657,7 +893,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          gate_type?: string | null
           id?: string
+          is_gated?: boolean | null
           is_preview?: boolean | null
           module_type?: string | null
           order_index?: number | null
@@ -908,6 +1146,7 @@ export type Database = {
           id: string
           is_admin: boolean
           is_creator: boolean
+          is_creator_pro: boolean | null
           phone: string | null
           referrer_email: string
           total_earned: number
@@ -932,6 +1171,7 @@ export type Database = {
           id: string
           is_admin?: boolean
           is_creator?: boolean
+          is_creator_pro?: boolean | null
           phone?: string | null
           referrer_email?: string
           total_earned?: number
@@ -956,6 +1196,7 @@ export type Database = {
           id?: string
           is_admin?: boolean
           is_creator?: boolean
+          is_creator_pro?: boolean | null
           phone?: string | null
           referrer_email?: string
           total_earned?: number

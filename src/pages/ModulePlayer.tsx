@@ -6,11 +6,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useCallback } from 'react';
 import ResourceModuleView from '@/components/module/ResourceModuleView';
 import CommunityModuleView from '@/components/module/CommunityModuleView';
+import { SequentialLockScreen, MentorGateScreen, WaitingMentorScreen } from '@/components/module/GateScreens';
+import AudioNotePlayer from '@/components/module/AudioNotePlayer';
 
 const moduleTypeIcon = (type: string) => {
   if (type === 'resource') return <BookOpen className="h-3 w-3" />;
@@ -25,6 +27,21 @@ const ModulePlayer = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showMentorGate, setShowMentorGate] = useState(false);
+
+  // Check module access (gate system)
+  const { data: accessCheck, isLoading: accessLoading } = useQuery({
+    queryKey: ['module-access', moduleId, courseId],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('check-module-access', {
+        body: { module_id: moduleId, course_id: courseId },
+      });
+      if (error) return { canAccess: true }; // fail open
+      return data;
+    },
+    enabled: !!moduleId && !!courseId && !!user,
+    staleTime: 30000,
+  });
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ['course-detail', courseId],
@@ -90,7 +107,25 @@ const ModulePlayer = () => {
     }
   }, [isCompleted, markComplete]);
 
-  if (courseLoading) return (
+  const handleMentorContact = useCallback(async (method: string) => {
+    if (!moduleId || !courseId || !currentModule) return;
+    const prevMod = currentIndex > 0 ? modules[currentIndex - 1] : null;
+    await supabase.functions.invoke('request-module-unlock', {
+      body: {
+        module_id: moduleId,
+        completed_module_id: prevMod?.id || moduleId,
+        course_id: courseId,
+        contact_method: method,
+      },
+    });
+    queryClient.invalidateQueries({ queryKey: ['module-access', moduleId] });
+  }, [moduleId, courseId, currentIndex, modules, queryClient, currentModule]);
+
+  const handleAlreadyContacted = useCallback(async () => {
+    await handleMentorContact('manual');
+  }, [handleMentorContact]);
+
+  if (courseLoading || accessLoading) return (
     <DashboardLayout>
       <div className="space-y-4">
         <Skeleton className="h-6 w-48" />
@@ -107,6 +142,70 @@ const ModulePlayer = () => {
       </div>
     </DashboardLayout>
   );
+
+  // Gate screens
+  if (accessCheck && !accessCheck.canAccess) {
+    const gateInfo = accessCheck.gateInfo;
+
+    if (accessCheck.reason === 'previous_incomplete') {
+      return (
+        <DashboardLayout>
+          <div className="max-w-2xl mx-auto">
+            <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+              <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+            </Link>
+            <SequentialLockScreen
+              previousModuleTitle={gateInfo?.previousModuleTitle || 'Previous Module'}
+              previousModuleId={gateInfo?.previousModuleId || ''}
+              courseId={courseId!}
+              currentModuleIndex={currentIndex}
+              totalModules={modules.length}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    if (accessCheck.reason === 'mentor_approval_needed') {
+      return (
+        <DashboardLayout>
+          <div className="max-w-2xl mx-auto">
+            <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+              <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+            </Link>
+            <MentorGateScreen
+              mentorName={gateInfo?.mentorName}
+              mentorPhone={gateInfo?.mentorPhone}
+              mentorEmail={gateInfo?.mentorEmail || ''}
+              gateMessage={gateInfo?.message || ''}
+              contactType={gateInfo?.contactType || 'whatsapp'}
+              zoomLink={gateInfo?.zoomLink}
+              onContact={handleMentorContact}
+              onAlreadyContacted={handleAlreadyContacted}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    if (accessCheck.reason === 'waiting_mentor') {
+      return (
+        <DashboardLayout>
+          <div className="max-w-2xl mx-auto">
+            <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+              <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+            </Link>
+            <WaitingMentorScreen
+              moduleName={currentModule?.title || 'Module'}
+              status={gateInfo?.status || 'waiting'}
+              contactedAt={gateInfo?.contactedAt}
+              courseId={courseId!}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+  }
 
   if (showCelebration) return (
     <DashboardLayout>
@@ -134,6 +233,16 @@ const ModulePlayer = () => {
             <Progress value={overallProgress} className="h-1.5 flex-1" />
             <span className="text-xs font-medium text-muted-foreground">{overallProgress}%</span>
           </div>
+
+          {/* Audio note — before video */}
+          {accessCheck?.hasAudioNote && accessCheck?.audioPosition === 'before' && accessCheck?.audioR2Key && (
+            <AudioNotePlayer
+              label={accessCheck.audioLabel || 'Message from your mentor'}
+              audioUrl={accessCheck.audioR2Key}
+              duration={accessCheck.audioDuration || 0}
+              position="before"
+            />
+          )}
 
           {/* Content based on module type */}
           {moduleType === 'resource' ? (
@@ -222,8 +331,8 @@ const ModulePlayer = () => {
                     to={`/courses/${courseId}/module/${m.id}`}
                     className={`flex items-center gap-3 p-3 text-xs transition-colors hover:bg-secondary/50 ${isCurrent ? 'bg-primary/5 border-l-2 border-primary' : ''}`}
                   >
-                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold ${done ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>
-                      {done ? '✓' : moduleTypeIcon(mType)}
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold ${done ? 'bg-primary/20 text-primary' : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? 'bg-accent/20 text-accent' : 'bg-secondary text-muted-foreground'}`}>
+                      {done ? '✓' : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? <Lock className="h-3 w-3" /> : moduleTypeIcon(mType)}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className={`truncate font-medium ${isCurrent ? 'text-primary' : ''}`}>{m.title}</p>

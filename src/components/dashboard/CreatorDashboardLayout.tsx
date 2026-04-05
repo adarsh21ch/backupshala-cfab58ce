@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Users, IndianRupee, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Film, Settings } from 'lucide-react';
+import { Bell, BookOpen, Users, IndianRupee, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Film, Settings, Unlock, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
-const creatorNav = [
+const baseCreatorNav = [
   { to: '/creator/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/creator/courses', label: 'My Courses', icon: BookOpen },
   { to: '/creator/videos', label: 'Video Gallery', icon: Film },
@@ -30,6 +31,28 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const { data: proSub } = useQuery({
+    queryKey: ['creator-pro-sub', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('creator_pro_subscriptions')
+        .select('plan, status')
+        .eq('creator_id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isPro = proSub && (proSub.plan === 'pro' || proSub.plan === 'trial') && proSub.status === 'active';
+
+  const creatorNav = [
+    ...baseCreatorNav,
+    ...(isPro ? [{ to: '/creator/unlock-requests', label: '🔓 Unlock Requests', icon: Unlock }] : []),
+    ...(!isPro ? [{ to: '/creator/upgrade', label: '⭐ Upgrade to Pro', icon: Star }] : []),
+  ];
 
   useEffect(() => {
     if (!user) return;
