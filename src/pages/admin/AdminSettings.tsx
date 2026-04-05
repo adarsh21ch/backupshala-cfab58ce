@@ -7,9 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { Save, AlertTriangle, Film } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
+import { Save, AlertTriangle } from 'lucide-react';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
