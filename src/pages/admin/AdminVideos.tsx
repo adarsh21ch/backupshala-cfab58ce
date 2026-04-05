@@ -270,6 +270,9 @@ const AdminVideos = () => {
               {requests?.length === 0 && <p className="text-center text-muted-foreground py-8">No requests found.</p>}
             </div>
           </TabsContent>
+          <TabsContent value="folders" className="mt-4">
+            <AdminFoldersTab />
+          </TabsContent>
         </Tabs>
 
         {/* Upload Modal */}
