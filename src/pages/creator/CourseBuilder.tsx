@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import PriceBreakdown from '@/components/PriceBreakdown';
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Link2, FolderOpen, Info } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 
@@ -59,6 +59,7 @@ const CourseBuilder = () => {
   const [mIsPreview, setMIsPreview] = useState(false);
   const [mModuleType, setMModuleType] = useState<'video' | 'resource' | 'community'>('video');
   const [mResources, setMResources] = useState<any[]>([]);
+  const [mVideoSource, setMVideoSource] = useState<'youtube' | 'gallery'>('youtube');
 
   const platformFeePercent = platformSettings?.platform_fee_percent ?? 15;
   const maxCommission = 100 - platformFeePercent;
@@ -130,7 +131,6 @@ const CourseBuilder = () => {
         total_modules: modules.length,
       };
 
-      // Lock in platform fee for new courses
       if (isNew) {
         courseData.platform_fee_percent = platformFeePercent;
       }
@@ -142,7 +142,6 @@ const CourseBuilder = () => {
         navigate(`/creator/courses/${data.id}/edit`, { replace: true });
         return data.id;
       } else {
-        // For published courses changing price/commission -> trigger review
         if (status === 'published' && course) {
           const priceChanged = priceNum !== course.price;
           const commChanged = commissionPercent !== course.commission_percent;
@@ -215,7 +214,7 @@ const CourseBuilder = () => {
   const resetModuleForm = () => {
     setEditingModule(null);
     setMTitle(''); setMDesc(''); setMVideoUrl(''); setMDuration(''); setMIsPreview(false);
-    setMModuleType('video'); setMResources([]);
+    setMModuleType('video'); setMResources([]); setMVideoSource('youtube');
   };
 
   const openEditModule = (m: any) => {
@@ -223,6 +222,7 @@ const CourseBuilder = () => {
     setMTitle(m.title); setMDesc(m.description || ''); setMVideoUrl(m.video_url || '');
     setMDuration(String(m.duration_minutes || '')); setMIsPreview(m.is_preview || false);
     setMModuleType(m.module_type || 'video'); setMResources(m.resources || []);
+    setMVideoSource(m.video_url?.includes('youtube') ? 'youtube' : 'youtube');
     setModuleDialogOpen(true);
   };
 
@@ -250,6 +250,12 @@ const CourseBuilder = () => {
   const allChecked = checks.every(c => c.ok);
 
   const enrollmentUrl = `${window.location.origin}/c/${profile?.creator_slug}/${slug}`;
+
+  const moduleTypeCards = [
+    { value: 'video' as const, label: 'Video Lesson', desc: 'Add a video for students to watch', icon: Play, emoji: '▶️' },
+    { value: 'resource' as const, label: 'Resource Library', desc: 'Curated links & YouTube resources', icon: BookOpen, emoji: '📚' },
+    { value: 'community' as const, label: 'Community Module', desc: 'Community & Telegram access', icon: Users2, emoji: '👥' },
+  ];
 
   return (
     <CreatorDashboardLayout>
@@ -289,7 +295,7 @@ const CourseBuilder = () => {
                 <Label>Full Description</Label>
                 <Textarea value={fullDesc} onChange={e => setFullDesc(e.target.value)} className="mt-1 rounded-lg min-h-[120px]" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <Label>Category</Label>
                   <Select value={category} onValueChange={setCategory}>
@@ -350,90 +356,163 @@ const CourseBuilder = () => {
             </div>
           </TabsContent>
 
-          {/* Modules */}
+          {/* Modules — Redesigned */}
           <TabsContent value="modules" className="mt-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-base font-600">Modules</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-heading text-lg font-600">Modules ({modules.length})</h2>
                 <Dialog open={moduleDialogOpen} onOpenChange={(open) => { setModuleDialogOpen(open); if (!open) resetModuleForm(); }}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="rounded-md" disabled={isNew && !id}><Plus className="h-4 w-4 mr-1" /> Add Module</Button>
+                    <Button size="sm" className="rounded-lg bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isNew && !id}>
+                      <Plus className="h-4 w-4 mr-1" /> Add Module
+                    </Button>
                   </DialogTrigger>
-                  <DialogContent className="dark bg-card border-border max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>{editingModule ? 'Edit Module' : 'Add Module'}</DialogTitle></DialogHeader>
-                    <div className="space-y-3">
-                      {/* Module Type Selector */}
+                  <DialogContent className="dark bg-card border-border max-w-xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="font-heading text-lg">{editingModule ? 'Edit Module' : 'Add Module'}</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-5">
+                      {/* Module Type — Visual Cards */}
                       <div>
-                        <Label>Module Type</Label>
-                        <div className="flex gap-2 mt-1">
-                          {[
-                            { value: 'video' as const, label: '▶️ Video Lesson' },
-                            { value: 'resource' as const, label: '📚 Resource Library' },
-                            { value: 'community' as const, label: '👥 Community Module' },
-                          ].map(t => (
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">What type of module is this?</p>
+                        <div className="grid grid-cols-3 gap-3">
+                          {moduleTypeCards.map(t => (
                             <button key={t.value} onClick={() => setMModuleType(t.value)}
-                              className={`flex-1 rounded-lg border p-2 text-xs font-medium transition-colors ${mModuleType === t.value ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-foreground/20'}`}>
-                              {t.label}
+                              className={`group flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all ${
+                                mModuleType === t.value
+                                  ? 'border-accent bg-accent/5 shadow-sm shadow-accent/10'
+                                  : 'border-border hover:border-muted-foreground/30'
+                              }`}>
+                              <span className="text-2xl">{t.emoji}</span>
+                              <span className={`text-xs font-semibold font-heading ${mModuleType === t.value ? 'text-accent' : 'text-foreground'}`}>{t.label}</span>
+                              <span className="text-[10px] text-muted-foreground leading-tight">{t.desc}</span>
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      <div><Label>Title *</Label><Input value={mTitle} onChange={e => setMTitle(e.target.value)} className="mt-1 rounded-lg" /></div>
-                      <div><Label>Description</Label><Textarea value={mDesc} onChange={e => setMDesc(e.target.value)} className="mt-1 rounded-lg" /></div>
+                      {/* Title */}
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">📝 Module Title</p>
+                        <Input
+                          value={mTitle} onChange={e => setMTitle(e.target.value)}
+                          placeholder={mModuleType === 'video' ? 'e.g. "How Instagram Algorithm Works"' : mModuleType === 'resource' ? 'e.g. "Best Video Editing Resources"' : 'e.g. "Join Our Community"'}
+                          className="rounded-lg"
+                        />
+                      </div>
 
+                      {/* Video Lesson Fields */}
                       {mModuleType === 'video' && (
                         <>
-                          <div><Label>YouTube Embed URL *</Label><Input value={mVideoUrl} onChange={e => setMVideoUrl(e.target.value)} placeholder="https://www.youtube.com/embed/..." className="mt-1 rounded-lg" /></div>
-                          <div><Label>Duration (minutes)</Label><Input type="number" value={mDuration} onChange={e => setMDuration(e.target.value)} className="mt-1 rounded-lg" /></div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">🎬 Video Source</p>
+                            <p className="text-xs text-muted-foreground mb-3">How do you want to add the video?</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <button onClick={() => setMVideoSource('gallery')}
+                                className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all ${mVideoSource === 'gallery' ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'}`}>
+                                <FolderOpen className={`h-5 w-5 ${mVideoSource === 'gallery' ? 'text-accent' : 'text-muted-foreground'}`} />
+                                <span className="text-xs font-semibold">From Video Gallery</span>
+                                <span className="text-[10px] text-muted-foreground">Pick an uploaded video</span>
+                              </button>
+                              <button onClick={() => setMVideoSource('youtube')}
+                                className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all ${mVideoSource === 'youtube' ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'}`}>
+                                <Link2 className={`h-5 w-5 ${mVideoSource === 'youtube' ? 'text-accent' : 'text-muted-foreground'}`} />
+                                <span className="text-xs font-semibold">YouTube Embed URL</span>
+                                <span className="text-[10px] text-muted-foreground">Paste a YouTube embed URL</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {mVideoSource === 'youtube' && (
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">🔗 YouTube Embed URL</p>
+                              <Input
+                                value={mVideoUrl} onChange={e => setMVideoUrl(e.target.value)}
+                                placeholder="https://www.youtube.com/embed/VIDEO_ID_HERE"
+                                className="rounded-lg font-mono text-xs"
+                              />
+                              <div className="mt-3 rounded-lg bg-secondary/50 border border-border p-3 space-y-1.5">
+                                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                                  <Info className="h-3 w-3" /> How to get this URL:
+                                </p>
+                                <ol className="text-[11px] text-muted-foreground space-y-0.5 pl-4 list-decimal">
+                                  <li>Open your YouTube video</li>
+                                  <li>Click <span className="font-medium text-foreground">Share → Embed</span></li>
+                                  <li>Copy the URL from <code className="text-[10px] bg-secondary px-1 rounded">src="..."</code> — starts with <code className="text-[10px] bg-secondary px-1 rounded">https://www.youtube.com/embed/</code></li>
+                                  <li>Paste it above</li>
+                                </ol>
+                                <p className="text-[11px] text-accent flex items-center gap-1 mt-1">
+                                  <AlertTriangle className="h-3 w-3" /> Make sure your video is set to <span className="font-semibold">Unlisted</span> on YouTube
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {mVideoSource === 'gallery' && (
+                            <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                              <FolderOpen className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                              <p className="text-xs text-muted-foreground">Video gallery picker coming soon.</p>
+                              <p className="text-[10px] text-muted-foreground mt-1">For now, use YouTube Embed URL.</p>
+                            </div>
+                          )}
                         </>
                       )}
 
+                      {/* Resource Library Fields */}
                       {mModuleType === 'resource' && (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <Label>Resources ({mResources.length}/20)</Label>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">🔗 Resources ({mResources.length}/20)</p>
                             {mResources.length < 20 && (
-                              <Button variant="ghost" size="sm" onClick={() => setMResources([...mResources, { id: crypto.randomUUID(), title: '', url: '', type: 'youtube', description: '' }])}>
+                              <Button variant="ghost" size="sm" className="text-accent hover:text-accent text-xs"
+                                onClick={() => setMResources([...mResources, { id: crypto.randomUUID(), title: '', url: '', type: 'youtube', description: '' }])}>
                                 <Plus className="h-3 w-3 mr-1" /> Add Resource
                               </Button>
                             )}
                           </div>
+                          <p className="text-[11px] text-muted-foreground -mt-1">Add YouTube videos, podcasts, articles, or tools</p>
                           {mResources.map((r: any, i: number) => (
                             <div key={r.id} className="rounded-lg border border-border p-3 space-y-2">
-                              <div className="flex gap-2">
-                                <Input value={r.title} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], title: e.target.value }; setMResources(a); }} placeholder="Title" className="rounded-lg text-xs" />
-                                <select value={r.type} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], type: e.target.value }; setMResources(a); }}
-                                  className="rounded-lg border border-input bg-background px-2 text-xs">
-                                  <option value="youtube">YouTube</option>
-                                  <option value="podcast">Podcast</option>
-                                  <option value="article">Article</option>
-                                  <option value="tool">Tool</option>
-                                  <option value="other">Other</option>
-                                </select>
-                                <Button variant="ghost" size="sm" onClick={() => setMResources(mResources.filter((_: any, j: number) => j !== i))} className="text-destructive shrink-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] font-semibold text-muted-foreground">Resource {i + 1}</span>
+                                <Button variant="ghost" size="sm" onClick={() => setMResources(mResources.filter((_: any, j: number) => j !== i))} className="text-destructive h-6 w-6 p-0">
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
+                              <Input value={r.title} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], title: e.target.value }; setMResources(a); }} placeholder="Title" className="rounded-lg text-xs" />
                               <Input value={r.url} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], url: e.target.value }; setMResources(a); }} placeholder="URL" className="rounded-lg text-xs" />
-                              <Input value={r.description || ''} onChange={e => { const a = [...mResources]; a[i] = { ...a[i], description: e.target.value }; setMResources(a); }} placeholder="Description (optional)" className="rounded-lg text-xs" />
+                              <div className="flex gap-2">
+                                {['youtube', 'podcast', 'article', 'tool'].map(type => (
+                                  <button key={type} onClick={() => { const a = [...mResources]; a[i] = { ...a[i], type }; setMResources(a); }}
+                                    className={`rounded-full px-3 py-1 text-[10px] font-medium transition-colors ${r.type === type ? 'bg-accent/10 text-accent' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           ))}
+                          {mResources.length === 0 && (
+                            <div className="rounded-lg border border-dashed border-border p-4 text-center">
+                              <p className="text-xs text-muted-foreground">No resources yet. Click "Add Resource" above.</p>
+                            </div>
+                          )}
                         </div>
                       )}
 
+                      {/* Community Module Fields */}
                       {mModuleType === 'community' && (
-                        <div className="space-y-2">
-                          <p className="text-xs text-muted-foreground">Add community links for this module. Leave empty to use platform defaults.</p>
+                        <div className="space-y-3">
+                          <p className="text-[11px] text-muted-foreground">Leave empty to use platform default community links</p>
                           {[
-                            { label: 'Telegram Link', key: 'telegram' },
-                            { label: 'WhatsApp Link', key: 'whatsapp' },
-                            { label: 'Discord Link', key: 'discord' },
+                            { label: '📱 Telegram Group Link', key: 'telegram', placeholder: 'https://t.me/...' },
+                            { label: '💬 WhatsApp Community Link', key: 'whatsapp', placeholder: 'https://chat.whatsapp.com/...' },
+                            { label: '🎮 Discord Link', key: 'discord', placeholder: 'https://discord.gg/...' },
                           ].map(cl => {
                             const existing = mResources.find((r: any) => r.title?.toLowerCase().includes(cl.key));
                             return (
                               <div key={cl.key}>
-                                <Label className="text-xs">{cl.label}</Label>
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">{cl.label} <span className="font-normal">(optional)</span></p>
                                 <Input
                                   value={existing?.url || ''}
                                   onChange={e => {
@@ -443,49 +522,100 @@ const CourseBuilder = () => {
                                     }
                                     setMResources(filtered);
                                   }}
-                                  placeholder={`https://...`}
-                                  className="mt-1 rounded-lg text-xs"
+                                  placeholder={cl.placeholder}
+                                  className="rounded-lg text-xs"
                                 />
                               </div>
                             );
                           })}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">📝 Custom Message <span className="font-normal">(optional)</span></p>
+                            <Textarea
+                              value={mDesc} onChange={e => setMDesc(e.target.value)}
+                              placeholder="Tell students what they'll find in this community..."
+                              className="rounded-lg text-xs min-h-[60px]"
+                            />
+                          </div>
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2">
+                      {/* Description — for video & resource only */}
+                      {mModuleType !== 'community' && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">📝 Description <span className="font-normal normal-case">(optional)</span></p>
+                          <Textarea
+                            value={mDesc} onChange={e => setMDesc(e.target.value)}
+                            placeholder="What will students learn in this module?"
+                            className="rounded-lg text-xs min-h-[60px]"
+                          />
+                        </div>
+                      )}
+
+                      {/* Duration — for video only */}
+                      {mModuleType === 'video' && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">⏱️ Duration (minutes)</p>
+                          <Input type="number" value={mDuration} onChange={e => setMDuration(e.target.value)} placeholder="0" className="rounded-lg w-32" />
+                        </div>
+                      )}
+
+                      {/* Preview Toggle */}
+                      <div className="flex items-center gap-3 rounded-lg bg-secondary/30 p-3">
                         <Switch checked={mIsPreview} onCheckedChange={setMIsPreview} />
-                        <Label>Preview module (accessible without enrollment)</Label>
+                        <div>
+                          <p className="text-xs font-semibold">👁️ Preview Module</p>
+                          <p className="text-[10px] text-muted-foreground">Allow non-enrolled users to view this module</p>
+                        </div>
                       </div>
-                      <Button onClick={saveModule} className="w-full rounded-md">{editingModule ? 'Update Module' : 'Add Module'}</Button>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-2">
+                        <Button variant="outline" className="flex-1 rounded-lg" onClick={() => { setModuleDialogOpen(false); resetModuleForm(); }}>
+                          Cancel
+                        </Button>
+                        <Button onClick={saveModule} className="flex-1 rounded-lg bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">
+                          {editingModule ? 'Update Module' : 'Add Module'} ✓
+                        </Button>
+                      </div>
                     </div>
                   </DialogContent>
                 </Dialog>
               </div>
 
               {isNew && !id ? (
-                <p className="text-sm text-muted-foreground">Save the course first, then add modules.</p>
+                <div className="rounded-xl border border-dashed border-border p-8 text-center">
+                  <BookOpen className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">Save the course first</p>
+                  <p className="text-xs text-muted-foreground mt-1">Then add modules here.</p>
+                </div>
               ) : modules.length > 0 ? (
                 <div className="space-y-2">
                   {modules.map((m: any, i: number) => (
-                    <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-                      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">{i + 1}</div>
+                    <div key={m.id} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/20 p-3 hover:border-accent/20 transition-colors">
+                      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/40 cursor-grab" />
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xs font-bold text-accent">{i + 1}</div>
+                      <span className="text-base">
+                        {m.module_type === 'resource' ? '📚' : m.module_type === 'community' ? '👥' : '▶️'}
+                      </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{m.title}</p>
                         <div className="flex gap-2 text-xs text-muted-foreground">
-                          <span className={`${m.module_type === 'resource' ? 'text-primary' : m.module_type === 'community' ? 'text-accent' : ''}`}>
-                            {m.module_type === 'resource' ? '📚 Resource' : m.module_type === 'community' ? '👥 Community' : `▶️ ${m.duration_minutes || 0}m`}
-                          </span>
-                          {m.is_preview && <span className="text-accent">Preview</span>}
+                          <span>{m.module_type === 'resource' ? 'Resource Library' : m.module_type === 'community' ? 'Community Module' : `Video Lesson`}</span>
+                          {m.module_type === 'video' && m.duration_minutes > 0 && <span>· {m.duration_minutes}m</span>}
+                          {m.is_preview && <span className="text-accent font-medium">· 👁 Preview</span>}
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => openEditModule(m)}>Edit</Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id)} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEditModule(m)} className="text-xs">✏️</Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id)} className="text-destructive hover:text-destructive text-xs">🗑</Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No modules yet. Add your first module.</p>
+                <div className="rounded-xl border border-dashed border-border p-8 text-center">
+                  <Play className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No modules yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Add your first module to get started.</p>
+                </div>
               )}
             </div>
           </TabsContent>
@@ -494,9 +624,9 @@ const CourseBuilder = () => {
           <TabsContent value="pricing" className="mt-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
               {status === 'published' && (
-                <div className="flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
-                  <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-yellow-400">This course is live. Changing the price or commission will set status back to pending review for admin approval.</p>
+                <div className="flex items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 p-3">
+                  <AlertTriangle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                  <p className="text-xs text-accent">This course is live. Changing the price or commission will set status back to pending review for admin approval.</p>
                 </div>
               )}
 
@@ -516,7 +646,7 @@ const CourseBuilder = () => {
                   <Label>Referral Commission: {commissionPercent}%</Label>
                   <span className="text-xs text-muted-foreground">Referrer earns {formatPrice(Math.round(priceNum * (commissionPercent / 100)))} per enrollment</span>
                 </div>
-                <input type="range" min={0} max={maxCommission} value={commissionPercent} onChange={e => setCommissionPercent(Number(e.target.value))} className="mt-2 w-full accent-primary" />
+                <input type="range" min={0} max={maxCommission} value={commissionPercent} onChange={e => setCommissionPercent(Number(e.target.value))} className="mt-2 w-full accent-accent" />
                 <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>{maxCommission}%</span></div>
               </div>
               {priceNum >= 99 && priceNum <= 9999 && (
@@ -544,7 +674,7 @@ const CourseBuilder = () => {
               </div>
 
               <div className="border-t border-border pt-4">
-                <p className="text-sm">Status: <span className="font-semibold">{status.replace('_', ' ')}</span></p>
+                <p className="text-sm">Status: <span className="font-semibold">{(status || 'draft').replace('_', ' ')}</span></p>
               </div>
 
               {status === 'draft' && (
@@ -557,7 +687,7 @@ const CourseBuilder = () => {
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Enrollment Link:</p>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 font-mono text-xs text-primary truncate">{enrollmentUrl}</div>
+                    <div className="flex-1 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 font-mono text-xs text-accent truncate">{enrollmentUrl}</div>
                     <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(enrollmentUrl); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}>
                       {linkCopied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                     </Button>

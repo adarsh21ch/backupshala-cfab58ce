@@ -16,7 +16,8 @@ import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { VIDEO_CATEGORIES, VIDEO_LANGUAGES } from '@/lib/videoTypes';
-import { Search, Upload, Film, Clock, CheckCircle, XCircle, Loader2, ExternalLink } from 'lucide-react';
+import { Search, Upload, Film, Clock, CheckCircle, XCircle, Loader2, ExternalLink, FolderOpen } from 'lucide-react';
+import AdminFoldersTab from '@/components/admin/AdminFoldersTab';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-500',
@@ -138,6 +139,7 @@ const AdminVideos = () => {
           <TabsList className="bg-secondary">
             <TabsTrigger value="library">Video Library ({assets?.length || 0})</TabsTrigger>
             <TabsTrigger value="requests">Video Requests ({requestStats.pending} pending)</TabsTrigger>
+            <TabsTrigger value="folders" className="gap-1"><FolderOpen className="h-3 w-3" /> Folders</TabsTrigger>
           </TabsList>
 
           <TabsContent value="library" className="space-y-4 mt-4">
@@ -267,6 +269,9 @@ const AdminVideos = () => {
               ))}
               {requests?.length === 0 && <p className="text-center text-muted-foreground py-8">No requests found.</p>}
             </div>
+          </TabsContent>
+          <TabsContent value="folders" className="mt-4">
+            <AdminFoldersTab />
           </TabsContent>
         </Tabs>
 

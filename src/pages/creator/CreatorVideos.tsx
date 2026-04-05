@@ -16,8 +16,9 @@ import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { VIDEO_CATEGORIES, VIDEO_LANGUAGES } from '@/lib/videoTypes';
-import { Search, Film, ExternalLink } from 'lucide-react';
+import { Search, Film, ExternalLink, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
+import CreatorSharedFolders from '@/components/creator/CreatorSharedFolders';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-500',
@@ -112,6 +113,7 @@ const CreatorVideos = () => {
         <Tabs defaultValue="browse">
           <TabsList className="bg-secondary">
             <TabsTrigger value="browse">Browse Library</TabsTrigger>
+            <TabsTrigger value="folders" className="gap-1"><FolderOpen className="h-3 w-3" /> Shared Folders</TabsTrigger>
             <TabsTrigger value="request">Request a Video</TabsTrigger>
           </TabsList>
 
@@ -159,6 +161,10 @@ const CreatorVideos = () => {
                 <p className="text-xs text-muted-foreground">Admin is working on adding content. Request a specific video below.</p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="folders" className="mt-4">
+            <CreatorSharedFolders />
           </TabsContent>
 
           <TabsContent value="request" className="space-y-6 mt-4">

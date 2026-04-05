@@ -458,6 +458,64 @@ export type Database = {
           },
         ]
       }
+      folder_shares: {
+        Row: {
+          folder_id: string
+          id: string
+          is_active: boolean | null
+          message: string | null
+          notification_sent: boolean | null
+          shared_at: string | null
+          shared_by: string
+          shared_with: string | null
+          shared_with_email: string | null
+        }
+        Insert: {
+          folder_id: string
+          id?: string
+          is_active?: boolean | null
+          message?: string | null
+          notification_sent?: boolean | null
+          shared_at?: string | null
+          shared_by: string
+          shared_with?: string | null
+          shared_with_email?: string | null
+        }
+        Update: {
+          folder_id?: string
+          id?: string
+          is_active?: boolean | null
+          message?: string | null
+          notification_sent?: boolean | null
+          shared_at?: string | null
+          shared_by?: string
+          shared_with?: string | null
+          shared_with_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_shares_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "video_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folder_shares_shared_by_fkey"
+            columns: ["shared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folder_shares_shared_with_fkey"
+            columns: ["shared_with"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_completions: {
         Row: {
           completed_at: string
@@ -1000,6 +1058,99 @@ export type Database = {
           {
             foreignKeyName: "video_assets_uploaded_by_fkey"
             columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_folder_items: {
+        Row: {
+          added_at: string | null
+          added_by: string
+          folder_id: string
+          id: string
+          order_index: number | null
+          video_asset_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by: string
+          folder_id: string
+          id?: string
+          order_index?: number | null
+          video_asset_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string
+          folder_id?: string
+          id?: string
+          order_index?: number | null
+          video_asset_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_folder_items_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_folder_items_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "video_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_folder_items_video_asset_id_fkey"
+            columns: ["video_asset_id"]
+            isOneToOne: false
+            referencedRelation: "video_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_folders: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+          video_count: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+          video_count?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+          video_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_folders_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

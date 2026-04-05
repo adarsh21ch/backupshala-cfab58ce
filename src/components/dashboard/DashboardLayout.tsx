@@ -72,7 +72,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/" className="flex items-center">
-            <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
+            <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
           </Link>
         </div>
         <nav className="p-4 space-y-1">
@@ -146,7 +146,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
             <div className="mb-6 flex items-center px-3">
-              <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
+              <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
             </div>
             <nav className="space-y-1">
               {studentNav.map(item => (
