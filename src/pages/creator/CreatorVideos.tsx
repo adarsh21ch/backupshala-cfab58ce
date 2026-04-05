@@ -163,6 +163,10 @@ const CreatorVideos = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="folders" className="mt-4">
+            <CreatorSharedFolders />
+          </TabsContent>
+
           <TabsContent value="request" className="space-y-6 mt-4">
             <VideoRequestForm onSuccess={() => refetchRequests()} />
 
