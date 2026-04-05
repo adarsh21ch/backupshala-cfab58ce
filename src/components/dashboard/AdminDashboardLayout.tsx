@@ -32,15 +32,15 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/" className="flex items-center">
-            <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+            <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>
         </div>
         <nav className="p-4 space-y-1">
           {adminNav.map(item => (
             <Link key={item.to} to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.to) ? 'bg-accent/8 text-accent border-l-[3px] border-accent' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
-              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-accent' : ''}`} />{item.label}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.to) ? 'bg-primary/8 text-primary border-l-[3px] border-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
+              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-primary' : ''}`} />{item.label}
             </Link>
           ))}
           <div className="border-t border-border my-3" />
@@ -75,7 +75,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
             <div className="mb-6 flex items-center px-3">
-              <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+              <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
               <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>
             </div>
             <nav className="space-y-1">

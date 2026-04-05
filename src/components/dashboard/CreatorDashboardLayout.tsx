@@ -56,15 +56,15 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/" className="flex items-center">
-            <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+            <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
-          <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">Creator</span>
+           <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Creator</span>
         </div>
         <nav className="p-4 space-y-1">
           {creatorNav.map(item => (
             <Link key={item.to} to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.to) ? 'bg-accent/8 text-accent border-l-[3px] border-accent' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
-              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-accent' : ''}`} />{item.label}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.to) ? 'bg-primary/8 text-primary border-l-[3px] border-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
+              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-primary' : ''}`} />{item.label}
             </Link>
           ))}
           <div className="border-t border-border my-3" />
@@ -91,10 +91,10 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
           <Link to="/notifications" className="relative">
             <Bell className="h-5 w-5 text-muted-foreground" />
             {unreadCount > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">{unreadCount > 9 ? '9+' : unreadCount}</span>
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">{unreadCount > 9 ? '9+' : unreadCount}</span>
             )}
           </Link>
-          <Link to="/creator/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-sm font-semibold text-accent">
+          <Link to="/creator/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
             {profile?.full_name?.[0]?.toUpperCase() || 'C'}
           </Link>
         </div>
@@ -105,8 +105,8 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
             <div className="mb-6 flex items-center px-3">
-              <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
-              <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">Creator</span>
+              <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
+              <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Creator</span>
             </div>
             <nav className="space-y-1">
               {creatorNav.map(item => (
@@ -126,7 +126,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card lg:hidden">
         {mobileNav.map(item => (
           <Link key={item.to} to={item.to}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${isActive(item.to) ? 'text-accent' : 'text-muted-foreground'}`}>
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${isActive(item.to) ? 'text-primary' : 'text-muted-foreground'}`}>
             <item.icon className="h-5 w-5" />{item.label}
           </Link>
         ))}

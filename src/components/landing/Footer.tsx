@@ -5,7 +5,7 @@ const Footer = () => (
     <div className="container mx-auto px-4">
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
         <div>
-          <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+          <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           <p className="mt-2 text-sm text-muted-foreground">Your backup plan starts here.</p>
         </div>
         <div>

@@ -26,7 +26,7 @@ const LandingNavbar = () => {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center">
-          <span className="font-heading text-2xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+          <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
         </Link>
 
         <div className="hidden items-center gap-6 md:flex">

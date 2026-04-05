@@ -5,7 +5,7 @@ const PrivacyPolicy = () => (
     <header className="border-b border-border bg-card py-4">
       <div className="container mx-auto px-4">
         <Link to="/" className="inline-flex items-center">
-          <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+          <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
         </Link>
       </div>
     </header>

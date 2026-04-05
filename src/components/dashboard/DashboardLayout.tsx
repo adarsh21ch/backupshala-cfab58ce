@@ -72,7 +72,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/" className="flex items-center">
-            <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+            <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
         </div>
         <nav className="p-4 space-y-1">
@@ -82,18 +82,18 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               to={item.to}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive(item.to)
-                  ? 'bg-accent/8 text-accent border-l-[3px] border-accent'
+                  ? 'bg-primary/8 text-primary border-l-[3px] border-primary'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               }`}
             >
-              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-accent' : ''}`} />
+              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-primary' : ''}`} />
               {item.label}
             </Link>
           ))}
           {profile?.is_creator && profile?.creator_approved && (
             <Link
               to="/creator/dashboard"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-accent hover:bg-secondary hover:text-foreground transition-colors"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-secondary hover:text-foreground transition-colors"
             >
               <PenTool className="h-4 w-4" />
               Creator Dashboard
@@ -129,12 +129,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <Link to="/notifications" className="relative">
             <Bell className="h-5 w-5 text-muted-foreground" />
             {unreadCount > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </Link>
-          <Link to="/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
+           <Link to="/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
             {profile?.full_name?.[0]?.toUpperCase() || 'U'}
           </Link>
         </div>
@@ -146,7 +146,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
             <div className="mb-6 flex items-center px-3">
-              <span className="font-heading text-xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+              <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
             </div>
             <nav className="space-y-1">
               {studentNav.map(item => (
@@ -185,10 +185,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             key={item.to}
             to={item.to}
             className={`flex flex-1 flex-col items-center gap-0.5 py-3 text-[10px] font-semibold transition-colors ${
-              isActive(item.to) ? 'text-accent' : 'text-muted-foreground'
+              isActive(item.to) ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
-            <item.icon className={`h-5 w-5 ${isActive(item.to) ? 'text-accent' : ''}`} />
+            <item.icon className={`h-5 w-5 ${isActive(item.to) ? 'text-primary' : ''}`} />
             {item.label}
           </Link>
         ))}
