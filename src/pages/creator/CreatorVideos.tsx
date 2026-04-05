@@ -113,6 +113,7 @@ const CreatorVideos = () => {
         <Tabs defaultValue="browse">
           <TabsList className="bg-secondary">
             <TabsTrigger value="browse">Browse Library</TabsTrigger>
+            <TabsTrigger value="folders" className="gap-1"><FolderOpen className="h-3 w-3" /> Shared Folders</TabsTrigger>
             <TabsTrigger value="request">Request a Video</TabsTrigger>
           </TabsList>
 
