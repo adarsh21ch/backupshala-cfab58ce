@@ -117,8 +117,8 @@ const Login = () => {
               </div>
               <Input id="password" type="password" placeholder="Your password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 rounded-lg" />
             </div>
-            <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 rounded-md font-semibold">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Log In'}
+            <Button type="submit" disabled={loading || !!isLocked} className="w-full bg-primary hover:bg-primary/90 rounded-md font-semibold">
+              {isLocked ? 'Too many attempts — wait 30s' : loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Log In'}
             </Button>
           </form>
         )}
