@@ -331,8 +331,8 @@ const ModulePlayer = () => {
                     to={`/courses/${courseId}/module/${m.id}`}
                     className={`flex items-center gap-3 p-3 text-xs transition-colors hover:bg-secondary/50 ${isCurrent ? 'bg-primary/5 border-l-2 border-primary' : ''}`}
                   >
-                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold ${done ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>
-                      {done ? '✓' : moduleTypeIcon(mType)}
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold ${done ? 'bg-primary/20 text-primary' : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? 'bg-accent/20 text-accent' : 'bg-secondary text-muted-foreground'}`}>
+                      {done ? '✓' : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? <Lock className="h-3 w-3" /> : moduleTypeIcon(mType)}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className={`truncate font-medium ${isCurrent ? 'text-primary' : ''}`}>{m.title}</p>
