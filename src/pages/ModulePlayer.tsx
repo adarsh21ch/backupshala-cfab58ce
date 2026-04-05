@@ -234,6 +234,16 @@ const ModulePlayer = () => {
             <span className="text-xs font-medium text-muted-foreground">{overallProgress}%</span>
           </div>
 
+          {/* Audio note — before video */}
+          {accessCheck?.hasAudioNote && accessCheck?.audioPosition === 'before' && accessCheck?.audioR2Key && (
+            <AudioNotePlayer
+              label={accessCheck.audioLabel || 'Message from your mentor'}
+              audioUrl={accessCheck.audioR2Key}
+              duration={accessCheck.audioDuration || 0}
+              position="before"
+            />
+          )}
+
           {/* Content based on module type */}
           {moduleType === 'resource' ? (
             <ResourceModuleView
