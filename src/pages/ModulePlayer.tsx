@@ -6,11 +6,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useCallback } from 'react';
 import ResourceModuleView from '@/components/module/ResourceModuleView';
 import CommunityModuleView from '@/components/module/CommunityModuleView';
+import { SequentialLockScreen, MentorGateScreen, WaitingMentorScreen } from '@/components/module/GateScreens';
+import AudioNotePlayer from '@/components/module/AudioNotePlayer';
 
 const moduleTypeIcon = (type: string) => {
   if (type === 'resource') return <BookOpen className="h-3 w-3" />;
