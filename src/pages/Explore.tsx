@@ -6,10 +6,11 @@ import Footer from '@/components/landing/Footer';
 import CourseCard from '@/components/CourseCard';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/format';
 import BackButton from '@/components/BackButton';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const LANGUAGES = ['All', 'English', 'Hindi', 'Hinglish'];
