@@ -106,7 +106,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4">
             <div className="mb-6 flex items-center px-3">
               <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
-              <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">Creator</span>
+              <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Creator</span>
             </div>
             <nav className="space-y-1">
               {creatorNav.map(item => (
