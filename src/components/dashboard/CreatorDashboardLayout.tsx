@@ -32,6 +32,28 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const { data: proSub } = useQuery({
+    queryKey: ['creator-pro-sub', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('creator_pro_subscriptions')
+        .select('plan, status')
+        .eq('creator_id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isPro = proSub && (proSub.plan === 'pro' || proSub.plan === 'trial') && proSub.status === 'active';
+
+  const creatorNav = [
+    ...baseCreatorNav,
+    ...(isPro ? [{ to: '/creator/unlock-requests', label: '🔓 Unlock Requests', icon: Unlock }] : []),
+    ...(!isPro ? [{ to: '/creator/upgrade', label: '⭐ Upgrade to Pro', icon: Star }] : []),
+  ];
+
   useEffect(() => {
     if (!user) return;
     const fetchUnread = async () => {
