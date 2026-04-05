@@ -27,6 +27,21 @@ const ModulePlayer = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showMentorGate, setShowMentorGate] = useState(false);
+
+  // Check module access (gate system)
+  const { data: accessCheck, isLoading: accessLoading } = useQuery({
+    queryKey: ['module-access', moduleId, courseId],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('check-module-access', {
+        body: { module_id: moduleId, course_id: courseId },
+      });
+      if (error) return { canAccess: true }; // fail open
+      return data;
+    },
+    enabled: !!moduleId && !!courseId && !!user,
+    staleTime: 30000,
+  });
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ['course-detail', courseId],
