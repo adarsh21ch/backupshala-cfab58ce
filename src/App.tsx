@@ -77,6 +77,7 @@ const App = () => (
             <Route path="/c/:creatorSlug/:courseSlug" element={<CourseEnrollment />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify/:certCode" element={<VerifyCertificate />} />
             <Route path="/watch/:bsvCode" element={<WatchVideo />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
