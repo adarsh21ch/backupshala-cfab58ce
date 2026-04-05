@@ -29,11 +29,21 @@ const AdminPayouts = () => {
   });
 
   const processMutation = useMutation({
-    mutationFn: async ({ id, status, note }: { id: string; status: string; note?: string }) => {
+    mutationFn: async ({ id, status, note, userId, amount }: { id: string; status: string; note?: string; userId: string; amount: number }) => {
       const update: any = { status, processed_at: new Date().toISOString() };
       if (note) update.admin_note = note;
       const { error } = await supabase.from('payout_requests').update(update).eq('id', id);
       if (error) throw error;
+
+      // Deduct wallet balance on approval
+      if (status === 'approved') {
+        const { data: profile } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
+        if (profile) {
+          const newBalance = Math.max(0, Number(profile.wallet_balance) - amount);
+          const { error: walletError } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
+          if (walletError) throw walletError;
+        }
+      }
     },
     onSuccess: () => {
       toast.success('Payout request processed');
@@ -84,13 +94,13 @@ const AdminPayouts = () => {
             <TableCell className="text-right">
               {r.status === 'pending' && (
                 <div className="flex gap-2 justify-end">
-                  <Button size="sm" className="h-8 bg-primary hover:bg-primary/90" onClick={() => processMutation.mutate({ id: r.id, status: 'approved' })}>
+                  <Button size="sm" className="h-8 bg-primary hover:bg-primary/90" onClick={() => processMutation.mutate({ id: r.id, status: 'approved', userId: r.user_id, amount: r.amount })}>
                     <CheckCircle className="h-3 w-3 mr-1" /> Approve
                   </Button>
                   {activeReqId === r.id ? (
                     <div className="flex gap-1">
                       <Input value={adminNote} onChange={e => setAdminNote(e.target.value)} placeholder="Note" className="h-8 w-32 text-xs" />
-                      <Button size="sm" variant="destructive" className="h-8" onClick={() => processMutation.mutate({ id: r.id, status: 'rejected', note: adminNote })}>
+                      <Button size="sm" variant="destructive" className="h-8" onClick={() => processMutation.mutate({ id: r.id, status: 'rejected', note: adminNote, userId: r.user_id, amount: r.amount })}>
                         Send
                       </Button>
                     </div>

@@ -13,13 +13,21 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
 
+  const isLocked = lockedUntil && Date.now() < lockedUntil;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      toast({ title: 'Too many attempts. Please wait 30 seconds.', variant: 'destructive' });
+      return;
+    }
     if (!email || !password) {
       toast({ title: 'Please fill in all fields', variant: 'destructive' });
       return;
@@ -28,8 +36,15 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.toLowerCase().trim(), password });
       if (error) throw error;
+      setFailedAttempts(0);
       navigate(redirect);
     } catch (error: any) {
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        setLockedUntil(Date.now() + 30000);
+        setTimeout(() => { setLockedUntil(null); setFailedAttempts(0); }, 30000);
+      }
       toast({ title: 'Login failed', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -45,7 +60,7 @@ const Login = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
       setResetSent(true);
@@ -102,8 +117,8 @@ const Login = () => {
               </div>
               <Input id="password" type="password" placeholder="Your password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 rounded-lg" />
             </div>
-            <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 rounded-md font-semibold">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Log In'}
+            <Button type="submit" disabled={loading || !!isLocked} className="w-full bg-primary hover:bg-primary/90 rounded-md font-semibold">
+              {isLocked ? 'Too many attempts — wait 30s' : loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Log In'}
             </Button>
           </form>
         )}

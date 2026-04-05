@@ -19,7 +19,7 @@ const AdminDashboardHome = () => {
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_creator', true),
         supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       ]);
-      const paidPayments = (payments.data || []).filter(p => p.status === 'paid');
+      const paidPayments = (payments.data || []).filter(p => p.status === 'success');
       const totalRevenue = paidPayments.reduce((s, p) => s + Number(p.amount_total), 0);
       const platformEarnings = paidPayments.reduce((s, p) => s + Number(p.platform_fee_amount), 0);
       return {

@@ -11,6 +11,7 @@ import CreatorProfile from "./pages/CreatorProfile";
 import CourseEnrollment from "./pages/CourseEnrollment";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
@@ -51,7 +52,15 @@ import CreatorSettings from "./pages/creator/CreatorSettings";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -68,6 +77,7 @@ const App = () => (
             <Route path="/c/:creatorSlug/:courseSlug" element={<CourseEnrollment />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify/:certCode" element={<VerifyCertificate />} />
             <Route path="/watch/:bsvCode" element={<WatchVideo />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

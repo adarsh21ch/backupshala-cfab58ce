@@ -6,10 +6,11 @@ import Footer from '@/components/landing/Footer';
 import CourseCard from '@/components/CourseCard';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/format';
 import BackButton from '@/components/BackButton';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const LANGUAGES = ['All', 'English', 'Hindi', 'Hinglish'];
@@ -27,6 +28,66 @@ const SORT_OPTIONS = [
 
 const BUNDLE_SLUG = 'backupshala-standard-bundle';
 
+const FilterSections = ({ category, setCategory, level, setLevel, language, setLanguage, minRating, setMinRating, courseType, setCourseType }: any) => (
+  <>
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground mb-2">CATEGORY</p>
+      <div className="space-y-1">
+        {['All', ...CATEGORIES].map((c: string) => (
+          <button key={c} onClick={() => setCategory(c)}
+            className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${category === c ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+            {c}
+          </button>
+        ))}
+      </div>
+    </div>
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground mb-2">LEVEL</p>
+      <div className="space-y-1">
+        {LEVELS.map((l: string) => (
+          <button key={l} onClick={() => setLevel(l)}
+            className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${level === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+    </div>
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground mb-2">LANGUAGE</p>
+      <div className="space-y-1">
+        {LANGUAGES.map((l: string) => (
+          <button key={l} onClick={() => setLanguage(l)}
+            className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${language === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+    </div>
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground mb-2">RATING</p>
+      <div className="space-y-1">
+        {RATINGS.map((r: any) => (
+          <button key={r.value} onClick={() => setMinRating(r.value)}
+            className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${minRating === r.value ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+    </div>
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground mb-2">COURSE TYPE</p>
+      <div className="space-y-1">
+        {['All', 'Video Courses', 'Resource Bundles', 'Standard Bundle'].map((t: string) => (
+          <button key={t} onClick={() => setCourseType(t)}
+            className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${courseType === t ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+    </div>
+  </>
+);
+
 const Explore = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
@@ -34,7 +95,6 @@ const Explore = () => {
   const [language, setLanguage] = useState('All');
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState('popular');
-  const [showFilters, setShowFilters] = useState(false);
   const [courseType, setCourseType] = useState('All');
 
   const { data: courses, isLoading } = useQuery({
@@ -87,9 +147,21 @@ const Explore = () => {
             <Input placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-lg" />
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="md:hidden rounded-md" onClick={() => setShowFilters(!showFilters)}>
-              <SlidersHorizontal className="h-4 w-4 mr-1" /> Filters
-            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="md:hidden rounded-md">
+                  <SlidersHorizontal className="h-4 w-4 mr-1" /> Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 space-y-6">
+                  <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
+                </div>
+              </SheetContent>
+            </Sheet>
             <select value={sort} onChange={e => setSort(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -97,62 +169,8 @@ const Explore = () => {
         </div>
 
         <div className="flex gap-6">
-          <aside className={`shrink-0 w-56 space-y-6 ${showFilters ? 'block' : 'hidden md:block'}`}>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">CATEGORY</p>
-              <div className="space-y-1">
-                {['All', ...CATEGORIES].map(c => (
-                  <button key={c} onClick={() => setCategory(c)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${category === c ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">LEVEL</p>
-              <div className="space-y-1">
-                {LEVELS.map(l => (
-                  <button key={l} onClick={() => setLevel(l)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${level === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">LANGUAGE</p>
-              <div className="space-y-1">
-                {LANGUAGES.map(l => (
-                  <button key={l} onClick={() => setLanguage(l)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${language === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">RATING</p>
-              <div className="space-y-1">
-                {RATINGS.map(r => (
-                  <button key={r.value} onClick={() => setMinRating(r.value)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${minRating === r.value ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">COURSE TYPE</p>
-              <div className="space-y-1">
-                {['All', 'Video Courses', 'Resource Bundles', 'Standard Bundle'].map(t => (
-                  <button key={t} onClick={() => setCourseType(t)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${courseType === t ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <aside className="shrink-0 w-56 space-y-6 hidden md:block">
+            <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
           </aside>
 
           <div className="flex-1">
