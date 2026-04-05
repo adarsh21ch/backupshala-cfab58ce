@@ -110,7 +110,11 @@ const CreatorDashboard = () => {
                   <tbody className="divide-y divide-border">
                     {courses.slice(0, 5).map(c => (
                       <tr key={c.id} className="transition-colors hover:bg-muted/5">
-                        <td className="px-4 py-3 text-sm font-medium">{c.title}</td>
+                        <td className="px-4 py-3 text-sm font-medium">
+                          <Link to={`/creator/courses/${c.id}/edit`} className="hover:text-primary hover:underline transition-colors">
+                            {c.title}
+                          </Link>
+                        </td>
                         <td className="px-4 py-3 text-sm">{c.total_students || 0}</td>
                         <td className="px-4 py-3">
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
