@@ -46,7 +46,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
     staleTime: 5 * 60 * 1000,
   });
 
-  const isPro = proSub && (proSub.plan === 'pro' || proSub.plan === 'trial') && proSub.status === 'active';
+  const isPro = profile?.is_admin || (proSub && (proSub.plan === 'pro' || proSub.plan === 'trial') && proSub.status === 'active');
 
   const creatorNav = [
     ...baseCreatorNav,
