@@ -16,8 +16,9 @@ import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { VIDEO_CATEGORIES, VIDEO_LANGUAGES } from '@/lib/videoTypes';
-import { Search, Film, ExternalLink } from 'lucide-react';
+import { Search, Film, ExternalLink, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
+import CreatorSharedFolders from '@/components/creator/CreatorSharedFolders';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-500',
