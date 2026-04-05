@@ -88,9 +88,21 @@ const Explore = () => {
             <Input placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-lg" />
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="md:hidden rounded-md" onClick={() => setShowFilters(!showFilters)}>
-              <SlidersHorizontal className="h-4 w-4 mr-1" /> Filters
-            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="md:hidden rounded-md">
+                  <SlidersHorizontal className="h-4 w-4 mr-1" /> Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 space-y-6">
+                  {filterSections}
+                </div>
+              </SheetContent>
+            </Sheet>
             <select value={sort} onChange={e => setSort(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>

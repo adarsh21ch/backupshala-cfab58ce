@@ -47,9 +47,12 @@ const CreatorPayouts = () => {
       const record: any = { user_id: user!.id, request_type: 'creator_earnings', amount: amt };
       if (paymentMethod === 'upi') {
         if (!upiId.trim()) throw new Error('UPI ID required');
+        if (!/^[a-zA-Z0-9._-]+@[a-zA-Z]{2,}$/.test(upiId.trim())) throw new Error('Invalid UPI ID format (e.g. name@bank)');
         record.upi_id = upiId.trim();
       } else {
         if (!bankName.trim() || !accountHolder.trim() || !accountNumber.trim() || !ifscCode.trim()) throw new Error('All bank details required');
+        if (!/^\d{9,18}$/.test(accountNumber.trim())) throw new Error('Account number must be 9-18 digits');
+        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.trim())) throw new Error('Invalid IFSC code format (e.g. SBIN0001234)');
         record.bank_name = bankName.trim(); record.account_holder_name = accountHolder.trim();
         record.account_number = accountNumber.trim(); record.ifsc_code = ifscCode.trim();
       }
