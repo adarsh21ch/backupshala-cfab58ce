@@ -72,8 +72,6 @@ const AdminSettings = () => {
     { key: 'maintenance_mode', label: 'Maintenance Mode (true/false)', type: 'text' },
   ];
 
-  const watchThreshold = Number(values.min_watch_percentage_to_complete || 80);
-
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
