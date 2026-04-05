@@ -94,7 +94,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
               <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">{unreadCount > 9 ? '9+' : unreadCount}</span>
             )}
           </Link>
-          <Link to="/creator/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-sm font-semibold text-accent">
+          <Link to="/creator/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
             {profile?.full_name?.[0]?.toUpperCase() || 'C'}
           </Link>
         </div>
