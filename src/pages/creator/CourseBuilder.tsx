@@ -872,6 +872,73 @@ const CourseBuilder = () => {
             </div>
           </TabsContent>
 
+          {/* Gate Settings */}
+          <TabsContent value="gate-settings" className="mt-4 space-y-4">
+            {!isNew && modules.length > 0 ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Select a module to configure gates</p>
+                  <div className="space-y-2">
+                    {modules.map((m: any, i: number) => {
+                      const hasGate = gateSettings?.some((g: any) => g.module_id === m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => loadGateForModule(m.id)}
+                          className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                            gateModuleId === m.id
+                              ? 'border-accent bg-accent/5'
+                              : 'border-border hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{m.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {i === 0 ? 'First module (always unlocked)' : hasGate ? '🔒 Has gate settings' : 'No gate'}
+                            </p>
+                          </div>
+                          {hasGate && <Lock className="h-4 w-4 text-accent shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {gateModuleId && modules.findIndex((m: any) => m.id === gateModuleId) === 0 ? (
+                  <div className="rounded-xl border border-border bg-card p-6 text-center">
+                    <p className="text-sm text-muted-foreground">The first module is always accessible — no gate settings needed.</p>
+                  </div>
+                ) : gateModuleId ? (
+                  <div className="space-y-4">
+                    <GateSettingsForm
+                      isPro={isPro}
+                      isSequential={gsSequential} setIsSequential={setGsSequential}
+                      hasAudioNote={gsAudioNote} setHasAudioNote={setGsAudioNote}
+                      audioNoteLabel={gsAudioLabel} setAudioNoteLabel={setGsAudioLabel}
+                      audioNotePosition={gsAudioPosition} setAudioNotePosition={setGsAudioPosition}
+                      hasMentorGate={gsMentorGate} setHasMentorGate={setGsMentorGate}
+                      mentorGateMessage={gsMentorMessage} setMentorGateMessage={setGsMentorMessage}
+                      mentorContactType={gsContactType} setMentorContactType={setGsContactType}
+                      zoomLink={gsZoomLink} setZoomLink={setGsZoomLink}
+                    />
+                    {isPro && (
+                      <Button onClick={saveGateSettings} disabled={savingGate} className="rounded-md bg-primary hover:bg-primary/90">
+                        {savingGate ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Gate Settings'}
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border p-8 text-center">
+                <Lock className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground">Save the course and add modules first</p>
+                <p className="text-xs text-muted-foreground mt-1">Then configure gate settings per module.</p>
+              </div>
+            )}
+          </TabsContent>
+
           {/* Publish */}
           <TabsContent value="publish" className="mt-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
