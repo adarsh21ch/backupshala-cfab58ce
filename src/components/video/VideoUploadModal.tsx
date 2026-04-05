@@ -99,9 +99,9 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
       // Step 2: Upload via proxy edge function (bypasses R2 CORS entirely)
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const proxyUrl = `${supabaseUrl}/functions/v1/r2-proxy-upload`;
+      const proxyUrl = `${supabaseUrl}/functions/v1/r2-proxy-upload?asset_id=${encodeURIComponent(asset_id)}`;
 
-      console.log('[Upload] Proxying through edge function:', proxyUrl);
+      console.log('[Upload] Proxying through edge function (POST):', proxyUrl);
 
       const startTime = Date.now();
       const xhr = new XMLHttpRequest();
@@ -136,13 +136,16 @@ const VideoUploadModal = ({ open, onOpenChange, onSuccess }: VideoUploadModalPro
           reject(new Error(errMsg));
         };
         xhr.onerror = () => {
-          console.error('[Upload] Network error. Status:', xhr.status);
-          reject(new Error('Network error during upload. Please check your connection and try again.'));
+          console.error('[Upload] XHR onerror. Status:', xhr.status, 'readyState:', xhr.readyState);
+          if (xhr.status === 0) {
+            reject(new Error('CORS/preflight blocked or network unavailable. Try incognito mode.'));
+          } else {
+            reject(new Error('Network error during upload. Check your connection.'));
+          }
         };
-        xhr.open('PUT', proxyUrl);
+        xhr.open('POST', proxyUrl);
         xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
         xhr.setRequestHeader('apikey', supabaseKey);
-        xhr.setRequestHeader('x-asset-id', asset_id);
         xhr.send(file);
       });
 
