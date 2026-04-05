@@ -82,11 +82,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               to={item.to}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive(item.to)
-                  ? 'bg-primary/10 text-primary border-l-[3px] border-primary'
+                  ? 'bg-accent/8 text-accent border-l-[3px] border-accent'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               }`}
             >
-              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-primary' : ''}`} />
+              <item.icon className={`h-4 w-4 ${isActive(item.to) ? 'text-accent' : ''}`} />
               {item.label}
             </Link>
           ))}
