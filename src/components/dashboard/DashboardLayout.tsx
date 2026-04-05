@@ -93,7 +93,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           {profile?.is_creator && profile?.creator_approved && (
             <Link
               to="/creator/dashboard"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-accent hover:bg-secondary hover:text-foreground transition-colors"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-secondary hover:text-foreground transition-colors"
             >
               <PenTool className="h-4 w-4" />
               Creator Dashboard
