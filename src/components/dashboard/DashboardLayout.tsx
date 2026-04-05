@@ -134,7 +134,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </span>
             )}
           </Link>
-          <Link to="/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
+           <Link to="/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
             {profile?.full_name?.[0]?.toUpperCase() || 'U'}
           </Link>
         </div>
