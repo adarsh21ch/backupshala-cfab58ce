@@ -400,6 +400,47 @@ export type Database = {
           },
         ]
       }
+      creator_video_settings: {
+        Row: {
+          allow_forward_seeking: boolean
+          allow_speed_control: boolean
+          created_at: string
+          creator_id: string
+          id: string
+          min_watch_percentage_to_complete: number
+          updated_at: string
+          video_watermark_enabled: boolean
+        }
+        Insert: {
+          allow_forward_seeking?: boolean
+          allow_speed_control?: boolean
+          created_at?: string
+          creator_id: string
+          id?: string
+          min_watch_percentage_to_complete?: number
+          updated_at?: string
+          video_watermark_enabled?: boolean
+        }
+        Update: {
+          allow_forward_seeking?: boolean
+          allow_speed_control?: boolean
+          created_at?: string
+          creator_id?: string
+          id?: string
+          min_watch_percentage_to_complete?: number
+          updated_at?: string
+          video_watermark_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_video_settings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           amount_paid: number
