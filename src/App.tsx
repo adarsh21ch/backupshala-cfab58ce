@@ -116,6 +116,8 @@ const App = () => (
             <Route path="/creator/profile" element={<CreatorRoute><CreatorProfileEdit /></CreatorRoute>} />
             <Route path="/creator/videos" element={<CreatorRoute><CreatorVideos /></CreatorRoute>} />
             <Route path="/creator/settings" element={<CreatorRoute><CreatorSettings /></CreatorRoute>} />
+            <Route path="/creator/unlock-requests" element={<CreatorRoute><CreatorUnlockRequests /></CreatorRoute>} />
+            <Route path="/creator/upgrade" element={<CreatorRoute><CreatorUpgrade /></CreatorRoute>} />
 
             {/* Admin panel */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
