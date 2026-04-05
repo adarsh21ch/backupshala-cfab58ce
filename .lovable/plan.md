@@ -1,40 +1,64 @@
 
+Goal: remove the false R2 CORS error on the published site and make production use the same working proxy upload flow as preview.
 
-## Fix: R2 Signature Mismatch Error
+Do I know what the issue is?
+- Yes.
 
-### What's actually happening
+What the problem actually is
+- Adding `https://backupshala.lovable.app` to the R2 CORS list is only needed if the browser uploads directly to R2 with `PUT`.
+- Your current code no longer does that.
+- In `src/components/video/VideoUploadModal.tsx`, the browser now uploads to the backend function `r2-proxy-upload` with `POST`, not to R2 directly.
+- I also searched the codebase and the exact toast text in your screenshot does not exist in the current source anymore.
+- That means the published site is still serving an older frontend bundle that contains the old direct-to-R2 upload logic/message.
 
-The screenshot shows: **"The request signature we calculated does not match the signature you provided."** This is coming from the proxy edge function — meaning the request IS reaching R2 now (CORS is no longer the blocker), but **the R2 API credentials stored as secrets are wrong or stale**.
+What to do
+1. Re-publish the frontend
+- Open the Publish dialog and click Update so `backupshala.lovable.app` gets the latest frontend bundle.
+- Backend functions already deploy automatically; frontend changes do not.
 
-Important clarification: the `r2.dev` public URL is for **read-only public access** — it cannot be used for authenticated uploads. The S3 API endpoint (`r2.cloudflarestorage.com`) that we're currently using is correct for uploads. The issue is the credentials, not the endpoint.
+2. Test production again
+- After publish, upload from `https://backupshala.lovable.app`.
+- Expected behavior: request should go to the backend upload proxy, not directly to R2, so browser R2 CORS should no longer matter for the main video file.
 
-### Root cause
+3. Optional safety update to R2 CORS
+- If you want a safer CORS config anyway, add the published domain too:
+```json
+[
+  {
+    "AllowedOrigins": [
+      "https://ca791d54-8375-4712-8ff2-bec4800191ca.lovableproject.com",
+      "https://id-preview--ca791d54-8375-4712-8ff2-bec4800191ca.lovable.app",
+      "https://backupshala.lovable.app"
+    ],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+- This will not hurt, but it is not the real fix for the current published error if production is still on old code.
 
-The `R2_ACCESS_KEY_ID` and/or `R2_SECRET_ACCESS_KEY` secrets stored in your backend don't match what Cloudflare R2 expects. This happens when:
-- The API token was regenerated in Cloudflare but not updated here
-- The token was copied with extra whitespace or characters
-- The token doesn't have write permission on the bucket
+Expected result
+- Preview and published site will both use the same upload flow.
+- The misleading “Origin must be allowed in R2 CORS policy with PUT method” toast should disappear on production.
 
-### What you need to do (no code changes needed)
+Files involved
+- `src/components/video/VideoUploadModal.tsx`
+- `supabase/functions/r2-proxy-upload/index.ts`
 
-1. Go to **Cloudflare Dashboard → R2 → Manage R2 API Tokens**
-2. Either verify your existing token or **create a new API token** with:
-   - **Permissions**: Object Read & Write
-   - **Bucket scope**: Apply to your `backupshala` bucket (or all buckets)
-3. Copy the **Access Key ID** and **Secret Access Key** exactly
-4. Update the secrets in your backend:
-   - `R2_ACCESS_KEY_ID` — the new Access Key ID
-   - `R2_SECRET_ACCESS_KEY` — the new Secret Access Key
-5. Also verify `R2_ACCOUNT_ID` matches your Cloudflare account ID (visible in the R2 dashboard URL: `dash.cloudflare.com/<account_id>/r2`)
+Technical details
+```text
+Old production flow:
+browser -> direct R2 PUT
+needs R2 bucket CORS for each site origin
 
-### After updating credentials
+Current code flow:
+browser -> backend function POST /r2-proxy-upload
+backend -> R2 PUT server-side
 
-No code changes are needed — the proxy edge function and frontend are already correctly wired. Once the credentials match, the upload should complete successfully.
-
-### Technical details
-
-- The proxy flow (`VideoUploadModal → r2-proxy-upload edge function → R2 PutObject`) is working correctly
-- The edge function successfully authenticates the user, finds the asset, and attempts the R2 upload
-- R2 rejects it at the S3 signing step because the stored credentials don't match
-- The `r2.cloudflarestorage.com` S3 endpoint is the correct one for authenticated uploads — `r2.dev` is public-read only
-
+So:
+- direct R2 CORS matters for old bundle
+- frontend republish is the main fix
+- adding backupshala.lovable.app to CORS is optional defense, not the root fix
+```
