@@ -185,10 +185,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             key={item.to}
             to={item.to}
             className={`flex flex-1 flex-col items-center gap-0.5 py-3 text-[10px] font-semibold transition-colors ${
-              isActive(item.to) ? 'text-accent' : 'text-muted-foreground'
+              isActive(item.to) ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
-            <item.icon className={`h-5 w-5 ${isActive(item.to) ? 'text-accent' : ''}`} />
+            <item.icon className={`h-5 w-5 ${isActive(item.to) ? 'text-primary' : ''}`} />
             {item.label}
           </Link>
         ))}
