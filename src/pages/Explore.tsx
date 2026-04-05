@@ -99,7 +99,7 @@ const Explore = () => {
                   <SheetTitle>Filters</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 space-y-6">
-                  {filterSections}
+                  <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -110,62 +110,8 @@ const Explore = () => {
         </div>
 
         <div className="flex gap-6">
-          <aside className={`shrink-0 w-56 space-y-6 ${showFilters ? 'block' : 'hidden md:block'}`}>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">CATEGORY</p>
-              <div className="space-y-1">
-                {['All', ...CATEGORIES].map(c => (
-                  <button key={c} onClick={() => setCategory(c)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${category === c ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">LEVEL</p>
-              <div className="space-y-1">
-                {LEVELS.map(l => (
-                  <button key={l} onClick={() => setLevel(l)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${level === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">LANGUAGE</p>
-              <div className="space-y-1">
-                {LANGUAGES.map(l => (
-                  <button key={l} onClick={() => setLanguage(l)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${language === l ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">RATING</p>
-              <div className="space-y-1">
-                {RATINGS.map(r => (
-                  <button key={r.value} onClick={() => setMinRating(r.value)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${minRating === r.value ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">COURSE TYPE</p>
-              <div className="space-y-1">
-                {['All', 'Video Courses', 'Resource Bundles', 'Standard Bundle'].map(t => (
-                  <button key={t} onClick={() => setCourseType(t)}
-                    className={`block w-full text-left rounded-md px-3 py-1.5 text-sm transition-colors ${courseType === t ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <aside className="shrink-0 w-56 space-y-6 hidden md:block">
+            <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
           </aside>
 
           <div className="flex-1">
