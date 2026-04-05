@@ -286,6 +286,7 @@ const CourseBuilder = () => {
             <TabsTrigger value="basic" className="rounded-md text-xs">Basic Info</TabsTrigger>
             <TabsTrigger value="modules" className="rounded-md text-xs">Modules ({modules.length})</TabsTrigger>
             <TabsTrigger value="pricing" className="rounded-md text-xs">Pricing</TabsTrigger>
+            <TabsTrigger value="video-settings" className="rounded-md text-xs">Video Settings</TabsTrigger>
             <TabsTrigger value="publish" className="rounded-md text-xs">Publish</TabsTrigger>
           </TabsList>
 
