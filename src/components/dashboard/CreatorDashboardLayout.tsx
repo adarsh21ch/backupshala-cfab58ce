@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Users, IndianRupee, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Film } from 'lucide-react';
+import { Bell, BookOpen, Users, IndianRupee, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Film, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ const creatorNav = [
   { to: '/creator/earnings', label: 'Earnings', icon: IndianRupee },
   { to: '/creator/payouts', label: 'Payouts', icon: Wallet },
   { to: '/creator/profile', label: 'Creator Profile', icon: PenTool },
+  { to: '/creator/settings', label: 'Settings', icon: Settings },
 ];
 
 const mobileNav = [

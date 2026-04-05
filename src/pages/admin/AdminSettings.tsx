@@ -7,9 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { Save, AlertTriangle, Film } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
+import { Save, AlertTriangle } from 'lucide-react';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
@@ -74,8 +72,6 @@ const AdminSettings = () => {
     { key: 'maintenance_mode', label: 'Maintenance Mode (true/false)', type: 'text' },
   ];
 
-  const watchThreshold = Number(values.min_watch_percentage_to_complete || 80);
-
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
@@ -115,90 +111,6 @@ const AdminSettings = () => {
           </CardContent>
         </Card>
 
-        {/* Video Settings */}
-        <Card className="bg-card border-border max-w-2xl">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Film className="h-4 w-4 text-primary" /> Video Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Completion Threshold */}
-            <div className="space-y-2">
-              <Label className="text-sm">Completion Threshold</Label>
-              <p className="text-xs text-muted-foreground">Students must watch {watchThreshold}% to mark module complete</p>
-              <Slider
-                value={[watchThreshold]}
-                min={50} max={100} step={5}
-                onValueChange={([v]) => setValues(prev => ({ ...prev, min_watch_percentage_to_complete: String(v) }))}
-                className="w-full"
-              />
-            </div>
-
-            {/* Allow Speed Control */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm">Allow Speed Control</Label>
-                <p className="text-xs text-muted-foreground">Players cannot change playback speed when off</p>
-              </div>
-              <Switch
-                checked={values.allow_video_speed_control === 'true'}
-                onCheckedChange={c => setValues(prev => ({ ...prev, allow_video_speed_control: String(c) }))}
-              />
-            </div>
-
-            {/* Allow Forward Seeking */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm">Allow Forward Seeking</Label>
-                <p className="text-xs text-muted-foreground">Students cannot skip ahead when off</p>
-              </div>
-              <Switch
-                checked={values.allow_video_seeking_forward === 'true'}
-                onCheckedChange={c => setValues(prev => ({ ...prev, allow_video_seeking_forward: String(c) }))}
-              />
-            </div>
-
-            {/* Video Watermark */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm">Video Watermark</Label>
-                <p className="text-xs text-muted-foreground">Show "Backupshala" on all videos</p>
-              </div>
-              <Switch
-                checked={values.video_watermark_enabled === 'true'}
-                onCheckedChange={c => setValues(prev => ({ ...prev, video_watermark_enabled: String(c) }))}
-              />
-            </div>
-
-            {/* Request Processing Time */}
-            <div className="space-y-1.5">
-              <Label className="text-sm">Request Processing Time (hours)</Label>
-              <p className="text-xs text-muted-foreground">Tell creators the expected wait time</p>
-              <Input
-                type="number"
-                value={values.video_request_processing_hours || '48'}
-                onChange={e => setValues(prev => ({ ...prev, video_request_processing_hours: e.target.value }))}
-                className="bg-secondary border-border w-32"
-              />
-            </div>
-
-            {/* Max Upload Size */}
-            <div className="space-y-1.5">
-              <Label className="text-sm">Max Upload Size (GB)</Label>
-              <Input
-                type="number"
-                value={values.max_video_upload_size_gb || '2'}
-                onChange={e => setValues(prev => ({ ...prev, max_video_upload_size_gb: e.target.value }))}
-                className="bg-secondary border-border w-32"
-              />
-            </div>
-
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="bg-primary hover:bg-primary/90">
-              <Save className="h-4 w-4 mr-2" /> Save Video Settings
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </AdminDashboardLayout>
   );

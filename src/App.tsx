@@ -47,6 +47,7 @@ import AdminSupport from "./pages/admin/AdminSupport";
 import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
 import AdminVideos from "./pages/admin/AdminVideos";
 import CreatorVideos from "./pages/creator/CreatorVideos";
+import CreatorSettings from "./pages/creator/CreatorSettings";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
 
@@ -101,6 +102,7 @@ const App = () => (
             <Route path="/creator/payouts" element={<CreatorRoute><CreatorPayouts /></CreatorRoute>} />
             <Route path="/creator/profile" element={<CreatorRoute><CreatorProfileEdit /></CreatorRoute>} />
             <Route path="/creator/videos" element={<CreatorRoute><CreatorVideos /></CreatorRoute>} />
+            <Route path="/creator/settings" element={<CreatorRoute><CreatorSettings /></CreatorRoute>} />
 
             {/* Admin panel */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
