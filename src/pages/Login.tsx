@@ -62,7 +62,7 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center">
-            <span className="font-heading text-2xl font-800"><span className="text-accent">Backup</span><span className="text-primary">shala</span></span>
+            <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">
             {forgotMode ? 'Reset Password' : 'Welcome back'}
