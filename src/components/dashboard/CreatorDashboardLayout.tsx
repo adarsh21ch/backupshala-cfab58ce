@@ -58,7 +58,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
           <Link to="/" className="flex items-center">
             <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
-          <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">Creator</span>
+           <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Creator</span>
         </div>
         <nav className="p-4 space-y-1">
           {creatorNav.map(item => (
