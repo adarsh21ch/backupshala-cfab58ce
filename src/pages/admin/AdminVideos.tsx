@@ -139,6 +139,7 @@ const AdminVideos = () => {
           <TabsList className="bg-secondary">
             <TabsTrigger value="library">Video Library ({assets?.length || 0})</TabsTrigger>
             <TabsTrigger value="requests">Video Requests ({requestStats.pending} pending)</TabsTrigger>
+            <TabsTrigger value="folders" className="gap-1"><FolderOpen className="h-3 w-3" /> Folders</TabsTrigger>
           </TabsList>
 
           <TabsContent value="library" className="space-y-4 mt-4">
