@@ -61,7 +61,7 @@ const CreatorCourses = () => {
                       course.status === 'pending_review' ? 'bg-accent/10 text-accent' :
                       course.status === 'suspended' ? 'bg-destructive/10 text-destructive' :
                       'bg-secondary text-muted-foreground'
-                    }`}>{course.status.replace('_', ' ')}</span>
+                    }`}>{(course.status || 'draft').replace('_', ' ')}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{course.total_students || 0} students</span>
