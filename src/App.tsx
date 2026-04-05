@@ -49,8 +49,11 @@ import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
 import AdminVideos from "./pages/admin/AdminVideos";
 import CreatorVideos from "./pages/creator/CreatorVideos";
 import CreatorSettings from "./pages/creator/CreatorSettings";
+import CreatorUnlockRequests from "./pages/creator/CreatorUnlockRequests";
+import CreatorUpgrade from "./pages/creator/CreatorUpgrade";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
+import AdminCreatorPro from "./pages/admin/AdminCreatorPro";
 
 const queryClient = new QueryClient({
   defaultOptions: {
