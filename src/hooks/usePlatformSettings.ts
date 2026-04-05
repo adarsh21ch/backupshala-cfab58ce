@@ -22,23 +22,35 @@ const defaults: PlatformSettings = {
 };
 
 export const usePlatformSettings = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['platform-settings'],
     queryFn: async () => {
       const { data } = await supabase.from('platform_settings').select('key, value');
-      if (!data) return defaults;
       const map: Record<string, string> = {};
-      data.forEach(s => { map[s.key] = s.value; });
+      if (data) data.forEach(s => { map[s.key] = s.value; });
       return {
-        platform_name: map.platform_name || defaults.platform_name,
-        platform_fee_percent: Number(map.platform_fee_percent) || defaults.platform_fee_percent,
-        default_commission_percent: Number(map.default_commission_percent) || defaults.default_commission_percent,
-        min_payout_amount: Number(map.min_payout_amount) || defaults.min_payout_amount,
-        support_email: map.support_email || defaults.support_email,
-        razorpay_enabled: map.razorpay_enabled === 'true',
-        maintenance_mode: map.maintenance_mode === 'true',
-      } as PlatformSettings;
+        raw: map,
+        parsed: {
+          platform_name: map.platform_name || defaults.platform_name,
+          platform_fee_percent: Number(map.platform_fee_percent) || defaults.platform_fee_percent,
+          default_commission_percent: Number(map.default_commission_percent) || defaults.default_commission_percent,
+          min_payout_amount: Number(map.min_payout_amount) || defaults.min_payout_amount,
+          support_email: map.support_email || defaults.support_email,
+          razorpay_enabled: map.razorpay_enabled === 'true',
+          maintenance_mode: map.maintenance_mode === 'true',
+        } as PlatformSettings,
+      };
     },
     staleTime: 60_000,
   });
+
+  const getSetting = (key: string, fallback: string = ''): string => {
+    return query.data?.raw?.[key] ?? fallback;
+  };
+
+  return {
+    ...query,
+    data: query.data?.parsed ?? defaults,
+    getSetting,
+  };
 };
