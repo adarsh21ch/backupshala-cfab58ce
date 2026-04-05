@@ -259,6 +259,8 @@ export type Database = {
       }
       courses: {
         Row: {
+          allow_forward_seeking: boolean | null
+          allow_speed_control: boolean | null
           category: string
           commission_percent: number
           created_at: string
@@ -268,6 +270,7 @@ export type Database = {
           is_featured: boolean | null
           language: string | null
           level: string | null
+          min_watch_percentage_to_complete: number | null
           platform_fee_percent: number
           preview_video_url: string | null
           price: number
@@ -285,9 +288,12 @@ export type Database = {
           total_reviews: number | null
           total_students: number | null
           updated_at: string
+          video_watermark_enabled: boolean | null
           what_you_learn: string[] | null
         }
         Insert: {
+          allow_forward_seeking?: boolean | null
+          allow_speed_control?: boolean | null
           category?: string
           commission_percent?: number
           created_at?: string
@@ -297,6 +303,7 @@ export type Database = {
           is_featured?: boolean | null
           language?: string | null
           level?: string | null
+          min_watch_percentage_to_complete?: number | null
           platform_fee_percent?: number
           preview_video_url?: string | null
           price?: number
@@ -314,9 +321,12 @@ export type Database = {
           total_reviews?: number | null
           total_students?: number | null
           updated_at?: string
+          video_watermark_enabled?: boolean | null
           what_you_learn?: string[] | null
         }
         Update: {
+          allow_forward_seeking?: boolean | null
+          allow_speed_control?: boolean | null
           category?: string
           commission_percent?: number
           created_at?: string
@@ -326,6 +336,7 @@ export type Database = {
           is_featured?: boolean | null
           language?: string | null
           level?: string | null
+          min_watch_percentage_to_complete?: number | null
           platform_fee_percent?: number
           preview_video_url?: string | null
           price?: number
@@ -343,6 +354,7 @@ export type Database = {
           total_reviews?: number | null
           total_students?: number | null
           updated_at?: string
+          video_watermark_enabled?: boolean | null
           what_you_learn?: string[] | null
         }
         Relationships: [

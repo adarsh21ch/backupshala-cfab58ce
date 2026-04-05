@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
@@ -48,6 +49,12 @@ const CourseBuilder = () => {
   const [price, setPrice] = useState('249');
   const [commissionPercent, setCommissionPercent] = useState(30);
   const [status, setStatus] = useState('draft');
+
+  // Per-course video settings (null = use creator default)
+  const [vsSpeedControl, setVsSpeedControl] = useState<boolean | null>(null);
+  const [vsForwardSeeking, setVsForwardSeeking] = useState<boolean | null>(null);
+  const [vsWatermark, setVsWatermark] = useState<boolean | null>(null);
+  const [vsWatchPercent, setVsWatchPercent] = useState<number | null>(null);
 
   const [modules, setModules] = useState<any[]>([]);
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
@@ -90,6 +97,10 @@ const CourseBuilder = () => {
       setPrice(String(course.price));
       setCommissionPercent(course.commission_percent);
       setStatus(course.status);
+      setVsSpeedControl(course.allow_speed_control ?? null);
+      setVsForwardSeeking(course.allow_forward_seeking ?? null);
+      setVsWatermark(course.video_watermark_enabled ?? null);
+      setVsWatchPercent(course.min_watch_percentage_to_complete ?? null);
       if (course.modules) {
         setModules([...course.modules].sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)));
       }
@@ -129,6 +140,10 @@ const CourseBuilder = () => {
         price: priceNum,
         commission_percent: commissionPercent,
         total_modules: modules.length,
+        allow_speed_control: vsSpeedControl,
+        allow_forward_seeking: vsForwardSeeking,
+        video_watermark_enabled: vsWatermark,
+        min_watch_percentage_to_complete: vsWatchPercent,
       };
 
       if (isNew) {
@@ -272,6 +287,7 @@ const CourseBuilder = () => {
             <TabsTrigger value="basic" className="rounded-md text-xs">Basic Info</TabsTrigger>
             <TabsTrigger value="modules" className="rounded-md text-xs">Modules ({modules.length})</TabsTrigger>
             <TabsTrigger value="pricing" className="rounded-md text-xs">Pricing</TabsTrigger>
+            <TabsTrigger value="video-settings" className="rounded-md text-xs">Video Settings</TabsTrigger>
             <TabsTrigger value="publish" className="rounded-md text-xs">Publish</TabsTrigger>
           </TabsList>
 
@@ -654,6 +670,105 @@ const CourseBuilder = () => {
               )}
               <Button onClick={saveCourse} disabled={saving} className="rounded-md bg-primary hover:bg-primary/90">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Video Settings */}
+          <TabsContent value="video-settings" className="mt-4 space-y-4">
+            <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+              <div>
+                <h2 className="font-heading text-base font-600 flex items-center gap-2">
+                  <Play className="h-4 w-4 text-primary" /> Video Playback Settings
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Control how students watch videos in this course. Leave toggles off to use your global creator defaults.
+                </p>
+              </div>
+
+              {/* Completion Threshold */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Custom Completion Threshold</Label>
+                  <Switch
+                    checked={vsWatchPercent !== null}
+                    onCheckedChange={c => setVsWatchPercent(c ? 80 : null)}
+                  />
+                </div>
+                {vsWatchPercent !== null && (
+                  <div className="pl-1 space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      Students must watch {vsWatchPercent}% to mark a module complete
+                    </p>
+                    <Slider
+                      value={[vsWatchPercent]}
+                      min={50} max={100} step={5}
+                      onValueChange={([v]) => setVsWatchPercent(v)}
+                      className="w-full max-w-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Allow Speed Control */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm">Allow Speed Control</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {vsSpeedControl === null ? 'Using creator default' : vsSpeedControl ? 'Students can change playback speed' : 'Speed control disabled'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {vsSpeedControl !== null && (
+                    <button onClick={() => setVsSpeedControl(null)} className="text-[10px] text-muted-foreground hover:text-foreground underline">Reset</button>
+                  )}
+                  <Switch
+                    checked={vsSpeedControl ?? true}
+                    onCheckedChange={c => setVsSpeedControl(c)}
+                  />
+                </div>
+              </div>
+
+              {/* Allow Forward Seeking */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm">Allow Forward Seeking</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {vsForwardSeeking === null ? 'Using creator default' : vsForwardSeeking ? 'Students can skip ahead' : 'Forward seeking disabled'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {vsForwardSeeking !== null && (
+                    <button onClick={() => setVsForwardSeeking(null)} className="text-[10px] text-muted-foreground hover:text-foreground underline">Reset</button>
+                  )}
+                  <Switch
+                    checked={vsForwardSeeking ?? true}
+                    onCheckedChange={c => setVsForwardSeeking(c)}
+                  />
+                </div>
+              </div>
+
+              {/* Watermark */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm">Video Watermark</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {vsWatermark === null ? 'Using creator default' : vsWatermark ? 'Watermark shown on videos' : 'Watermark disabled'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {vsWatermark !== null && (
+                    <button onClick={() => setVsWatermark(null)} className="text-[10px] text-muted-foreground hover:text-foreground underline">Reset</button>
+                  )}
+                  <Switch
+                    checked={vsWatermark ?? false}
+                    onCheckedChange={c => setVsWatermark(c)}
+                  />
+                </div>
+              </div>
+
+              <Button onClick={saveCourse} disabled={saving} className="rounded-md bg-primary hover:bg-primary/90">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Settings'}
               </Button>
             </div>
           </TabsContent>
