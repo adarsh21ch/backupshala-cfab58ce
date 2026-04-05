@@ -96,6 +96,10 @@ const CourseBuilder = () => {
       setPrice(String(course.price));
       setCommissionPercent(course.commission_percent);
       setStatus(course.status);
+      setVsSpeedControl(course.allow_speed_control ?? null);
+      setVsForwardSeeking(course.allow_forward_seeking ?? null);
+      setVsWatermark(course.video_watermark_enabled ?? null);
+      setVsWatchPercent(course.min_watch_percentage_to_complete ?? null);
       if (course.modules) {
         setModules([...course.modules].sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)));
       }
