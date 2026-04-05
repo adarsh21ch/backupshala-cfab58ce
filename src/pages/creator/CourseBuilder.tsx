@@ -69,6 +69,103 @@ const CourseBuilder = () => {
   const [mResources, setMResources] = useState<any[]>([]);
   const [mVideoSource, setMVideoSource] = useState<'youtube' | 'gallery'>('youtube');
 
+  // Gate settings state (per-module, edited in gate tab)
+  const [gateModuleId, setGateModuleId] = useState<string | null>(null);
+  const [gsSequential, setGsSequential] = useState(false);
+  const [gsAudioNote, setGsAudioNote] = useState(false);
+  const [gsAudioLabel, setGsAudioLabel] = useState('Message from your mentor');
+  const [gsAudioPosition, setGsAudioPosition] = useState('before');
+  const [gsMentorGate, setGsMentorGate] = useState(false);
+  const [gsMentorMessage, setGsMentorMessage] = useState('');
+  const [gsContactType, setGsContactType] = useState('whatsapp');
+  const [gsZoomLink, setGsZoomLink] = useState('');
+  const [savingGate, setSavingGate] = useState(false);
+
+  const { data: proSub } = useQuery({
+    queryKey: ['creator-pro-sub', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('creator_pro_subscriptions')
+        .select('plan, status')
+        .eq('creator_id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isPro = !!proSub && (proSub.plan === 'pro' || proSub.plan === 'trial') && proSub.status === 'active';
+
+  const { data: gateSettings } = useQuery({
+    queryKey: ['gate-settings', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('module_gate_settings')
+        .select('*')
+        .eq('course_id', id!);
+      return data || [];
+    },
+    enabled: !!id && isPro,
+  });
+
+  const loadGateForModule = (moduleId: string) => {
+    setGateModuleId(moduleId);
+    const existing = gateSettings?.find((g: any) => g.module_id === moduleId);
+    if (existing) {
+      setGsSequential(existing.is_sequential);
+      setGsAudioNote(existing.has_audio_note);
+      setGsAudioLabel(existing.audio_note_label || 'Message from your mentor');
+      setGsAudioPosition(existing.audio_note_position || 'before');
+      setGsMentorGate(existing.has_mentor_gate);
+      setGsMentorMessage(existing.mentor_gate_message || '');
+      setGsContactType(existing.mentor_contact_type || 'whatsapp');
+      setGsZoomLink(existing.zoom_link || '');
+    } else {
+      setGsSequential(false); setGsAudioNote(false); setGsAudioLabel('Message from your mentor');
+      setGsAudioPosition('before'); setGsMentorGate(false); setGsMentorMessage('');
+      setGsContactType('whatsapp'); setGsZoomLink('');
+    }
+  };
+
+  const saveGateSettings = async () => {
+    if (!gateModuleId || !id) return;
+    setSavingGate(true);
+    try {
+      const gateData = {
+        module_id: gateModuleId,
+        course_id: id,
+        creator_id: user!.id,
+        is_sequential: gsSequential,
+        has_audio_note: gsAudioNote,
+        audio_note_label: gsAudioLabel,
+        audio_note_position: gsAudioPosition,
+        has_mentor_gate: gsMentorGate,
+        mentor_gate_message: gsMentorMessage,
+        mentor_contact_type: gsContactType,
+        zoom_link: gsContactType === 'zoom' ? gsZoomLink : null,
+        updated_at: new Date().toISOString(),
+      };
+
+      await supabase.from('module_gate_settings').upsert(gateData, { onConflict: 'module_id' });
+
+      // Update module is_gated flag
+      const gateType = gsMentorGate && gsSequential ? 'both' : gsMentorGate ? 'mentor' : gsSequential ? 'sequential' : null;
+      await supabase.from('modules').update({
+        is_gated: gsSequential || gsMentorGate,
+        gate_type: gateType,
+      }).eq('id', gateModuleId);
+
+      queryClient.invalidateQueries({ queryKey: ['gate-settings', id] });
+      queryClient.invalidateQueries({ queryKey: ['creator-course-edit', id] });
+      toast({ title: 'Gate settings saved ✓' });
+    } catch (err: any) {
+      toast({ title: 'Failed to save gate settings', variant: 'destructive' });
+    } finally {
+      setSavingGate(false);
+    }
+  };
+
   const platformFeePercent = platformSettings?.platform_fee_percent ?? 15;
   const maxCommission = 100 - platformFeePercent;
 
