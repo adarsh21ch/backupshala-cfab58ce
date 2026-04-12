@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import SEOHead from '@/components/SEOHead';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -96,6 +97,7 @@ const CourseDetail = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <SEOHead title={course.title} />
         <BackButton fallback="/courses" />
         {/* Header */}
         <div>

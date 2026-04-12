@@ -48,7 +48,7 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
     <div className={`group rounded-xl border bg-card overflow-hidden transition-all hover:shadow-md ${pinned ? 'border-accent/40 ring-1 ring-accent/20' : 'border-border hover:border-primary/20'}`}>
       <div className="aspect-video bg-muted relative overflow-hidden">
         {course.thumbnail_url ? (
-          <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+          <img src={course.thumbnail_url} alt={course.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
         ) : (
           <div className="flex h-full items-center justify-center bg-primary/5">
             <BookOpen className="h-10 w-10 text-primary/30" />
