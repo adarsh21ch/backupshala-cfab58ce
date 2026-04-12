@@ -54,6 +54,10 @@ import CreatorUpgrade from "./pages/creator/CreatorUpgrade";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
 import AdminCreatorPro from "./pages/admin/AdminCreatorPro";
+import CreatorAgreement from "./pages/CreatorAgreement";
+import ContentPolicy from "./pages/ContentPolicy";
+import CommunityGuidelines from "./pages/CommunityGuidelines";
+import CancellationPolicy from "./pages/CancellationPolicy";
 
 const queryClient = new QueryClient({
   defaultOptions: {
