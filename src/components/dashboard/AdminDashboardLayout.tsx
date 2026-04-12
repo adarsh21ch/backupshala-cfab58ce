@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList } from 'lucide-react';
+import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
 const adminNav = [
   { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { to: '/admin/revenue', label: 'Revenue', icon: TrendingUp },
   { to: '/admin/creators', label: 'Creators', icon: UserCheck },
   { to: '/admin/courses', label: 'Courses', icon: BookOpen },
   { to: '/admin/videos', label: 'Videos', icon: Film },
@@ -14,6 +15,7 @@ const adminNav = [
   { to: '/admin/payments', label: 'Payments', icon: CreditCard },
   { to: '/admin/commissions', label: 'Commissions', icon: IndianRupee },
   { to: '/admin/payouts', label: 'Payouts', icon: Wallet },
+  { to: '/admin/featured', label: 'Featured', icon: Sparkles },
   { to: '/admin/support', label: 'Support', icon: MessageSquare },
   { to: '/admin/creator-pro', label: 'Creator Pro', icon: Star },
   { to: '/admin/settings', label: 'Settings', icon: Settings },

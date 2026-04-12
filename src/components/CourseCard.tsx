@@ -56,6 +56,9 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
         )}
         <div className="absolute top-2 left-2 flex gap-1.5">
           <span className="rounded-md bg-background/90 px-2 py-0.5 text-xs font-medium backdrop-blur-sm">{course.category}</span>
+          {course.is_featured && (
+            <span className="rounded-md bg-accent/90 px-2 py-0.5 text-[10px] font-bold text-accent-foreground backdrop-blur-sm">Featured</span>
+          )}
         </div>
         {pinned && (
           <div className="absolute top-0 left-0 bg-primary text-primary-foreground px-3 py-1 text-[10px] font-bold rounded-br-lg">Start Here</div>

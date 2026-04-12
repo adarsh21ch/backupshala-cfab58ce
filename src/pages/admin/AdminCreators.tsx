@@ -1,22 +1,33 @@
 import AdminDashboardLayout from '@/components/dashboard/AdminDashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Star, Shield, BadgeCheck } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdminCreators = () => {
+  const { user } = useAuth();
   const qc = useQueryClient();
+  const [grantDialog, setGrantDialog] = useState<{ id: string; name: string } | null>(null);
+  const [grantDuration, setGrantDuration] = useState('1');
+  const [grantReason, setGrantReason] = useState('');
 
   const { data: creators, isLoading } = useQuery({
     queryKey: ['admin-creators'],
     queryFn: async () => {
       const { data } = await supabase.from('profiles')
-        .select('*')
+        .select('*, creator_pro_subscriptions(plan, status, pro_ends_at)')
         .eq('is_creator', true)
         .order('created_at', { ascending: false });
       return data || [];
@@ -27,6 +38,10 @@ const AdminCreators = () => {
     mutationFn: async ({ id, approve }: { id: string; approve: boolean }) => {
       const { error } = await supabase.from('profiles').update({ creator_approved: approve }).eq('id', id);
       if (error) throw error;
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id, action: approve ? 'approve_creator' : 'reject_creator',
+        target_type: 'creator', target_id: id,
+      });
     },
     onSuccess: (_, { approve }) => {
       toast.success(approve ? 'Creator approved' : 'Creator rejected');
@@ -35,12 +50,68 @@ const AdminCreators = () => {
     onError: () => toast.error('Action failed'),
   });
 
+  const verifyMutation = useMutation({
+    mutationFn: async ({ id, verified }: { id: string; verified: boolean }) => {
+      const { error } = await supabase.from('profiles').update({ is_verified: verified } as any).eq('id', id);
+      if (error) throw error;
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id, action: verified ? 'verify_creator' : 'unverify_creator',
+        target_type: 'creator', target_id: id,
+      });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-creators'] }); toast.success('Updated'); },
+  });
+
+  const grantProMutation = useMutation({
+    mutationFn: async () => {
+      if (!grantDialog) return;
+      const months = Number(grantDuration);
+      const now = new Date();
+      const expiresAt = months === 0 ? null : new Date(now.getTime() + months * 30 * 24 * 60 * 60 * 1000);
+
+      await supabase.from('creator_pro_subscriptions').upsert({
+        creator_id: grantDialog.id,
+        plan: 'pro',
+        status: 'active',
+        pro_started_at: now.toISOString(),
+        pro_ends_at: expiresAt?.toISOString() || null,
+        amount_per_month: 0,
+        razorpay_subscription_id: 'admin_grant',
+        updated_at: now.toISOString(),
+      }, { onConflict: 'creator_id' });
+
+      await supabase.from('profiles').update({ is_creator_pro: true }).eq('id', grantDialog.id);
+
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id, action: 'grant_pro', target_type: 'creator', target_id: grantDialog.id,
+        details: { duration_months: months === 0 ? 'lifetime' : months, reason: grantReason },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-creators'] });
+      toast.success('Pro granted!');
+      setGrantDialog(null); setGrantReason('');
+    },
+    onError: () => toast.error('Failed'),
+  });
+
+  const revokeProMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('creator_pro_subscriptions').update({ status: 'expired' }).eq('creator_id', id);
+      await supabase.from('profiles').update({ is_creator_pro: false }).eq('id', id);
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id, action: 'revoke_pro', target_type: 'creator', target_id: id,
+      });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-creators'] }); toast.success('Pro revoked'); },
+  });
+
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-heading font-bold">Creator Management</h1>
         <Card className="bg-card border-border">
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -48,47 +119,106 @@ const AdminCreators = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Tier</TableHead>
+                  <TableHead>Pro Expires</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
-                ) : (creators || []).map(c => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.creator_display_name || c.full_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.email}</TableCell>
-                    <TableCell>{c.creator_category || '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant={c.creator_approved ? 'default' : 'secondary'} className={c.creator_approved ? 'bg-primary/20 text-primary border-0' : 'bg-accent/20 text-accent border-0'}>
-                        {c.creator_approved ? 'Approved' : 'Pending'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{format(new Date(c.created_at), 'dd MMM yyyy')}</TableCell>
-                    <TableCell className="text-right">
-                      {!c.creator_approved ? (
-                        <div className="flex gap-2 justify-end">
-                          <Button size="sm" onClick={() => approveMutation.mutate({ id: c.id, approve: true })} className="bg-primary hover:bg-primary/90 h-8">
-                            <CheckCircle className="h-3 w-3 mr-1" /> Approve
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ id: c.id, approve: false })} className="h-8">
-                            <XCircle className="h-3 w-3 mr-1" /> Reject
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
+                ) : (creators || []).map((c: any) => {
+                  const proSub = c.creator_pro_subscriptions?.[0] || c.creator_pro_subscriptions;
+                  const isPro = proSub && proSub.status === 'active';
+                  const proExpires = proSub?.pro_ends_at;
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1.5">
+                          {c.creator_display_name || c.full_name}
+                          {c.is_verified && <BadgeCheck className="h-3.5 w-3.5 text-blue-400" />}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{c.email}</TableCell>
+                      <TableCell>{c.creator_category || '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant={c.creator_approved ? 'default' : 'secondary'} className={c.creator_approved ? 'bg-primary/20 text-primary border-0' : 'bg-accent/20 text-accent border-0'}>
+                          {c.creator_approved ? 'Approved' : 'Pending'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={isPro ? 'default' : 'secondary'} className={`border-0 ${isPro ? 'bg-accent/20 text-accent' : 'bg-secondary text-muted-foreground'}`}>
+                          {isPro ? '⭐ Pro' : 'Free'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {proExpires ? format(new Date(proExpires), 'dd MMM yyyy') : isPro ? 'Lifetime' : '—'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{format(new Date(c.created_at), 'dd MMM yyyy')}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-end flex-wrap">
+                          {!c.creator_approved ? (
+                            <>
+                              <Button size="sm" onClick={() => approveMutation.mutate({ id: c.id, approve: true })} className="bg-primary hover:bg-primary/90 h-7 text-xs">
+                                <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ id: c.id, approve: false })} className="h-7 text-xs">
+                                <XCircle className="h-3 w-3 mr-1" /> Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => approveMutation.mutate({ id: c.id, approve: false })} className="h-7 text-xs">Revoke</Button>
+                          )}
+                          {!isPro ? (
+                            <Button size="sm" variant="outline" onClick={() => setGrantDialog({ id: c.id, name: c.creator_display_name || c.full_name })} className="h-7 text-xs gap-1">
+                              <Star className="h-3 w-3" /> Grant Pro
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => revokeProMutation.mutate(c.id)} className="h-7 text-xs text-destructive">Revoke Pro</Button>
+                          )}
+                          <Button size="sm" variant={c.is_verified ? 'default' : 'outline'} onClick={() => verifyMutation.mutate({ id: c.id, verified: !c.is_verified })} className="h-7 text-xs gap-1">
+                            <BadgeCheck className="h-3 w-3" /> {c.is_verified ? 'Verified' : 'Verify'}
                           </Button>
                         </div>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={() => approveMutation.mutate({ id: c.id, approve: false })} className="h-8">
-                          Revoke
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       </div>
+
+      {/* Grant Pro Dialog */}
+      <Dialog open={!!grantDialog} onOpenChange={() => setGrantDialog(null)}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader><DialogTitle>Grant Pro to {grantDialog?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm">Duration</Label>
+              <Select value={grantDuration} onValueChange={setGrantDuration}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Month</SelectItem>
+                  <SelectItem value="3">3 Months</SelectItem>
+                  <SelectItem value="6">6 Months</SelectItem>
+                  <SelectItem value="12">1 Year</SelectItem>
+                  <SelectItem value="0">Lifetime</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">Reason</Label>
+              <Textarea value={grantReason} onChange={e => setGrantReason(e.target.value)} placeholder="Partner, beta user, compensation..." className="mt-1" rows={2} />
+            </div>
+            <Button onClick={() => grantProMutation.mutate()} disabled={grantProMutation.isPending} className="w-full">
+              Grant Creator Pro
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminDashboardLayout>
   );
 };
