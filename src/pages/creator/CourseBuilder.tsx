@@ -385,7 +385,7 @@ const CourseBuilder = () => {
             <TabsTrigger value="basic" className="rounded-md text-xs">Basic Info</TabsTrigger>
             <TabsTrigger value="modules" className="rounded-md text-xs">Modules ({modules.length})</TabsTrigger>
             <TabsTrigger value="pricing" className="rounded-md text-xs">Pricing</TabsTrigger>
-            <TabsTrigger value="video-settings" className="rounded-md text-xs">Video Settings</TabsTrigger>
+            <TabsTrigger value="video-settings" className="rounded-md text-xs">Playback</TabsTrigger>
             <TabsTrigger value="gate-settings" className="rounded-md text-xs">🔒 Gate Settings</TabsTrigger>
             <TabsTrigger value="publish" className="rounded-md text-xs">Publish</TabsTrigger>
           </TabsList>
@@ -773,101 +773,32 @@ const CourseBuilder = () => {
             </div>
           </TabsContent>
 
-          {/* Video Settings */}
+          {/* Video Playback Info */}
           <TabsContent value="video-settings" className="mt-4 space-y-4">
-            <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+            <div className="rounded-xl border border-border/60 bg-card p-6 shadow-warm space-y-4">
               <div>
                 <h2 className="font-heading text-base font-600 flex items-center gap-2">
-                  <Play className="h-4 w-4 text-primary" /> Video Playback Settings
+                  <Play className="h-4 w-4 text-primary" /> Video Playback
                 </h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Control how students watch videos in this course. Leave toggles off to use your global creator defaults.
+                <p className="text-sm text-muted-foreground mt-2">
+                  Video playback is managed by our secure player. All videos are streamed through Backupshala's protected infrastructure to prevent unauthorized downloads and sharing.
                 </p>
               </div>
-
-              {/* Completion Threshold */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm">Custom Completion Threshold</Label>
-                  <Switch
-                    checked={vsWatchPercent !== null}
-                    onCheckedChange={c => setVsWatchPercent(c ? 80 : null)}
-                  />
+              <div className="rounded-lg bg-secondary/50 p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Videos are served through our secure CDN with encryption in transit.</p>
                 </div>
-                {vsWatchPercent !== null && (
-                  <div className="pl-1 space-y-1">
-                    <p className="text-xs text-muted-foreground">
-                      Students must watch {vsWatchPercent}% to mark a module complete
-                    </p>
-                    <Slider
-                      value={[vsWatchPercent]}
-                      min={50} max={100} step={5}
-                      onValueChange={([v]) => setVsWatchPercent(v)}
-                      className="w-full max-w-sm"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Allow Speed Control */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm">Allow Speed Control</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {vsSpeedControl === null ? 'Using creator default' : vsSpeedControl ? 'Students can change playback speed' : 'Speed control disabled'}
-                  </p>
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Student progress is tracked automatically based on watch time.</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {vsSpeedControl !== null && (
-                    <button onClick={() => setVsSpeedControl(null)} className="text-[10px] text-muted-foreground hover:text-foreground underline">Reset</button>
-                  )}
-                  <Switch
-                    checked={vsSpeedControl ?? true}
-                    onCheckedChange={c => setVsSpeedControl(c)}
-                  />
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Use Gate Settings (Creator Pro) for sequential locking and mentor approval flows.</p>
                 </div>
               </div>
-
-              {/* Allow Forward Seeking */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm">Allow Forward Seeking</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {vsForwardSeeking === null ? 'Using creator default' : vsForwardSeeking ? 'Students can skip ahead' : 'Forward seeking disabled'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {vsForwardSeeking !== null && (
-                    <button onClick={() => setVsForwardSeeking(null)} className="text-[10px] text-muted-foreground hover:text-foreground underline">Reset</button>
-                  )}
-                  <Switch
-                    checked={vsForwardSeeking ?? true}
-                    onCheckedChange={c => setVsForwardSeeking(c)}
-                  />
-                </div>
-              </div>
-
-              {/* Watermark */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm">Video Watermark</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {vsWatermark === null ? 'Using creator default' : vsWatermark ? 'Watermark shown on videos' : 'Watermark disabled'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {vsWatermark !== null && (
-                    <button onClick={() => setVsWatermark(null)} className="text-[10px] text-muted-foreground hover:text-foreground underline">Reset</button>
-                  )}
-                  <Switch
-                    checked={vsWatermark ?? false}
-                    onCheckedChange={c => setVsWatermark(c)}
-                  />
-                </div>
-              </div>
-
-              <Button onClick={saveCourse} disabled={saving} className="rounded-md bg-primary hover:bg-primary/90">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Settings'}
+            </div>
               </Button>
             </div>
           </TabsContent>
