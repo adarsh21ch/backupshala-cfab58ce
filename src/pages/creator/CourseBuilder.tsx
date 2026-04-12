@@ -799,8 +799,6 @@ const CourseBuilder = () => {
                 </div>
               </div>
             </div>
-              </Button>
-            </div>
           </TabsContent>
 
           {/* Gate Settings */}
