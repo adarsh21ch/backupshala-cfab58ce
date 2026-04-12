@@ -103,11 +103,26 @@ const Explore = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('courses')
-        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug), modules(module_type)')
+        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug, is_verified), modules(module_type)')
         .eq('status', 'published');
       return data || [];
     },
   });
+
+  // Fetch active featured listings
+  const { data: featuredListings } = useQuery({
+    queryKey: ['featured-listings-active'],
+    queryFn: async () => {
+      const { data } = await supabase.from('featured_listings')
+        .select('course_id')
+        .eq('status', 'active')
+        .gte('expires_at', new Date().toISOString())
+        .limit(3);
+      return data || [];
+    },
+  });
+
+  const featuredIds = new Set((featuredListings || []).map(f => f.course_id));
 
   const filtered = courses
     ?.filter(c => {
@@ -126,6 +141,10 @@ const Explore = () => {
       const aBundle = a.slug === BUNDLE_SLUG ? 1 : 0;
       const bBundle = b.slug === BUNDLE_SLUG ? 1 : 0;
       if (aBundle !== bBundle) return bBundle - aBundle;
+      // Then featured
+      const aFeatured = featuredIds.has(a.id) ? 1 : 0;
+      const bFeatured = featuredIds.has(b.id) ? 1 : 0;
+      if (aFeatured !== bFeatured) return bFeatured - aFeatured;
       if (sort === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sort === 'price_asc') return a.price - b.price;
       if (sort === 'price_desc') return b.price - a.price;
@@ -187,7 +206,7 @@ const Explore = () => {
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((course: any) => (
-                  <CourseCard key={course.id} course={course} isPlatformCourse={course.slug === BUNDLE_SLUG} pinned={course.slug === BUNDLE_SLUG} />
+                  <CourseCard key={course.id} course={{ ...course, is_featured: featuredIds.has(course.id) }} isPlatformCourse={course.slug === BUNDLE_SLUG} pinned={course.slug === BUNDLE_SLUG} />
                 ))}
               </div>
             )}
