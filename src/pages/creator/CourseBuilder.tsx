@@ -51,11 +51,11 @@ const CourseBuilder = () => {
   const [commissionPercent, setCommissionPercent] = useState(30);
   const [status, setStatus] = useState('draft');
 
-  // Per-course video settings (null = use creator default)
-  const [vsSpeedControl, setVsSpeedControl] = useState<boolean | null>(null);
-  const [vsForwardSeeking, setVsForwardSeeking] = useState<boolean | null>(null);
-  const [vsWatermark, setVsWatermark] = useState<boolean | null>(null);
-  const [vsWatchPercent, setVsWatchPercent] = useState<number | null>(null);
+  // Video settings kept in DB but hidden from UI — managed by platform
+  const [vsSpeedControl] = useState<boolean | null>(null);
+  const [vsForwardSeeking] = useState<boolean | null>(null);
+  const [vsWatermark] = useState<boolean | null>(null);
+  const [vsWatchPercent] = useState<number | null>(null);
 
   const [modules, setModules] = useState<any[]>([]);
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
