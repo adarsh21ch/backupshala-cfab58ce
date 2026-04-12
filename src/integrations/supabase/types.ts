@@ -216,6 +216,87 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_codes: {
+        Row: {
+          code: string
+          course_id: string | null
+          created_at: string
+          creator_id: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          uses_count: number
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          course_id?: string | null
+          created_at?: string
+          creator_id?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          uses_count?: number
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          course_id?: string | null
+          created_at?: string
+          creator_id?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          uses_count?: number
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      course_discussions: {
+        Row: {
+          content: string
+          course_id: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          module_id: string | null
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          course_id: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          module_id?: string | null
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          module_id?: string | null
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_overrides: {
         Row: {
           admin_id: string
@@ -445,6 +526,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      creator_announcements: {
+        Row: {
+          content: string
+          course_id: string | null
+          created_at: string
+          creator_id: string
+          id: string
+          title: string
+        }
+        Insert: {
+          content: string
+          course_id?: string | null
+          created_at?: string
+          creator_id: string
+          id?: string
+          title: string
+        }
+        Update: {
+          content?: string
+          course_id?: string | null
+          created_at?: string
+          creator_id?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
       }
       creator_payouts: {
         Row: {
@@ -746,6 +854,30 @@ export type Database = {
           },
         ]
       }
+      learning_streaks: {
+        Row: {
+          created_at: string
+          id: string
+          modules_completed: number
+          streak_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          modules_completed?: number
+          streak_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          modules_completed?: number
+          streak_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mentor_unlock_requests: {
         Row: {
           approved_at: string | null
@@ -1003,6 +1135,33 @@ export type Database = {
           },
         ]
       }
+      module_quizzes: {
+        Row: {
+          created_at: string
+          id: string
+          module_id: string
+          passing_score: number
+          questions: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_id: string
+          passing_score?: number
+          questions?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_id?: string
+          passing_score?: number
+          questions?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       modules: {
         Row: {
           backupshala_video_link: string | null
@@ -1017,6 +1176,7 @@ export type Database = {
           is_preview: boolean | null
           module_type: string | null
           order_index: number | null
+          release_after_days: number
           resources: Json | null
           title: string
           video_asset_id: string | null
@@ -1036,6 +1196,7 @@ export type Database = {
           is_preview?: boolean | null
           module_type?: string | null
           order_index?: number | null
+          release_after_days?: number
           resources?: Json | null
           title: string
           video_asset_id?: string | null
@@ -1055,6 +1216,7 @@ export type Database = {
           is_preview?: boolean | null
           module_type?: string | null
           order_index?: number | null
+          release_after_days?: number
           resources?: Json | null
           title?: string
           video_asset_id?: string | null
@@ -1138,6 +1300,7 @@ export type Database = {
           amount_total: number
           base_amount: number
           commission_amount: number
+          coupon_id: string | null
           course_id: string
           created_at: string
           creator_id: string
@@ -1157,6 +1320,7 @@ export type Database = {
           amount_total: number
           base_amount?: number
           commission_amount: number
+          coupon_id?: string | null
           course_id: string
           created_at?: string
           creator_id: string
@@ -1176,6 +1340,7 @@ export type Database = {
           amount_total?: number
           base_amount?: number
           commission_amount?: number
+          coupon_id?: string | null
           course_id?: string
           created_at?: string
           creator_id?: string
@@ -1388,6 +1553,60 @@ export type Database = {
           total_referred?: number
           updated_at?: string
           wallet_balance?: number
+        }
+        Relationships: []
+      }
+      quiz_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          module_id: string
+          passed: boolean
+          score: number
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          module_id: string
+          passed?: boolean
+          score?: number
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          module_id?: string
+          passed?: boolean
+          score?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_module_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          module_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          module_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          module_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
