@@ -25,6 +25,7 @@ import VerifyCertificate from "./pages/VerifyCertificate";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import ReferEarn from "./pages/ReferEarn";
+import WalletPage from "./pages/Wallet";
 import CreatorOnboarding from "./pages/creator/CreatorOnboarding";
 import CreatorDashboardHome from "./pages/creator/CreatorDashboardHome";
 import CreatorCourses from "./pages/creator/CreatorCourses";
@@ -121,6 +122,7 @@ const App = () => (
             <Route path="/certificate" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
             <Route path="/dashboard/certificates" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
             <Route path="/dashboard/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
+            <Route path="/dashboard/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/refer" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />

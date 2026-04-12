@@ -5,140 +5,357 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatINR } from '@/lib/format';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Download } from 'lucide-react';
 import { useState } from 'react';
 
 const AdminPayouts = () => {
+  const { user } = useAuth();
   const qc = useQueryClient();
+  const [completeModal, setCompleteModal] = useState<any>(null);
+  const [rejectModal, setRejectModal] = useState<any>(null);
+  const [utrNumber, setUtrNumber] = useState('');
   const [adminNote, setAdminNote] = useState('');
-  const [activeReqId, setActiveReqId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['admin-payout-requests'],
     queryFn: async () => {
       const { data } = await supabase.from('payout_requests')
-        .select('*, profiles!payout_requests_user_id_fkey(full_name, email)')
+        .select('*, profiles!payout_requests_user_id_fkey(full_name, email, is_creator)')
         .order('requested_at', { ascending: false });
       return data || [];
     },
   });
 
-  const processMutation = useMutation({
-    mutationFn: async ({ id, status, note, userId, amount }: { id: string; status: string; note?: string; userId: string; amount: number }) => {
-      const update: any = { status, processed_at: new Date().toISOString() };
-      if (note) update.admin_note = note;
-      const { error } = await supabase.from('payout_requests').update(update).eq('id', id);
-      if (error) throw error;
+  const completeMutation = useMutation({
+    mutationFn: async ({ id, userId, amount }: { id: string; userId: string; amount: number }) => {
+      if (!utrNumber.trim()) throw new Error('UTR number is required');
+      
+      await supabase.from('payout_requests').update({
+        status: 'paid',
+        processed_at: new Date().toISOString(),
+        admin_note: `UTR: ${utrNumber.trim()}${adminNote ? ` | ${adminNote}` : ''}`,
+      }).eq('id', id);
 
-      // Deduct wallet balance on approval
-      if (status === 'approved') {
-        const { data: profile } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
-        if (profile) {
-          const newBalance = Math.max(0, Number(profile.wallet_balance) - amount);
-          const { error: walletError } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
-          if (walletError) throw walletError;
-        }
+      // Update wallet total_withdrawn
+      const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', userId).maybeSingle();
+      if (wallet) {
+        await supabase.from('wallets').update({
+          total_withdrawn: Number(wallet.total_withdrawn) + amount,
+        }).eq('id', wallet.id);
+
+        // Mark pending wallet transaction as completed
+        await supabase.from('wallet_transactions').update({ status: 'completed' })
+          .eq('user_id', userId)
+          .eq('type', 'debit')
+          .eq('status', 'pending')
+          .eq('amount', amount);
+      }
+
+      // Audit log
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id,
+        action: 'payout_completed',
+        target_type: 'payout_request',
+        target_id: id,
+        details: { amount, user_id: userId, utr_number: utrNumber.trim(), admin_note: adminNote },
+      });
+
+      // Notification
+      await supabase.from('notifications').insert({
+        user_id: userId,
+        title: `Withdrawal of ₹${amount} processed ✅`,
+        message: `Your withdrawal has been processed. Please allow 1 business day for it to reflect.`,
+        type: 'payout',
+      });
+    },
+    onSuccess: () => {
+      toast.success('Payout marked as completed');
+      qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
+      setCompleteModal(null);
+      setUtrNumber('');
+      setAdminNote('');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ id, userId, amount }: { id: string; userId: string; amount: number }) => {
+      if (!rejectReason.trim()) throw new Error('Rejection reason is required');
+
+      await supabase.from('payout_requests').update({
+        status: 'rejected',
+        processed_at: new Date().toISOString(),
+        admin_note: rejectReason.trim(),
+      }).eq('id', id);
+
+      // Reverse wallet deduction
+      const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', userId).maybeSingle();
+      if (wallet) {
+        await supabase.from('wallets').update({
+          balance: Number(wallet.balance) + amount,
+        }).eq('id', wallet.id);
+
+        await supabase.from('wallet_transactions').insert({
+          wallet_id: wallet.id,
+          user_id: userId,
+          type: 'credit',
+          amount,
+          source: 'withdrawal_reversed',
+          description: `Withdrawal rejected: ${rejectReason.trim()}`,
+          status: 'completed',
+        });
+      }
+
+      // Audit log
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id,
+        action: 'payout_rejected',
+        target_type: 'payout_request',
+        target_id: id,
+        details: { amount, user_id: userId, reason: rejectReason.trim() },
+      });
+
+      // Notification
+      await supabase.from('notifications').insert({
+        user_id: userId,
+        title: `Withdrawal of ₹${amount} rejected`,
+        message: `Reason: ${rejectReason.trim()}. The amount has been returned to your wallet.`,
+        type: 'payout',
+      });
+    },
+    onSuccess: () => {
+      toast.success('Payout rejected and amount reversed');
+      qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
+      setRejectModal(null);
+      setRejectReason('');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const bulkProcess = useMutation({
+    mutationFn: async () => {
+      for (const id of selected) {
+        await supabase.from('payout_requests').update({ status: 'processing' }).eq('id', id);
       }
     },
     onSuccess: () => {
-      toast.success('Payout request processed');
+      toast.success(`${selected.size} requests marked as processing`);
+      setSelected(new Set());
       qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
-      setActiveReqId(null);
-      setAdminNote('');
     },
-    onError: () => toast.error('Failed to process'),
   });
 
-  const filterByStatus = (status: string) => (requests || []).filter((r: any) => r.status === status);
+  const filterByStatus = (status: string) => (requests || []).filter((r: any) => {
+    if (status === 'all') return true;
+    if (status === 'pending') return r.status === 'pending' || r.status === 'processing';
+    return r.status === status;
+  });
 
-  const PayoutTable = ({ items }: { items: any[] }) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>User</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Method</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.length === 0 ? (
-          <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No requests</TableCell></TableRow>
-        ) : items.map((r: any) => (
-          <TableRow key={r.id}>
-            <TableCell>
-              <div>
-                <p className="font-medium">{r.profiles?.full_name}</p>
-                <p className="text-xs text-muted-foreground">{r.profiles?.email}</p>
-              </div>
-            </TableCell>
-            <TableCell><Badge variant="secondary" className="border-0">{r.request_type}</Badge></TableCell>
-            <TableCell className="font-medium">{formatINR(r.amount)}</TableCell>
-            <TableCell className="text-muted-foreground text-xs">
-              {r.upi_id ? `UPI: ${r.upi_id}` : `Bank: ${r.bank_name} / ${r.account_number}`}
-            </TableCell>
-            <TableCell>
-              <Badge variant="secondary" className={`border-0 ${r.status === 'approved' ? 'bg-primary/20 text-primary' : r.status === 'rejected' ? 'bg-destructive/20 text-destructive' : 'bg-accent/20 text-accent'}`}>
-                {r.status}
-              </Badge>
-            </TableCell>
-            <TableCell className="text-muted-foreground">{format(new Date(r.requested_at), 'dd MMM yyyy')}</TableCell>
-            <TableCell className="text-right">
-              {r.status === 'pending' && (
-                <div className="flex gap-2 justify-end">
-                  <Button size="sm" className="h-8 bg-primary hover:bg-primary/90" onClick={() => processMutation.mutate({ id: r.id, status: 'approved', userId: r.user_id, amount: r.amount })}>
-                    <CheckCircle className="h-3 w-3 mr-1" /> Approve
-                  </Button>
-                  {activeReqId === r.id ? (
-                    <div className="flex gap-1">
-                      <Input value={adminNote} onChange={e => setAdminNote(e.target.value)} placeholder="Note" className="h-8 w-32 text-xs" />
-                      <Button size="sm" variant="destructive" className="h-8" onClick={() => processMutation.mutate({ id: r.id, status: 'rejected', note: adminNote, userId: r.user_id, amount: r.amount })}>
-                        Send
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => setActiveReqId(r.id)}>
-                      <XCircle className="h-3 w-3 mr-1" /> Reject
-                    </Button>
-                  )}
-                </div>
-              )}
-              {r.admin_note && <p className="text-xs text-muted-foreground mt-1">Note: {r.admin_note}</p>}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+  const getUserType = (r: any) => {
+    if (r.profiles?.is_creator) return 'Creator';
+    if (r.request_type === 'wallet_withdrawal') return 'Student';
+    return 'Student';
+  };
+
+  const maskAccount = (acc: string) => acc ? `XXXX${acc.slice(-4)}` : '';
+
+  const exportCSV = () => {
+    const rows = (requests || []).map((r: any) => [
+      format(new Date(r.requested_at), 'dd/MM/yyyy'),
+      r.profiles?.full_name,
+      r.amount,
+      r.upi_id || `${r.bank_name} ${maskAccount(r.account_number)}`,
+      r.status,
+    ]);
+    const csv = 'Date,Name,Amount,Method,Status\n' + rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'payouts.csv';
+    a.click();
+  };
+
+  const pendingItems = filterByStatus('pending');
 
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-heading font-bold">Payout Requests</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-heading font-bold">Payout Requests</h1>
+          <div className="flex gap-2">
+            {selected.size > 0 && (
+              <Button size="sm" variant="outline" onClick={() => bulkProcess.mutate()}>
+                Mark {selected.size} as Processing
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={exportCSV}>
+              <Download className="h-4 w-4 mr-1" /> Export CSV
+            </Button>
+          </div>
+        </div>
+
         <Tabs defaultValue="pending">
           <TabsList>
-            <TabsTrigger value="pending">Pending ({filterByStatus('pending').length})</TabsTrigger>
-            <TabsTrigger value="approved">Approved ({filterByStatus('approved').length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({pendingItems.length})</TabsTrigger>
+            <TabsTrigger value="paid">Completed ({filterByStatus('paid').length})</TabsTrigger>
             <TabsTrigger value="rejected">Rejected ({filterByStatus('rejected').length})</TabsTrigger>
+            <TabsTrigger value="all">All ({(requests || []).length})</TabsTrigger>
           </TabsList>
-          {['pending', 'approved', 'rejected'].map(status => (
+          {['pending', 'paid', 'rejected', 'all'].map(status => (
             <TabsContent key={status} value={status}>
               <Card className="bg-card border-border">
                 <CardContent className="p-0">
-                  <PayoutTable items={filterByStatus(status)} />
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {status === 'pending' && <TableHead className="w-10"><Checkbox checked={selected.size === pendingItems.length && pendingItems.length > 0} onCheckedChange={(c) => setSelected(c ? new Set(pendingItems.map((r: any) => r.id)) : new Set())} /></TableHead>}
+                        <TableHead>User</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filterByStatus(status).length === 0 ? (
+                        <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No requests</TableCell></TableRow>
+                      ) : filterByStatus(status).map((r: any) => (
+                        <TableRow key={r.id}>
+                          {status === 'pending' && (
+                            <TableCell>
+                              <Checkbox checked={selected.has(r.id)} onCheckedChange={(c) => {
+                                const next = new Set(selected);
+                                c ? next.add(r.id) : next.delete(r.id);
+                                setSelected(next);
+                              }} />
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{r.profiles?.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{r.profiles?.email}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell><Badge variant="secondary" className="border-0">{getUserType(r)}</Badge></TableCell>
+                          <TableCell className="font-semibold">{formatINR(r.amount)}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {r.upi_id ? `UPI: ${r.upi_id}` : `Bank: ${r.bank_name} / ${maskAccount(r.account_number || '')}`}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={`border-0 ${
+                              r.status === 'paid' ? 'bg-primary/20 text-primary' :
+                              r.status === 'rejected' ? 'bg-destructive/20 text-destructive' :
+                              r.status === 'processing' ? 'bg-blue-100 text-blue-700' :
+                              'bg-accent/20 text-accent'
+                            }`}>{r.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{format(new Date(r.requested_at), 'dd MMM yyyy')}</TableCell>
+                          <TableCell className="text-right">
+                            {(r.status === 'pending' || r.status === 'processing') && (
+                              <div className="flex gap-2 justify-end">
+                                {r.status === 'pending' && (
+                                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={async () => {
+                                    await supabase.from('payout_requests').update({ status: 'processing' }).eq('id', r.id);
+                                    qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
+                                    toast.success('Marked as processing');
+                                  }}>
+                                    <Clock className="h-3 w-3 mr-1" /> Processing
+                                  </Button>
+                                )}
+                                <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90" onClick={() => setCompleteModal(r)}>
+                                  <CheckCircle className="h-3 w-3 mr-1" /> Complete
+                                </Button>
+                                <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => setRejectModal(r)}>
+                                  <XCircle className="h-3 w-3 mr-1" /> Reject
+                                </Button>
+                              </div>
+                            )}
+                            {r.admin_note && <p className="text-xs text-muted-foreground mt-1">Note: {r.admin_note}</p>}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             </TabsContent>
           ))}
         </Tabs>
+
+        {/* Complete Modal */}
+        <Dialog open={!!completeModal} onOpenChange={() => setCompleteModal(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Complete Payout for {completeModal?.profiles?.full_name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-sm">
+                <p>Amount: <span className="font-semibold">{formatINR(completeModal?.amount || 0)}</span></p>
+                <p>Method: {completeModal?.upi_id ? `UPI: ${completeModal.upi_id}` : `Bank: ${completeModal?.bank_name}`}</p>
+              </div>
+              <div>
+                <Label>Transaction Reference / UTR Number *</Label>
+                <Input value={utrNumber} onChange={e => setUtrNumber(e.target.value)} placeholder="Enter UTR number" className="mt-1" />
+              </div>
+              <div>
+                <Label>Admin Note (optional)</Label>
+                <Input value={adminNote} onChange={e => setAdminNote(e.target.value)} placeholder="Optional note" className="mt-1" />
+              </div>
+              <Button
+                onClick={() => completeMutation.mutate({ id: completeModal.id, userId: completeModal.user_id, amount: completeModal.amount })}
+                disabled={completeMutation.isPending || !utrNumber.trim()}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                {completeMutation.isPending ? <span className="animate-spin">⏳</span> : 'Confirm Completion'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reject Modal */}
+        <Dialog open={!!rejectModal} onOpenChange={() => setRejectModal(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Payout Request</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-sm">
+                <p>Amount: <span className="font-semibold">{formatINR(rejectModal?.amount || 0)}</span></p>
+                <p>User: {rejectModal?.profiles?.full_name}</p>
+              </div>
+              <div>
+                <Label>Rejection Reason *</Label>
+                <Textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="This reason will be shown to the user" className="mt-1" rows={3} />
+              </div>
+              <div className="rounded-lg border border-accent/30 bg-accent/5 p-3">
+                <p className="text-xs text-muted-foreground">The full amount will be returned to the user's wallet.</p>
+              </div>
+              <Button
+                onClick={() => rejectMutation.mutate({ id: rejectModal.id, userId: rejectModal.user_id, amount: rejectModal.amount })}
+                disabled={rejectMutation.isPending || !rejectReason.trim()}
+                variant="destructive"
+                className="w-full"
+              >
+                {rejectMutation.isPending ? <span className="animate-spin">⏳</span> : 'Reject & Return Funds'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminDashboardLayout>
   );
