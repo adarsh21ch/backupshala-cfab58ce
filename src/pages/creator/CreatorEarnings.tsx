@@ -105,39 +105,20 @@ const CreatorEarnings = () => {
         </div>
 
         {/* Monthly Earnings Chart */}
-        {payments && payments.length > 0 && (() => {
-          const monthlyData = useMemo(() => {
-            const map: Record<string, number> = {};
-            payments.forEach(p => {
-              if (!p.paid_at) return;
-              const d = new Date(p.paid_at);
-              const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-              map[key] = (map[key] || 0) + Number(p.creator_payout_amount);
-            });
-            return Object.entries(map)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .slice(-6)
-              .map(([month, amount]) => ({
-                month: new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
-                amount: Math.round(amount),
-              }));
-          }, [payments]);
-
-          return monthlyData.length > 1 ? (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h2 className="font-heading text-base font-600 mb-4">Monthly Earnings</h2>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `₹${v}`} />
-                  <Tooltip formatter={(v: number) => [`₹${v}`, 'Earnings']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : null;
-        })()}
+        {monthlyData.length > 1 && (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h2 className="font-heading text-base font-600 mb-4">Monthly Earnings</h2>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v: number) => `₹${v}`} />
+                <Tooltip formatter={(v: number) => [`₹${v}`, 'Earnings']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Self-referral tip */}
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
