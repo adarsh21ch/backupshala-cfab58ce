@@ -56,6 +56,24 @@ const CreatorEarnings = () => {
   const paidOut = creatorPayouts?.paid || 0;
   const pendingPayout = creatorPayouts?.pending || 0;
 
+  const monthlyData = useMemo(() => {
+    if (!payments || payments.length === 0) return [];
+    const map: Record<string, number> = {};
+    payments.forEach(p => {
+      if (!p.paid_at) return;
+      const d = new Date(p.paid_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      map[key] = (map[key] || 0) + Number(p.creator_payout_amount);
+    });
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([month, amount]) => ({
+        month: new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
+        amount: Math.round(amount),
+      }));
+  }, [payments]);
+
   return (
     <CreatorDashboardLayout>
       <div className="space-y-6">
