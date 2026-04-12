@@ -110,6 +110,7 @@ export type Database = {
       commissions: {
         Row: {
           amount: number
+          commission_type: string
           course_id: string
           created_at: string
           id: string
@@ -121,6 +122,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          commission_type?: string
           course_id: string
           created_at?: string
           id?: string
@@ -132,6 +134,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          commission_type?: string
           course_id?: string
           created_at?: string
           id?: string
@@ -781,6 +784,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      featured_listings: {
+        Row: {
+          amount_paid: number
+          course_id: string
+          created_at: string
+          creator_id: string
+          expires_at: string
+          id: string
+          payment_id: string | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          amount_paid?: number
+          course_id: string
+          created_at?: string
+          creator_id: string
+          expires_at: string
+          id?: string
+          payment_id?: string | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          amount_paid?: number
+          course_id?: string
+          created_at?: string
+          creator_id?: string
+          expires_at?: string
+          id?: string
+          payment_id?: string | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
       }
       folder_shares: {
         Row: {
@@ -1496,6 +1535,7 @@ export type Database = {
           is_admin: boolean
           is_creator: boolean
           is_creator_pro: boolean | null
+          is_verified: boolean
           phone: string | null
           referrer_email: string
           total_earned: number
@@ -1521,6 +1561,7 @@ export type Database = {
           is_admin?: boolean
           is_creator?: boolean
           is_creator_pro?: boolean | null
+          is_verified?: boolean
           phone?: string | null
           referrer_email?: string
           total_earned?: number
@@ -1546,6 +1587,7 @@ export type Database = {
           is_admin?: boolean
           is_creator?: boolean
           is_creator_pro?: boolean | null
+          is_verified?: boolean
           phone?: string | null
           referrer_email?: string
           total_earned?: number
