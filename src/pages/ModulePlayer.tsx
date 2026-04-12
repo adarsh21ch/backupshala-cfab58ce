@@ -391,6 +391,10 @@ const ModulePlayer = () => {
                 const done = completedModuleIds.has(m.id);
                 const isCurrent = m.id === moduleId;
                 const mType = m.module_type || 'video';
+                const relDays = m.release_after_days || 0;
+                const isDripLocked = relDays > 0 && enrollment?.enrolled_at
+                  ? new Date(new Date(enrollment.enrolled_at).getTime() + relDays * 86400000) > new Date()
+                  : false;
                 return (
                   <Link
                     key={m.id}
