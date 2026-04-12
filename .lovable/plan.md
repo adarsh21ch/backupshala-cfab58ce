@@ -1,115 +1,152 @@
 
 
-# Production Readiness Audit & Plan for Backupshala
+# Backupshala — Complete Production Upgrade Plan
 
-After a thorough review of every page, edge function, database schema, RLS policy, and user flow, here is what needs to be fixed, added, or improved to make the app production-ready.
-
----
-
-## Critical Bugs & Missing Features
-
-### 1. Missing `check-and-issue-certificate` Edge Function
-The ModulePlayer calls `supabase.functions.invoke('check-and-issue-certificate')` on course completion, but **this edge function does not exist**. Certificates will never be issued.
-
-**Fix:** Create `supabase/functions/check-and-issue-certificate/index.ts` that:
-- Verifies all modules are completed for the course
-- Generates a unique certificate code (e.g., `BS-XXXXXX`)
-- Inserts into the `certificates` table
-- Marks the enrollment as `is_completed = true`
-
-### 2. Missing Password Reset Page (`/reset-password`)
-The Login page sends reset emails but redirects to `/login` instead of a dedicated `/reset-password` page. Users clicking the reset link get auto-logged in without ever setting a new password.
-
-**Fix:** Create `src/pages/ResetPassword.tsx` with a new password form, register route in App.tsx, and update the `redirectTo` in Login.tsx.
-
-### 3. Admin Dashboard Revenue Shows ₹0
-The admin dashboard filters payments by `status === 'paid'` but the verify-razorpay-payment function sets status to `'success'`, not `'paid'`. Revenue will always show zero.
-
-**Fix:** Update AdminDashboardHome to filter by `status === 'success'` instead of `'paid'`.
-
-### 4. Payout Approval Doesn't Deduct Wallet Balance
-When admin approves a payout request, the wallet balance is never deducted from the user's profile. Users could request unlimited payouts.
-
-**Fix:** In AdminPayouts, after approving, deduct the payout amount from the user's `wallet_balance` in the profiles table.
+This is a large-scope upgrade covering visual overhaul, bug fixes, payment safety, emails, admin upgrades, student UX, creator polish, mobile responsiveness, compliance, SEO, and general polish. The work will be split into phases executed in order.
 
 ---
 
-## Security Improvements
+## Phase 1: Visual Identity Overhaul + Bug Fixes
 
-### 5. Rate Limiting on Auth Forms
-Login and Signup have no client-side rate limiting or captcha. Bots could brute-force passwords.
+### 1A. Brand & Color System Update
+- Update `src/index.css` CSS variables: light bg `#FAFAF8`, dark bg `#0F1117`/`#111827`, card dark `#1C2333`, text dark `#F1F0EE`
+- Update `tailwind.config.ts`: add `DM Sans` body + `Space Grotesk` headings font families, consistent border radius (`12px` cards, `8px` inputs, `6px` badges)
+- Update `index.html` to import `DM Sans` and `Space Grotesk` from Google Fonts (replace `Plus Jakarta Sans`)
+- Update all Card components globally via `card.tsx` default classes: soft warm shadows, no harsh borders
+- Update Button variants in `button.tsx`: saffron primary, outlined secondary
+- Update KPICard, sidebar active states (left accent bar in saffron), form input styles
 
-**Fix:** Add a simple cooldown (disable button for 30s after 3 failed attempts) on Login.
-
-### 6. Input Validation on Payout Forms
-UPI IDs and bank account numbers are accepted without format validation. Invalid data means failed payouts.
-
-**Fix:** Add regex validation: UPI format `name@bank`, IFSC `^[A-Z]{4}0[A-Z0-9]{6}$`, account number 9-18 digits.
-
-### 7. Enrollment INSERT Policy Missing
-The `enrollments` table has no INSERT policy for authenticated users — inserts only work via the service role in the edge function. This is actually correct (server-side only), but we should verify the edge function handles all edge cases (duplicate enrollment check is already there).
-
----
-
-## Admin Analytics Gaps
-
-### 8. Admin Dashboard Missing Key Analytics
-The admin panel lacks:
-- Revenue trend (daily/weekly/monthly chart)
-- Course-wise revenue breakdown
-- Referral funnel (signups → enrollments → commissions)
-- Date-range filters on payments/commissions tables
-- Export to CSV on key tables
-
-**Fix:** Add a date filter and summary cards to AdminPayments, and a simple revenue chart to AdminDashboardHome.
-
-### 9. Admin Payments Table Missing Search/Filter
-No way to search by student name, filter by date, or filter by status.
-
-**Fix:** Add search input + status filter tabs (All / Pending / Success) to AdminPayments.
+### 1B. Bug Fixes
+- **Profile.tsx (line 27)**: Replace `useState(() => {...})` with `useEffect` to sync form state when profile loads. Remove the render-phase state sync on lines 37-42.
+- **Signup.tsx**: Make `referrerEmail` optional — remove validation requiring it (line 33), default to `none@backupshala.com` if blank, update label and helper text
+- **Video settings cleanup**: Remove `vsSpeedControl`, `vsForwardSeeking`, `vsWatermark`, `vsWatchPercent` toggles from CourseBuilder UI (lines 54-58 and their corresponding UI). Keep DB columns but hide from creators. Add note: "Video playback is managed by our secure player."
 
 ---
 
-## UX Improvements
+## Phase 2: Email Verification + Razorpay Webhook
 
-### 10. Explore Page Mobile Filters Broken
-The sidebar filters show/hide but there's no overlay or close button on mobile. Filters push content down awkwardly.
+### 2A. Email Verification Flow
+- Disable auto-confirm via `configure_auth` tool
+- Create `/verify-email` page showing "Check your inbox" message with resend button
+- Update `Signup.tsx` to redirect to `/verify-email` after signup instead of `/explore`
+- Update `ProtectedRoute` to check `user.email_confirmed_at` and redirect unverified users to `/verify-email`
+- Add route in `App.tsx`
 
-**Fix:** Wrap mobile filters in a Sheet/Drawer component.
+### 2B. Razorpay Webhook Edge Function
+- Create `supabase/functions/razorpay-webhook/index.ts`
+- Verify `x-razorpay-signature` using HMAC SHA256 with `RAZORPAY_KEY_SECRET`
+- Handle `payment.captured` (create enrollment if missing) and `payment.failed` (update status)
+- DB migration: create `webhook_logs` table (id, event_type, payload jsonb, processed_at, status) with admin-only RLS
 
-### 11. Course Detail Page Missing (`/courses/:id`)
-Students clicking "Start" or "Continue" on their enrolled courses go to `/courses/:id` which renders `CourseDetail.tsx`. Need to verify this page properly lists modules and links to the player.
-
-### 12. QueryClient Missing Error/Retry Config
-The QueryClient has no default error handling, no retry config, and no stale time. This means:
-- Excessive refetching on every mount
-- Silent failures on network errors
-
-**Fix:** Configure `QueryClient` with `staleTime: 5 * 60 * 1000`, `retry: 2`, and a global `onError` handler.
+### 2C. Invoice/Receipt Page
+- Create `/receipt/:paymentId` page accessible only to the buyer
+- Display: Backupshala logo, invoice number, date, buyer info, course name, amount, GST breakdown, Razorpay payment ID
+- Add print-optimized CSS with `@media print`
+- Add "View Receipt" link in student dashboard and enrollment success
 
 ---
 
-## Implementation Order (Priority)
+## Phase 3: Transactional Emails
 
-| # | Task | Impact |
-|---|------|--------|
-| 1 | Create `check-and-issue-certificate` edge function | **Blocker** — certificates don't work |
-| 2 | Fix revenue status filter (`'paid'` → `'success'`) | **Blocker** — admin sees ₹0 revenue |
-| 3 | Create `/reset-password` page | **Blocker** — password reset broken |
-| 4 | Deduct wallet on payout approval | **Blocker** — financial integrity |
-| 5 | Add UPI/bank validation on payout forms | Security |
-| 6 | Add auth rate limiting | Security |
-| 7 | Configure QueryClient defaults | Stability |
-| 8 | Add search/filters to AdminPayments | Analytics |
-| 9 | Add revenue summary to AdminDashboardHome | Analytics |
-| 10 | Fix mobile filters on Explore | UX |
+- Set up email infrastructure using Lovable's built-in email system (not Resend — the prompt suggested Resend but Lovable Cloud has built-in support)
+- Scaffold transactional email templates:
+  1. `enrollment-confirmation` — triggered after enrollment
+  2. `certificate-issued` — triggered after certificate generation
+  3. `payout-processed` — triggered on admin payout approval
+  4. `payout-rejected` — triggered on admin payout rejection
+- Wire up triggers in the relevant UI flows using `supabase.functions.invoke('send-transactional-email', ...)`
+
+---
+
+## Phase 4: Admin Panel Upgrades
+
+### 4A. Audit Log
+- DB migration: create `admin_audit_log` table (id, admin_id, action, target_type, target_id, details jsonb, created_at) with admin-only RLS
+- Create helper function `logAdminAction(action, targetType, targetId, details)` used across admin pages
+- Add logging to: creator approve/reject, course approve/reject, payout approve/reject, settings updates
+- Create `/admin/audit-log` page with paginated table, add to admin sidebar
+
+### 4B. CSV Export
+- Add "Export CSV" button to AdminPayments (already has one — verify others)
+- Add to AdminStudents, AdminCommissions, AdminPayouts
+
+### 4C. Revenue Charts
+- Add Recharts line chart (daily revenue, last 30 days) to AdminDashboardHome
+- Add bar chart (monthly enrollments, last 6 months)
+- Add date range filter (7d / 30d / 3mo / custom)
+
+### 4D. Date Filters
+- Add From/To date pickers to Payments, Commissions, Payouts admin tables
+
+---
+
+## Phase 5: Student Experience
+
+### 5A. Course Review Modal
+- After course completion, show a modal with star rating (1-5) + optional text
+- Submit to existing `course_reviews` table (already exists with proper RLS)
+- Show average rating on course cards and detail page
+
+### 5B. Student Order History
+- Create `/dashboard/orders` page showing past payments
+- Add "Order History" to student sidebar
+- Show: course name, date, amount, payment ID, status, receipt link
+
+### 5C. Cookie Consent Banner
+- Sticky bottom banner on first visit for non-logged-in users
+- Store consent in localStorage, hide once accepted
+
+---
+
+## Phase 6: Creator Polish + Mobile
+
+### 6A. Creator UX
+- Add character counters on title (100) and description (500) in CourseBuilder
+- Add empty state for 0 modules
+- Add monthly earnings bar chart to CreatorEarnings using Recharts
+
+### 6B. Mobile Responsiveness Audit
+- Navbar: hamburger menu with slide-in drawer (already partially built — polish it)
+- Dashboard KPI cards: 2x2 grid on mobile
+- Student sidebar: bottom nav bar on mobile (already exists — verify)
+- Explore: horizontal scrollable category pills on mobile
+- CourseEnrollment: sticky bottom CTA on mobile
+- Admin sidebar: collapsible drawer on mobile (already built — verify)
+
+---
+
+## Phase 7: Compliance, SEO, General Polish
+
+### 7A. Trust & Compliance
+- Checkout page: add "Price includes 18% GST" note
+- Course cards: replace referral earnings badge with "Referral bonus available"
+- Add "Report this course" link on CourseDetail page
+- Verify all legal pages linked in footer on all page layouts
+
+### 7B. SEO Meta Tags
+- Add `react-helmet-async` for per-page `<title>` and meta tags
+- Add to: Index, Explore, CourseEnrollment, CourseDetail pages
+- Add `loading="lazy"` to course card images
+
+### 7C. General Polish
+- Skeleton loaders on all data fetches (audit existing, add missing)
+- Empty states on all lists/tables
+- Disable + loading spinner on submit buttons
+- Confirmation dialogs before destructive admin actions
+- `document.title` updates on all pages
+- `transition-all duration-200` on interactive elements
 
 ---
 
 ## Technical Notes
 
-- The certificate edge function needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (already available as secrets)
-- The revenue bug is a one-line fix in `AdminDashboardHome.tsx` line 22: change `'paid'` to `'success'`
-- Wallet deduction on payout approval requires an additional Supabase update call in `AdminPayouts.tsx` after the status update
-- The reset password page needs to handle the `type=recovery` hash parameter from the email link
+- **Font change**: Replacing `Plus Jakarta Sans` with `Space Grotesk` for headings, keeping `DM Sans` for body, keeping `JetBrains Mono` for code
+- **FK verification**: All Supabase queries use FK syntax but no FKs are defined — need migration to add FK constraints on courses.creator_id, enrollments.student_id/course_id, payments.student_id/course_id/creator_id, etc.
+- **Email system**: Will use Lovable's built-in email infrastructure (not Resend) since the project runs on Lovable Cloud
+- **Webhook secret**: `RAZORPAY_KEY_SECRET` is already configured in secrets
+- **Existing CSV export**: AdminPayments already has CSV export — will extend pattern to other admin tables
+- **course_reviews table**: Already exists with proper RLS policies — no migration needed for reviews
+- **Memory update**: Will update brand design memory to reflect new color tokens and typography
+
+This is approximately 6-8 implementation sessions. Phase 1 and 2 are the highest priority and should be done first.
 
