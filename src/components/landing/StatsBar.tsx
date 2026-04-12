@@ -1,20 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, Users, IndianRupee } from 'lucide-react';
+import { BookOpen, Users, GraduationCap } from 'lucide-react';
 
 const StatsBar = () => {
   const { data: stats } = useQuery({
     queryKey: ['landing-stats'],
     queryFn: async () => {
-      const [coursesRes, enrollmentsRes, commissionsRes] = await Promise.all([
+      const [coursesRes, enrollmentsRes] = await Promise.all([
         supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'published'),
         supabase.from('enrollments').select('id', { count: 'exact', head: true }),
-        supabase.from('commissions').select('amount'),
       ]);
       const courseCount = coursesRes.count || 0;
       const enrollmentCount = enrollmentsRes.count || 0;
-      const totalCommissions = (commissionsRes.data || []).reduce((sum, c) => sum + Number(c.amount), 0);
-      return { courseCount, enrollmentCount, totalCommissions };
+      return { courseCount, enrollmentCount };
     },
   });
 
@@ -27,16 +25,12 @@ const StatsBar = () => {
     {
       icon: Users,
       value: stats ? (stats.enrollmentCount > 500 ? `${stats.enrollmentCount}+` : '500+') : '…',
-      label: 'Students Enrolled',
+      label: 'Learners Enrolled',
     },
     {
-      icon: IndianRupee,
-      value: stats
-        ? stats.totalCommissions > 25000
-          ? `₹${Math.round(stats.totalCommissions).toLocaleString('en-IN')}+`
-          : '₹25,000+'
-        : '…',
-      label: 'Commissions Paid',
+      icon: GraduationCap,
+      value: '100%',
+      label: 'GST Compliant',
     },
   ];
 

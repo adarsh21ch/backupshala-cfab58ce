@@ -15,52 +15,90 @@ const Terms = () => (
 
       <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
         <section>
-          <h2 className="font-heading text-lg font-700">1. Platform Usage</h2>
-          <p className="text-muted-foreground">Backupshala is an online education platform that connects creators with students. By using our platform, you agree to these terms. You must be at least 18 years old or have parental consent to use this platform.</p>
+          <h2 className="font-heading text-lg font-700">1. Platform Overview</h2>
+          <p className="text-muted-foreground">Backupshala is a digital skills learning marketplace that connects course creators with learners. The Platform facilitates course hosting, payments, certificate issuance, and referral management. Backupshala is a <strong>platform provider</strong> — not a guarantor of results, income, or outcomes.</p>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">2. Creator Responsibilities</h2>
+          <h2 className="font-heading text-lg font-700">2. Eligibility</h2>
+          <p className="text-muted-foreground">You must be at least 18 years old (or have parental/guardian consent) to use this platform. By creating an account, you represent that the information you provide is accurate and complete.</p>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">3. Creator Responsibilities</h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Creators must provide accurate, original content that does not infringe on any intellectual property rights.</li>
-            <li>Course content must meet quality standards set by Backupshala.</li>
-            <li>Creators are responsible for the accuracy of information in their courses.</li>
-            <li>Creators must not upload harmful, misleading, or inappropriate content.</li>
+            <li>Creators are solely responsible for the accuracy, legality, and quality of their course content.</li>
+            <li>Creators must not upload harmful, misleading, illegal, or inappropriate content.</li>
+            <li>Creators must comply with the <Link to="/creator-agreement" className="text-primary hover:underline">Creator Agreement</Link> and <Link to="/content-policy" className="text-primary hover:underline">Content Upload Policy</Link>.</li>
+            <li>Creators must not make guarantees about income, financial returns, or specific outcomes.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">3. Student Responsibilities</h2>
+          <h2 className="font-heading text-lg font-700">4. Student Responsibilities</h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Students must not share, redistribute, or resell course content.</li>
             <li>Students must not use automated tools to access or download content.</li>
             <li>Students are responsible for maintaining the confidentiality of their account credentials.</li>
+            <li>Students must comply with the <Link to="/community-guidelines" className="text-primary hover:underline">Community Guidelines</Link>.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">4. Payments & Refunds</h2>
-          <p className="text-muted-foreground">All payments are processed in Indian Rupees (INR) through Razorpay. Prices include applicable GST (18%). Refunds are governed by our <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>.</p>
+          <h2 className="font-heading text-lg font-700">5. Payments & Refunds</h2>
+          <p className="text-muted-foreground">All payments are processed in Indian Rupees (INR) through Razorpay. Prices include applicable GST (18%). Refunds are governed by our <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>. Cancellations are governed by our <Link to="/cancellation-policy" className="text-primary hover:underline">Cancellation Policy</Link>.</p>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">5. Commission & Payouts</h2>
-          <p className="text-muted-foreground">Referral commissions are credited to wallets upon successful enrollment. Payouts can be requested when the wallet balance reaches ₹500 or more. Payouts are processed within 7–10 business days.</p>
+          <h2 className="font-heading text-lg font-700">6. Referral Program</h2>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
+            <li>The referral program allows users to earn commissions when people they refer enroll in courses.</li>
+            <li>Commission percentages are set by individual course creators and may vary.</li>
+            <li>Referral commissions are <strong>not guaranteed income</strong>. They depend on actual course enrollments.</li>
+            <li>Commissions are credited to your wallet upon successful enrollment. Payouts require a minimum balance of ₹500.</li>
+            <li>Backupshala reserves the right to reverse commissions in case of refunds, fraud, or policy violations.</li>
+            <li>The referral program is not an employment, investment, or money-making scheme. It is a standard affiliate-style commission.</li>
+          </ul>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">6. Prohibited Content</h2>
-          <p className="text-muted-foreground">The following is strictly prohibited: hate speech, harassment, spam, misleading claims, plagiarized content, illegal activities, and content that violates any applicable laws.</p>
+          <h2 className="font-heading text-lg font-700">7. Prohibited Content & Activities</h2>
+          <p className="text-muted-foreground">The following is strictly prohibited on Backupshala:</p>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
+            <li>Hate speech, harassment, threats, or discriminatory behavior</li>
+            <li>Plagiarized, pirated, or copyrighted content without authorization</li>
+            <li>Misleading income claims or "guaranteed earning" promises</li>
+            <li>Pyramid schemes, MLM promotion, or money circulation</li>
+            <li>Spam, phishing, or any form of fraud</li>
+            <li>Illegal activities, gambling, betting, or regulated financial promotion</li>
+            <li>Adult, violent, or harmful content</li>
+          </ul>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">7. Account Termination</h2>
-          <p className="text-muted-foreground">We reserve the right to suspend or terminate accounts that violate these terms. Enrolled students retain access to courses they have already paid for, even if a creator's account is suspended.</p>
+          <h2 className="font-heading text-lg font-700">8. Account Termination</h2>
+          <p className="text-muted-foreground">We reserve the right to suspend or terminate accounts that violate these terms without prior notice. Enrolled students retain access to courses they have already paid for, even if a creator's account is suspended.</p>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">8. Governing Law</h2>
+          <h2 className="font-heading text-lg font-700">9. Disclaimer of Warranties</h2>
+          <p className="text-muted-foreground">Backupshala provides the platform "as is" without warranties of any kind. We do not guarantee the accuracy, completeness, or usefulness of any course content. Course content is created by independent creators and does not represent the views of Backupshala. <strong>Backupshala does not guarantee any specific income, financial results, employment, or outcomes from using the platform.</strong></p>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">10. Limitation of Liability</h2>
+          <p className="text-muted-foreground">Backupshala shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the platform. Our total liability is limited to the amount you paid for the specific course in question.</p>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">11. Governing Law</h2>
           <p className="text-muted-foreground">These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in India.</p>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">12. Contact</h2>
+          <p className="text-muted-foreground">For questions about these Terms, contact <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
         </section>
       </div>
     </main>

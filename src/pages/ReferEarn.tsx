@@ -54,8 +54,8 @@ const ReferEarn = () => {
     ? Math.round((enrolledReferrals / referralCount) * 100)
     : 0;
 
-  const whatsappMsg = `Hey! I'm learning on Backupshala — a platform where you learn from expert creators and earn by referring friends. Sign up at ${window.location.origin}/signup?ref=${encodeURIComponent(profile?.email || '')} and start your journey! 🚀`;
-  const generalMsg = `Check out Backupshala — learn from expert creators, earn certificates, and earn commissions by referring friends. Sign up here: ${window.location.origin}/signup?ref=${encodeURIComponent(profile?.email || '')}`;
+  const whatsappMsg = `Hey! I'm learning digital skills on Backupshala — a platform with expert-led courses and verified certificates. Sign up at ${window.location.origin}/signup?ref=${encodeURIComponent(profile?.email || '')} and check it out! 📚`;
+  const generalMsg = `Check out Backupshala — expert-led digital skills courses with verified certificates. Sign up here: ${window.location.origin}/signup?ref=${encodeURIComponent(profile?.email || '')}`;
 
   const copyToClipboard = async (text: string, type: 'email' | 'whatsapp' | 'general') => {
     await navigator.clipboard.writeText(text);
@@ -65,13 +65,13 @@ const ReferEarn = () => {
 
   const bundleCourse = publishedCourses?.find(c => c.slug === BUNDLE_SLUG);
   const bundleCommission = bundleCourse ? Math.round(bundleCourse.price * (bundleCourse.commission_percent / 100)) : 75;
-  const bundleShareMsg = `Hey! I just enrolled in the Backupshala Standard Bundle — ₹${bundleCourse?.price || 249} for digital skills resources on video editing, content creation, personal branding and more. Plus a certificate and community access! When you sign up at backupshala.com, enter my email ${profile?.email} as your referrer. Here's the link: ${window.location.origin}/c/backupshala/${BUNDLE_SLUG} 🚀`;
+  const bundleShareMsg = `Hey! I enrolled in the Backupshala Standard Bundle — ₹${bundleCourse?.price || 249} for digital skills courses on video editing, content creation, personal branding and more. Plus a certificate and community access! Sign up at backupshala.com and enter my email ${profile?.email} as your referrer. Here's the link: ${window.location.origin}/c/backupshala/${BUNDLE_SLUG} 📚`;
 
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl">
         <BackButton fallback="/dashboard" />
-        <h1 className="font-heading text-2xl font-700">Refer & Earn</h1>
+        <h1 className="font-heading text-2xl font-700">Referral Program</h1>
 
         {/* Best to Refer Card */}
         {bundleCourse && (

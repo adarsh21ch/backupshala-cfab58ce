@@ -92,7 +92,7 @@ const Signup = () => {
             <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">Create your account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Start learning and earning on Backupshala</p>
+          <p className="mt-1 text-sm text-muted-foreground">Join Backupshala — a digital skills learning platform</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -148,6 +148,12 @@ const Signup = () => {
             </p>
             {errors.referrerEmail && <p className="mt-1 text-xs text-destructive">{errors.referrerEmail}</p>}
           </div>
+          <p className="text-[10px] text-muted-foreground text-center mt-3">
+            By creating an account, you agree to our{' '}
+            <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>,{' '}
+            <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>, and{' '}
+            <Link to="/community-guidelines" className="text-primary hover:underline">Community Guidelines</Link>.
+          </p>
           <Button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-md font-semibold">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Account'}
           </Button>

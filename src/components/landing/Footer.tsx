@@ -6,7 +6,7 @@ const Footer = () => (
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <span className="font-heading text-xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
-          <p className="mt-2 text-sm text-muted-foreground">Your backup plan starts here.</p>
+          <p className="mt-2 text-sm text-muted-foreground">A digital skills learning platform.</p>
         </div>
         <div>
           <p className="font-heading text-sm font-600 mb-3">Platform</p>
@@ -18,36 +18,38 @@ const Footer = () => (
           </div>
         </div>
         <div>
-          <p className="font-heading text-sm font-600 mb-3">Creators</p>
+          <p className="font-heading text-sm font-600 mb-3">For Creators</p>
           <div className="flex flex-col gap-2">
             <Link to="/creator/onboarding" className="text-sm text-muted-foreground hover:text-foreground">Become a Creator</Link>
-            <Link to="/creator/dashboard" className="text-sm text-muted-foreground hover:text-foreground">Creator Dashboard</Link>
-            <Link to="/refund-policy" className="text-sm text-muted-foreground hover:text-foreground">Payout Policy</Link>
-            <a href="/#faq" className="text-sm text-muted-foreground hover:text-foreground">Creator FAQ</a>
+            <Link to="/creator-agreement" className="text-sm text-muted-foreground hover:text-foreground">Creator Agreement</Link>
+            <Link to="/content-policy" className="text-sm text-muted-foreground hover:text-foreground">Content Upload Policy</Link>
+            <a href="/#faq" className="text-sm text-muted-foreground hover:text-foreground">FAQ</a>
           </div>
         </div>
         <div>
-          <p className="font-heading text-sm font-600 mb-3">Students</p>
+          <p className="font-heading text-sm font-600 mb-3">For Learners</p>
           <div className="flex flex-col gap-2">
             <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">My Dashboard</Link>
             <Link to="/dashboard/certificates" className="text-sm text-muted-foreground hover:text-foreground">My Certificates</Link>
-            <Link to="/refer" className="text-sm text-muted-foreground hover:text-foreground">Refer & Earn</Link>
             <Link to="/verify" className="text-sm text-muted-foreground hover:text-foreground">Verify Certificate</Link>
+            <Link to="/community-guidelines" className="text-sm text-muted-foreground hover:text-foreground">Community Guidelines</Link>
           </div>
         </div>
         <div>
-          <p className="font-heading text-sm font-600 mb-3">Company</p>
+          <p className="font-heading text-sm font-600 mb-3">Legal & Support</p>
           <div className="flex flex-col gap-2">
             <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground">About Backupshala</Link>
             <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact Us</Link>
-            <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
             <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">Terms of Service</Link>
+            <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
             <Link to="/refund-policy" className="text-sm text-muted-foreground hover:text-foreground">Refund Policy</Link>
+            <Link to="/cancellation-policy" className="text-sm text-muted-foreground hover:text-foreground">Cancellation Policy</Link>
           </div>
         </div>
       </div>
-      <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Backupshala. All rights reserved. | Made in India 🇮🇳
+      <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground space-y-1">
+        <p>© {new Date().getFullYear()} Backupshala. All rights reserved.</p>
+        <p>Backupshala is a digital learning marketplace. We do not guarantee any income, results, or specific outcomes. All course content is provided by independent creators.</p>
       </div>
     </div>
   </footer>

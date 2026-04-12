@@ -21,7 +21,7 @@ const RefundPolicy = () => (
 
         <section>
           <h2 className="font-heading text-lg font-700">2. Eligibility</h2>
-          <p className="text-muted-foreground">To be eligible for a refund, you must have completed <strong>less than 20%</strong> of the course content (modules).</p>
+          <p className="text-muted-foreground">To be eligible for a refund, you must have completed <strong>less than 20%</strong> of the course content (modules). Refund requests made after 7 days or after completing 20% or more of the course will not be processed.</p>
         </section>
 
         <section>
@@ -30,7 +30,7 @@ const RefundPolicy = () => (
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Your registered email address</li>
             <li>Course name</li>
-            <li>Invoice number</li>
+            <li>Invoice number (if available)</li>
             <li>Reason for refund</li>
           </ul>
         </section>
@@ -41,13 +41,27 @@ const RefundPolicy = () => (
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">5. Commission Reversal</h2>
-          <p className="text-muted-foreground">Referral commissions paid on refunded orders will be reversed from the referrer's wallet balance.</p>
+          <h2 className="font-heading text-lg font-700">5. Commission & Payout Reversal</h2>
+          <p className="text-muted-foreground">Referral commissions paid on refunded orders will be reversed from the referrer's wallet balance. Creator earnings from refunded orders will also be reversed.</p>
         </section>
 
         <section>
           <h2 className="font-heading text-lg font-700">6. Promotional Purchases</h2>
           <p className="text-muted-foreground">Courses purchased during promotional offers may have different refund terms as specified at the time of purchase.</p>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">7. Non-Refundable Items</h2>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
+            <li>Courses where more than 20% of content has been accessed</li>
+            <li>Courses where the refund window (7 days) has expired</li>
+            <li>Certificates already issued (certificate remains valid even after refund)</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">8. Contact</h2>
+          <p className="text-muted-foreground">For refund inquiries, contact <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
         </section>
       </div>
     </main>

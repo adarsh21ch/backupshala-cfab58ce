@@ -4,17 +4,17 @@ const testimonials = [
   {
     name: 'Priya S., Delhi',
     role: 'Student',
-    quote: 'I enrolled in the Standard Bundle and completed it in 2 weeks. Already earned ₹375 by referring 5 friends. The certificate looks so professional!',
+    quote: 'I enrolled in the Standard Bundle and completed it in 2 weeks. The certificate looks professional and the content was very practical.',
   },
   {
     name: 'Rahul M., Mumbai',
     role: 'Creator',
-    quote: 'Uploaded my content creation course in 2 days. Got my first 12 enrollments within a week. Backupshala handles everything — payments, invoices, commissions.',
+    quote: 'Uploaded my content creation course in 2 days. Got my first enrollments within a week. Backupshala handles payments, invoices, and delivery.',
   },
   {
     name: 'Anjali K., Bangalore',
-    role: 'Student & Referrer',
-    quote: 'Started as a student, now I refer Backupshala to everyone in my network. Earned ₹2,250 in commissions last month just by sharing.',
+    role: 'Student',
+    quote: 'The digital skills courses helped me learn video editing and freelancing basics. Great value for the price.',
   },
 ];
 
@@ -41,7 +41,7 @@ const Testimonials = () => (
         ))}
       </div>
       <p className="mt-6 text-center text-xs text-muted-foreground">
-        * Testimonials are illustrative. Results vary based on effort and network size.
+        * These testimonials are illustrative examples. Individual experiences and results vary. Backupshala does not guarantee any specific outcome.
       </p>
     </div>
   </section>

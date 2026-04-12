@@ -19,11 +19,12 @@ const PrivacyPolicy = () => (
           <p className="text-muted-foreground">We collect the following personal information when you use Backupshala:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Full name, email address, and phone number (provided during signup)</li>
-            <li>Payment information processed securely through Razorpay</li>
+            <li>Payment information processed securely through Razorpay (we do not store card details)</li>
             <li>Course enrollment and completion data</li>
             <li>Referral information (referrer email)</li>
             <li>Profile photos uploaded by users</li>
-            <li>Device information and usage analytics</li>
+            <li>Device information and usage analytics (pages visited, features used)</li>
+            <li>Cookies and local storage data for session management</li>
           </ul>
         </section>
 
@@ -31,11 +32,12 @@ const PrivacyPolicy = () => (
           <h2 className="font-heading text-lg font-700">2. How We Use Your Information</h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>To deliver course content and track your learning progress</li>
-            <li>To process payments and generate invoices</li>
-            <li>To calculate and pay referral commissions</li>
+            <li>To process payments and generate GST invoices</li>
+            <li>To calculate and manage referral commissions</li>
             <li>To send transactional emails (enrollment confirmations, invoices, certificates)</li>
             <li>To improve our platform and user experience</li>
             <li>To prevent fraud and ensure platform security</li>
+            <li>To comply with legal and regulatory obligations</li>
           </ul>
         </section>
 
@@ -43,29 +45,57 @@ const PrivacyPolicy = () => (
           <h2 className="font-heading text-lg font-700">3. Third-Party Services</h2>
           <p className="text-muted-foreground">We share data with the following third-party services as necessary:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li><strong>Razorpay</strong> — for processing payments securely</li>
-            <li><strong>Resend</strong> — for sending transactional emails</li>
+            <li><strong>Razorpay</strong> — for processing payments securely (PCI DSS compliant)</li>
+            <li><strong>Cloudflare</strong> — for video hosting and content delivery</li>
           </ul>
           <p className="text-muted-foreground">We do not sell your personal data to any third party.</p>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">4. Data Retention</h2>
-          <p className="text-muted-foreground">We retain your personal data for as long as your account is active. If you request account deletion, we will remove your personal data within 30 days, except where retention is required by law (e.g., payment records for tax compliance).</p>
+          <h2 className="font-heading text-lg font-700">4. Cookies & Tracking</h2>
+          <p className="text-muted-foreground">Backupshala uses cookies and local storage for:</p>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
+            <li>Authentication and session management (essential)</li>
+            <li>Remembering your preferences</li>
+            <li>Basic analytics to improve the platform</li>
+          </ul>
+          <p className="text-muted-foreground">We do not use third-party advertising cookies. You can disable cookies in your browser settings, but some features may not work correctly.</p>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">5. Your Rights</h2>
+          <h2 className="font-heading text-lg font-700">5. Data Retention</h2>
+          <p className="text-muted-foreground">We retain your personal data for as long as your account is active. If you request account deletion, we will remove your personal data within 30 days, except where retention is required by law (e.g., payment records for tax/GST compliance, which are retained for 8 years as required by Indian law).</p>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">6. Data Security</h2>
+          <p className="text-muted-foreground">We implement appropriate security measures including:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li><strong>Access:</strong> You can request a copy of your personal data at any time.</li>
-            <li><strong>Correction:</strong> You can update your profile information from your dashboard.</li>
-            <li><strong>Deletion:</strong> You can request account deletion by contacting us.</li>
+            <li>Encrypted data transmission (HTTPS/TLS)</li>
+            <li>Row-level security on all database tables</li>
+            <li>Role-based access controls for admin, creator, and student roles</li>
+            <li>Secure payment processing through PCI-compliant Razorpay</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">6. Contact Us</h2>
-          <p className="text-muted-foreground">For privacy-related inquiries, contact us at <a href="mailto:privacy@backupshala.com" className="text-primary hover:underline">privacy@backupshala.com</a>.</p>
+          <h2 className="font-heading text-lg font-700">7. Your Rights</h2>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
+            <li><strong>Access:</strong> You can request a copy of your personal data at any time.</li>
+            <li><strong>Correction:</strong> You can update your profile information from your dashboard.</li>
+            <li><strong>Deletion:</strong> You can request account and data deletion by contacting us.</li>
+            <li><strong>Portability:</strong> You can request your data in a machine-readable format.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">8. Children's Privacy</h2>
+          <p className="text-muted-foreground">Backupshala is not intended for users under 18 years of age without parental consent. We do not knowingly collect data from children under 13.</p>
+        </section>
+
+        <section>
+          <h2 className="font-heading text-lg font-700">9. Contact Us</h2>
+          <p className="text-muted-foreground">For privacy-related inquiries, contact us at <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
         </section>
       </div>
     </main>

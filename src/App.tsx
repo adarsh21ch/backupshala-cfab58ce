@@ -54,6 +54,10 @@ import CreatorUpgrade from "./pages/creator/CreatorUpgrade";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
 import AdminCreatorPro from "./pages/admin/AdminCreatorPro";
+import CreatorAgreement from "./pages/CreatorAgreement";
+import ContentPolicy from "./pages/ContentPolicy";
+import CommunityGuidelines from "./pages/CommunityGuidelines";
+import CancellationPolicy from "./pages/CancellationPolicy";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +92,10 @@ const App = () => (
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
+            <Route path="/creator-agreement" element={<CreatorAgreement />} />
+            <Route path="/content-policy" element={<ContentPolicy />} />
+            <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+            <Route path="/cancellation-policy" element={<CancellationPolicy />} />
 
             {/* Student dashboard */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
