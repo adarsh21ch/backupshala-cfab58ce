@@ -7,11 +7,13 @@ import Footer from '@/components/landing/Footer';
 import CourseCard from '@/components/CourseCard';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/format';
 import BackButton from '@/components/BackButton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const LANGUAGES = ['All', 'English', 'Hindi', 'Hinglish'];
@@ -89,7 +91,7 @@ const FilterSections = ({ category, setCategory, level, setLevel, language, setL
   </>
 );
 
-const Explore = () => {
+const ExploreContent = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [level, setLevel] = useState('All');
@@ -109,7 +111,6 @@ const Explore = () => {
     },
   });
 
-  // Fetch active featured listings
   const { data: featuredListings } = useQuery({
     queryKey: ['featured-listings-active'],
     queryFn: async () => {
@@ -137,11 +138,9 @@ const Explore = () => {
       return true;
     })
     .sort((a, b) => {
-      // Pin Standard Bundle first
       const aBundle = a.slug === BUNDLE_SLUG ? 1 : 0;
       const bBundle = b.slug === BUNDLE_SLUG ? 1 : 0;
       if (aBundle !== bBundle) return bBundle - aBundle;
-      // Then featured
       const aFeatured = featuredIds.has(a.id) ? 1 : 0;
       const bFeatured = featuredIds.has(b.id) ? 1 : 0;
       if (aFeatured !== bFeatured) return bFeatured - aFeatured;
@@ -152,66 +151,87 @@ const Explore = () => {
     }) || [];
 
   return (
+    <>
+      <div className="mb-8">
+        <h1 className="font-heading text-3xl font-700">Explore Courses</h1>
+        <p className="mt-1 text-muted-foreground">Browse courses from expert creators across India</p>
+      </div>
+
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-lg" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="md:hidden rounded-md">
+                <SlidersHorizontal className="h-4 w-4 mr-1" /> Filters
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filters</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-6">
+                <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
+              </div>
+            </SheetContent>
+          </Sheet>
+          <select value={sort} onChange={e => setSort(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex gap-6">
+        <aside className="shrink-0 w-56 space-y-6 hidden md:block">
+          <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
+        </aside>
+
+        <div className="flex-1">
+          {isLoading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-80 rounded-xl" />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card p-12 text-center">
+              <p className="text-muted-foreground">No courses found matching your filters.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((course: any) => (
+                <CourseCard key={course.id} course={{ ...course, is_featured: featuredIds.has(course.id) }} isPlatformCourse={course.slug === BUNDLE_SLUG} pinned={course.slug === BUNDLE_SLUG} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+const Explore = () => {
+  const { user } = useAuth();
+
+  // Logged-in users see the dashboard layout (sidebar, no logout feeling)
+  if (user) {
+    return (
+      <DashboardLayout>
+        <SEOHead title="Explore Courses" description="Browse courses from expert creators across India." path="/explore" />
+        <ExploreContent />
+      </DashboardLayout>
+    );
+  }
+
+  // Public visitors see the landing layout
+  return (
     <div className="min-h-screen flex flex-col">
       <SEOHead title="Explore Courses" description="Browse courses from expert creators across India." path="/explore" />
       <LandingNavbar />
       <div className="flex-1 container mx-auto px-4 py-8">
         <BackButton fallback="/" />
-        <div className="mb-8">
-          <h1 className="font-heading text-3xl font-700">Explore Courses</h1>
-          <p className="mt-1 text-muted-foreground">Browse courses from expert creators across India</p>
-        </div>
-
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-lg" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="md:hidden rounded-md">
-                  <SlidersHorizontal className="h-4 w-4 mr-1" /> Filters
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-72 overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Filters</SheetTitle>
-                </SheetHeader>
-                <div className="mt-4 space-y-6">
-                  <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
-                </div>
-              </SheetContent>
-            </Sheet>
-            <select value={sort} onChange={e => setSort(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex gap-6">
-          <aside className="shrink-0 w-56 space-y-6 hidden md:block">
-            <FilterSections category={category} setCategory={setCategory} level={level} setLevel={setLevel} language={language} setLanguage={setLanguage} minRating={minRating} setMinRating={setMinRating} courseType={courseType} setCourseType={setCourseType} />
-          </aside>
-
-          <div className="flex-1">
-            {isLoading ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-80 rounded-xl" />)}
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-12 text-center">
-                <p className="text-muted-foreground">No courses found matching your filters.</p>
-              </div>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((course: any) => (
-                  <CourseCard key={course.id} course={{ ...course, is_featured: featuredIds.has(course.id) }} isPlatformCourse={course.slug === BUNDLE_SLUG} pinned={course.slug === BUNDLE_SLUG} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <ExploreContent />
       </div>
       <Footer />
     </div>
