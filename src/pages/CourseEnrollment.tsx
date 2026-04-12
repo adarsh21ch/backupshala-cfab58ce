@@ -353,7 +353,7 @@ const CourseEnrollment = () => {
                   </p>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. Invoice emailed on enrollment.</p>
+              <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. GST invoice emailed after payment.</p>
               <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => {
                 const msg = encodeURIComponent(`Check out "${course.title}" on Backupshala: ${window.location.href}`);
                 window.open(`https://wa.me/?text=${msg}`, '_blank');
