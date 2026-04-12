@@ -9,6 +9,42 @@ const corsHeaders = {
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 
+async function getSettingValue(supabase: any, key: string, defaultVal: string): Promise<string> {
+  const { data } = await supabase.from("platform_settings").select("value").eq("key", key).maybeSingle();
+  return data?.value || defaultVal;
+}
+
+async function ensureWallet(supabase: any, userId: string) {
+  const { data } = await supabase.from("wallets").select("id, balance, total_earned").eq("user_id", userId).maybeSingle();
+  if (data) return data;
+  const { data: newWallet } = await supabase.from("wallets").insert({ user_id: userId }).select("id, balance, total_earned").single();
+  return newWallet;
+}
+
+async function creditWallet(supabase: any, userId: string, amount: number, source: string, description: string, referenceId: string, holdDays: number) {
+  const wallet = await ensureWallet(supabase, userId);
+  if (!wallet) return;
+
+  const availableAfter = holdDays > 0 ? new Date(Date.now() + holdDays * 24 * 60 * 60 * 1000).toISOString() : null;
+
+  await supabase.from("wallets").update({
+    balance: Number(wallet.balance) + amount,
+    total_earned: Number(wallet.total_earned) + amount,
+  }).eq("id", wallet.id);
+
+  await supabase.from("wallet_transactions").insert({
+    wallet_id: wallet.id,
+    user_id: userId,
+    type: "credit",
+    amount,
+    source,
+    reference_id: referenceId,
+    description,
+    status: "completed",
+    available_after: availableAfter,
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -90,10 +126,32 @@ Deno.serve(async (req) => {
     // Generate invoice number
     const invoice_number = "INV-" + new Date().getFullYear() + "-" + Math.random().toString(36).substr(2, 6).toUpperCase();
 
-    // Update payment
+    // Server-side fee calculation
+    const coursePrice = Number(payment.amount_total);
+    const { data: creatorProfile } = await supabase
+      .from("profiles")
+      .select("is_creator_pro")
+      .eq("id", payment.creator_id)
+      .single();
+
+    const isCreatorPro = creatorProfile?.is_creator_pro === true;
+    const freeFeePct = Number(await getSettingValue(supabase, "platform_fee_free", "20"));
+    const proFeePct = Number(await getSettingValue(supabase, "platform_fee_pro", "10"));
+    const feePct = isCreatorPro ? proFeePct : freeFeePct;
+    const platformFeeAmount = Math.round((coursePrice * feePct) / 100);
+    const creatorEarningAmount = coursePrice - platformFeeAmount;
+
+    // Update payment with server-calculated fees
     await supabase
       .from("payments")
-      .update({ status: "success", razorpay_payment_id, invoice_number, paid_at: new Date().toISOString() })
+      .update({
+        status: "success",
+        razorpay_payment_id,
+        invoice_number,
+        paid_at: new Date().toISOString(),
+        platform_fee_amount: platformFeeAmount,
+        creator_payout_amount: creatorEarningAmount,
+      })
       .eq("id", payment.id);
 
     // Get student profile
@@ -130,24 +188,22 @@ Deno.serve(async (req) => {
       .update({ total_students: (courseData?.total_students || 0) + 1 })
       .eq("id", course_id);
 
-    // Handle commission
+    // Get hold periods from settings
+    const referralHoldDays = Number(await getSettingValue(supabase, "referral_hold_days", "7"));
+    const creatorHoldDays = Number(await getSettingValue(supabase, "creator_hold_days", "3"));
+    const commissionPct = Number(await getSettingValue(supabase, "affiliate_commission_percent", "15"));
+
+    // Handle referral commission
     if (student?.referrer_email && student.referrer_email !== "none@backupshala.com") {
       const { data: referrer } = await supabase
         .from("profiles")
-        .select("id, wallet_balance, total_earned, total_referred")
+        .select("id, full_name")
         .eq("email", student.referrer_email)
         .neq("id", user.id)
         .maybeSingle();
 
       if (referrer) {
-        await supabase
-          .from("profiles")
-          .update({
-            wallet_balance: Number(referrer.wallet_balance) + Number(payment.commission_amount),
-            total_earned: Number(referrer.total_earned) + Number(payment.commission_amount),
-            total_referred: (referrer.total_referred || 0) + 1,
-          })
-          .eq("id", referrer.id);
+        const commissionAmount = Math.round(coursePrice * (commissionPct / 100));
 
         await supabase.from("commissions").insert({
           referrer_email: student.referrer_email,
@@ -155,49 +211,59 @@ Deno.serve(async (req) => {
           student_id: user.id,
           course_id,
           payment_id: payment.id,
-          amount: payment.commission_amount,
+          amount: commissionAmount,
           status: "credited",
+          commission_type: "referral",
         });
+
+        // Credit referrer's wallet
+        const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
+        await creditWallet(
+          supabase,
+          referrer.id,
+          commissionAmount,
+          "referral_commission",
+          `Commission for referring ${course?.title} to ${(student.full_name || "Someone").split(" ")[0]}`,
+          payment.id,
+          referralHoldDays
+        );
 
         await supabase.from("notifications").insert({
           user_id: referrer.id,
-          title: `You earned ₹${payment.commission_amount}! 💰`,
-          message: `${(student.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Commission added to your wallet.`,
+          title: `You earned ₹${commissionAmount} commission! 💰`,
+          message: `${(student.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available to withdraw on ${holdDate.toLocaleDateString("en-IN")}.`,
           type: "commission",
+          action_url: "/refer",
         });
       }
     }
 
-    // Handle creator payout
-    const { data: creator } = await supabase
-      .from("profiles")
-      .select("id, wallet_balance, total_earned")
-      .eq("id", payment.creator_id)
-      .single();
+    // Credit creator's wallet
+    await creditWallet(
+      supabase,
+      payment.creator_id,
+      creatorEarningAmount,
+      "creator_earning",
+      `Earning from sale of ${course?.title}`,
+      payment.id,
+      creatorHoldDays
+    );
 
-    if (creator) {
-      await supabase
-        .from("profiles")
-        .update({
-          wallet_balance: Number(creator.wallet_balance) + Number(payment.creator_payout_amount),
-          total_earned: Number(creator.total_earned) + Number(payment.creator_payout_amount),
-        })
-        .eq("id", creator.id);
+    const creatorHoldDate = new Date(Date.now() + creatorHoldDays * 24 * 60 * 60 * 1000);
+    await supabase.from("creator_payouts").insert({
+      creator_id: payment.creator_id,
+      payment_id: payment.id,
+      amount: creatorEarningAmount,
+      status: "pending",
+    });
 
-      await supabase.from("creator_payouts").insert({
-        creator_id: payment.creator_id,
-        payment_id: payment.id,
-        amount: payment.creator_payout_amount,
-        status: "pending",
-      });
-
-      await supabase.from("notifications").insert({
-        user_id: payment.creator_id,
-        title: "New Enrollment! 🎉",
-        message: `${(student?.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. ₹${payment.creator_payout_amount} added to your earnings.`,
-        type: "enrollment",
-      });
-    }
+    await supabase.from("notifications").insert({
+      user_id: payment.creator_id,
+      title: "New Sale! 🎉",
+      message: `${(student?.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. ₹${creatorEarningAmount} earned — available on ${creatorHoldDate.toLocaleDateString("en-IN")}.`,
+      type: "enrollment",
+      action_url: "/creator/earnings",
+    });
 
     // Notification for student
     await supabase.from("notifications").insert({
