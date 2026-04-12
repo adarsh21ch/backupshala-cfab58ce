@@ -13,6 +13,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Loader2, ChevronRight, ChevronLeft, Check, AlertTriangle } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -419,10 +420,38 @@ const CreatorOnboarding = () => {
                   )}
                 </div>
               </div>
+
+              {/* Creator Agreement Consent */}
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <p className="text-xs font-medium">By submitting, you agree to the following:</p>
+                <div className="flex items-start gap-2">
+                  <Checkbox id="agree-creator" checked={agreedCreator} onCheckedChange={(v) => setAgreedCreator(v === true)} className="mt-0.5" />
+                  <label htmlFor="agree-creator" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                    I have read and agree to the <Link to="/creator-agreement" target="_blank" className="text-primary hover:underline">Creator Agreement</Link>, <Link to="/content-policy" target="_blank" className="text-primary hover:underline">Content Upload Policy</Link>, and <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link>.
+                  </label>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Checkbox id="agree-content" checked={agreedContent} onCheckedChange={(v) => setAgreedContent(v === true)} className="mt-0.5" />
+                  <label htmlFor="agree-content" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                    I confirm that all content I upload will be original or properly licensed, and I will not upload copyrighted, misleading, illegal, or harmful material. I understand Backupshala may reject or remove content that violates platform policies.
+                  </label>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Checkbox id="agree-earnings" checked={agreedEarnings} onCheckedChange={(v) => setAgreedEarnings(v === true)} className="mt-0.5" />
+                  <label htmlFor="agree-earnings" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                    I understand that Backupshala does not guarantee any income, enrollments, or specific results. Earnings depend on actual course enrollments.
+                  </label>
+                </div>
+              </div>
+
               <p className="text-xs text-muted-foreground">Our team reviews applications within 24-48 hours. You'll be notified by email.</p>
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep(3)} className="rounded-md"><ChevronLeft className="h-4 w-4 mr-1" /> Back</Button>
-                <Button onClick={handleSubmit} disabled={submitting} className="rounded-md bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting || !agreedCreator || !agreedContent || !agreedEarnings}
+                  className="rounded-md bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+                >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit for Review'}
                 </Button>
               </div>
