@@ -112,6 +112,7 @@ const App = () => (
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/refer" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
             <Route path="/dashboard/videos" element={<ProtectedRoute><StudentVideos /></ProtectedRoute>} />
+            <Route path="/receipt/:paymentId" element={<ProtectedRoute><Receipt /></ProtectedRoute>} />
 
             {/* Creator onboarding (any logged-in user) */}
             <Route path="/creator/onboarding" element={<ProtectedRoute><CreatorOnboarding /></ProtectedRoute>} />
