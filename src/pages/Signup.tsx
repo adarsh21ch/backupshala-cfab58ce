@@ -30,9 +30,8 @@ const Signup = () => {
     if (!form.password) e.password = 'Password is required';
     else if (form.password.length < 8) e.password = 'Password must be at least 8 characters';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
-    if (!form.referrerEmail.trim()) e.referrerEmail = 'Referrer email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.referrerEmail)) e.referrerEmail = 'Invalid email format';
-    else if (form.referrerEmail.toLowerCase() === form.email.toLowerCase()) e.referrerEmail = 'You cannot refer yourself';
+    if (form.referrerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.referrerEmail)) e.referrerEmail = 'Invalid email format';
+    if (form.referrerEmail.trim() && form.referrerEmail.toLowerCase() === form.email.toLowerCase()) e.referrerEmail = 'You cannot refer yourself';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -63,7 +62,7 @@ const Signup = () => {
           data: {
             full_name: form.fullName.trim(),
             phone: form.phone.trim(),
-            referrer_email: form.referrerEmail.toLowerCase().trim(),
+            referrer_email: form.referrerEmail.trim() ? form.referrerEmail.toLowerCase().trim() : 'none@backupshala.com',
           },
           emailRedirectTo: window.location.origin,
         },
@@ -135,7 +134,7 @@ const Signup = () => {
             {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
           </div>
           <div>
-            <Label htmlFor="referrerEmail">Referrer's Email</Label>
+            <Label htmlFor="referrerEmail">Referral code or referrer email (optional)</Label>
             <Input
               id="referrerEmail" type="email" placeholder="friend@example.com"
               value={form.referrerEmail}
@@ -144,7 +143,7 @@ const Signup = () => {
               className={`mt-1 rounded-lg ${refParam ? 'opacity-60' : ''}`}
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              Enter the email of the person who referred you. If no one referred you, enter: <span className="font-mono text-primary">none@backupshala.com</span>
+              If someone referred you, enter their email here. Otherwise leave blank.
             </p>
             {errors.referrerEmail && <p className="mt-1 text-xs text-destructive">{errors.referrerEmail}</p>}
           </div>

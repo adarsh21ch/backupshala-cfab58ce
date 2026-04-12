@@ -17,8 +17,8 @@ const colorMap = {
 const KPICard = ({ icon: Icon, label, value, color = 'primary' }: KPICardProps) => {
   const c = colorMap[color];
   return (
-    <div className="group rounded-xl border border-border bg-card p-4 transition-all hover:border-accent/30 hover:-translate-y-0.5">
-      <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ${c.icon}`}>
+    <div className="group rounded-xl border border-border/60 bg-card p-4 shadow-warm transition-all hover:shadow-warm-lg hover:-translate-y-0.5">
+      <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${c.icon}`}>
         <Icon className="h-4 w-4" />
       </div>
       <p className={`font-heading text-xl font-800 ${c.value}`}>{value}</p>
