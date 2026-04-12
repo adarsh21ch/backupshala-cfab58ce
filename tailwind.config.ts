@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['"Plus Jakarta Sans"', 'sans-serif'],
+        heading: ['"Space Grotesk"', 'sans-serif'],
         body: ['"DM Sans"', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },
@@ -70,6 +70,11 @@ export default {
         xl: "1rem",
         "2xl": "1.5rem",
         pill: "100px",
+      },
+      boxShadow: {
+        'warm': '0 4px 24px rgba(0, 0, 0, 0.06)',
+        'warm-lg': '0 8px 32px rgba(0, 0, 0, 0.08)',
+        'warm-xl': '0 12px 48px rgba(0, 0, 0, 0.1)',
       },
       keyframes: {
         "accordion-down": {
