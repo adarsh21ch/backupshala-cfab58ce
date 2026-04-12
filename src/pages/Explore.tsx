@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SEOHead from '@/components/SEOHead';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import LandingNavbar from '@/components/landing/Navbar';
@@ -133,6 +134,7 @@ const Explore = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead title="Explore Courses" description="Browse courses from expert creators across India." path="/explore" />
       <LandingNavbar />
       <div className="flex-1 container mx-auto px-4 py-8">
         <BackButton fallback="/" />

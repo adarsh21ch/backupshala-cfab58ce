@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import SEOHead from '@/components/SEOHead';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -209,8 +210,20 @@ const CourseEnrollment = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead title={course.title} description={course.short_description} ogImage={course.thumbnail_url || undefined} path={`/c/${creatorSlug}/${courseSlug}`} />
       <LandingNavbar />
-      <div className="flex-1 container mx-auto px-4 py-8">
+      {/* Mobile sticky CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background p-3 lg:hidden flex items-center justify-between gap-3">
+        <div>
+          <p className="font-heading text-lg font-800 text-accent">{formatPrice(course.price)}</p>
+          <p className="text-[10px] text-muted-foreground">Incl. 18% GST</p>
+        </div>
+        <Button onClick={handleEnroll} disabled={paying} className="rounded-md bg-primary hover:bg-primary/90 font-semibold flex-1 max-w-[200px]">
+          {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          {enrollment ? 'Continue' : paying ? 'Processing…' : 'Enroll Now'}
+        </Button>
+      </div>
+      <div className="flex-1 container mx-auto px-4 py-8 pb-24 lg:pb-8">
         <BackButton fallback="/explore" />
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
@@ -343,18 +356,17 @@ const CourseEnrollment = () => {
                 <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> Full lifetime access</li>
                 <li className="flex items-center gap-2"><Award className="h-4 w-4 text-primary" /> Certificate of completion</li>
                 {commissionAmount > 0 && (
-                  <li className="flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Refer friends & earn {formatPrice(commissionAmount)}</li>
+                  <li className="flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Referral bonus available</li>
                 )}
               </ul>
               {commissionAmount > 0 && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
                   <p className="text-xs text-primary font-medium">
-                    Refer friends, earn {formatPrice(commissionAmount)} per enrollment
-                    {course.commission_percent >= (100 - course.platform_fee_percent) ? ' — maximum referral course!' : ''}
+                    Referral bonus available — <Link to="/refer" className="underline">Learn more</Link>
                   </p>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. Invoice emailed on enrollment.</p>
+              <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. GST invoice emailed after payment.</p>
               <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => {
                 const msg = encodeURIComponent(`Check out "${course.title}" on Backupshala: ${window.location.href}`);
                 window.open(`https://wa.me/?text=${msg}`, '_blank');
