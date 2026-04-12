@@ -389,8 +389,8 @@ const CourseBuilder = () => {
           <TabsContent value="basic" className="mt-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
               <div>
-                <Label>Title *</Label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} className="mt-1 rounded-lg" />
+                <Label>Title * <span className="text-muted-foreground font-normal">({title.length}/100)</span></Label>
+                <Input value={title} onChange={e => setTitle(e.target.value.slice(0, 100))} className="mt-1 rounded-lg" />
               </div>
               <div>
                 <Label>Slug *</Label>
@@ -402,8 +402,8 @@ const CourseBuilder = () => {
                 <p className="mt-1 text-xs text-muted-foreground">{shortDesc.length}/150</p>
               </div>
               <div>
-                <Label>Full Description</Label>
-                <Textarea value={fullDesc} onChange={e => setFullDesc(e.target.value)} className="mt-1 rounded-lg min-h-[120px]" />
+                <Label>Full Description <span className="text-muted-foreground font-normal">({fullDesc.length}/500)</span></Label>
+                <Textarea value={fullDesc} onChange={e => setFullDesc(e.target.value.slice(0, 500))} className="mt-1 rounded-lg min-h-[120px]" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>

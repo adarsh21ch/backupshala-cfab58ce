@@ -114,7 +114,7 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
           <div>
             <span className="font-heading text-lg font-700 text-accent">{formatPrice(course.price)}</span>
             {commissionAmount > 0 && (
-              <p className="text-[10px] text-primary">Refer & earn {formatPrice(commissionAmount)}</p>
+              <Link to="/refer" className="text-[10px] text-primary hover:underline">Referral bonus available</Link>
             )}
           </div>
           <Button asChild size="sm" className="rounded-md text-xs h-8 px-3">
