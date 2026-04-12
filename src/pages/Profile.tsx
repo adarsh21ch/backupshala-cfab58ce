@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Lock, Loader2, Upload, Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BackButton from '@/components/BackButton';
@@ -23,23 +23,14 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Sync form state when profile loads
-  useState(() => {
+  // Sync form state when profile loads or changes
+  useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '');
       setPhone(profile.phone || '');
       setBio(profile.bio || '');
     }
-  });
-
-  // Also update when profile changes
-  const [lastProfileId, setLastProfileId] = useState('');
-  if (profile && profile.id !== lastProfileId) {
-    setFullName(profile.full_name || '');
-    setPhone(profile.phone || '');
-    setBio(profile.bio || '');
-    setLastProfileId(profile.id);
-  }
+  }, [profile?.id]);
 
   const handleSave = async () => {
     if (!profile?.id) { toast({ title: 'Profile not loaded yet', variant: 'destructive' }); return; }
