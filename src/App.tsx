@@ -25,6 +25,7 @@ import VerifyCertificate from "./pages/VerifyCertificate";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import ReferEarn from "./pages/ReferEarn";
+import WalletPage from "./pages/Wallet";
 import CreatorOnboarding from "./pages/creator/CreatorOnboarding";
 import CreatorDashboardHome from "./pages/creator/CreatorDashboardHome";
 import CreatorCourses from "./pages/creator/CreatorCourses";
