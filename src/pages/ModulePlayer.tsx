@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users, Lock, MessageSquare, StickyNote } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users, Lock, MessageSquare, StickyNote, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useCallback } from 'react';
 import ResourceModuleView from '@/components/module/ResourceModuleView';
@@ -55,6 +55,15 @@ const ModulePlayer = () => {
       return data;
     },
     enabled: !!courseId,
+  });
+
+  const { data: enrollment } = useQuery({
+    queryKey: ['enrollment-drip', user?.id, courseId],
+    queryFn: async () => {
+      const { data } = await supabase.from('enrollments').select('enrolled_at').eq('student_id', user!.id).eq('course_id', courseId!).maybeSingle();
+      return data;
+    },
+    enabled: !!user && !!courseId,
   });
 
   const { data: completions } = useQuery({
@@ -146,6 +155,36 @@ const ModulePlayer = () => {
       </div>
     </DashboardLayout>
   );
+
+  // Drip content check
+  const dripUnlockDate = (() => {
+    if (!currentModule || !enrollment?.enrolled_at) return null;
+    const releaseDays = (currentModule as any).release_after_days || 0;
+    if (releaseDays <= 0) return null;
+    const unlock = new Date(enrollment.enrolled_at);
+    unlock.setDate(unlock.getDate() + releaseDays);
+    return unlock > new Date() ? unlock : null;
+  })();
+
+  if (dripUnlockDate) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto flex flex-col items-center justify-center py-20 text-center space-y-4">
+          <div className="h-16 w-16 rounded-full bg-accent/10 flex items-center justify-center">
+            <Calendar className="h-8 w-8 text-accent" />
+          </div>
+          <h2 className="font-heading text-xl font-700">Module Locked</h2>
+          <p className="text-sm text-muted-foreground">
+            "{currentModule.title}" unlocks on <span className="font-semibold text-foreground">{dripUnlockDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">This module is released {(currentModule as any).release_after_days} days after enrollment.</p>
+          <Button asChild variant="outline" className="rounded-md">
+            <Link to={`/courses/${courseId}`}><ChevronLeft className="h-4 w-4 mr-1" /> Back to Course</Link>
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   // Gate screens
   if (accessCheck && !accessCheck.canAccess) {
