@@ -215,7 +215,7 @@ const CreatorOnboarding = () => {
             <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">Become a Creator</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Share your expertise, earn from every enrollment</p>
+          <p className="mt-1 text-sm text-muted-foreground">Share your expertise through courses on our platform</p>
         </div>
 
         <div className="flex items-center justify-center gap-2 mb-8">
