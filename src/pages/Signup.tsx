@@ -68,12 +68,8 @@ const Signup = () => {
         },
       });
       if (error) throw error;
-      toast({ title: 'Account created! 🎉', description: 'Welcome to Backupshala.' });
-      if (courseParam && creatorParam) {
-        navigate(`/c/${creatorParam}/${courseParam}`);
-      } else {
-        navigate('/explore');
-      }
+      toast({ title: 'Account created! 🎉', description: 'Please verify your email to get started.' });
+      navigate(`/verify-email?email=${encodeURIComponent(form.email.toLowerCase().trim())}`);
     } catch (error: any) {
       toast({ title: 'Signup failed', description: error.message, variant: 'destructive' });
     } finally {

@@ -12,6 +12,8 @@ import CourseEnrollment from "./pages/CourseEnrollment";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import Receipt from "./pages/Receipt";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
@@ -58,6 +60,9 @@ import CreatorAgreement from "./pages/CreatorAgreement";
 import ContentPolicy from "./pages/ContentPolicy";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import CancellationPolicy from "./pages/CancellationPolicy";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import OrderHistory from "./pages/OrderHistory";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +90,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/verify/:certCode" element={<VerifyCertificate />} />
             <Route path="/watch/:bsvCode" element={<WatchVideo />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -109,6 +115,8 @@ const App = () => (
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/refer" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
             <Route path="/dashboard/videos" element={<ProtectedRoute><StudentVideos /></ProtectedRoute>} />
+            <Route path="/receipt/:paymentId" element={<ProtectedRoute><Receipt /></ProtectedRoute>} />
+            <Route path="/dashboard/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
 
             {/* Creator onboarding (any logged-in user) */}
             <Route path="/creator/onboarding" element={<ProtectedRoute><CreatorOnboarding /></ProtectedRoute>} />
@@ -140,9 +148,11 @@ const App = () => (
             <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
             <Route path="/admin/videos" element={<AdminRoute><AdminVideos /></AdminRoute>} />
             <Route path="/admin/creator-pro" element={<AdminRoute><AdminCreatorPro /></AdminRoute>} />
+            <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsent />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

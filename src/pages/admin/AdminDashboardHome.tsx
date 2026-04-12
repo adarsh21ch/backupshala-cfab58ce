@@ -6,6 +6,8 @@ import { formatINR } from '@/lib/format';
 import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp } from 'lucide-react';
 import KPICard from '@/components/dashboard/KPICard';
 import { SkeletonKPI } from '@/components/dashboard/SkeletonCards';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 const AdminDashboardHome = () => {
   const { data: stats, isLoading } = useQuery({
@@ -52,6 +54,51 @@ const AdminDashboardHome = () => {
     },
   });
 
+  // Revenue data for last 30 days
+  const { data: revenueData } = useQuery({
+    queryKey: ['admin-daily-revenue'],
+    queryFn: async () => {
+      const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+      const { data } = await supabase.from('payments')
+        .select('amount_total, created_at, status')
+        .gte('created_at', thirtyDaysAgo)
+        .in('status', ['success', 'paid']);
+      
+      const grouped: Record<string, number> = {};
+      for (let i = 29; i >= 0; i--) {
+        const d = format(subDays(new Date(), i), 'dd MMM');
+        grouped[d] = 0;
+      }
+      (data || []).forEach(p => {
+        const d = format(new Date(p.created_at), 'dd MMM');
+        if (grouped[d] !== undefined) grouped[d] += Number(p.amount_total);
+      });
+      return Object.entries(grouped).map(([date, amount]) => ({ date, amount }));
+    },
+  });
+
+  // Monthly enrollments for last 6 months
+  const { data: enrollmentData } = useQuery({
+    queryKey: ['admin-monthly-enrollments'],
+    queryFn: async () => {
+      const sixMonthsAgo = subMonths(new Date(), 6).toISOString();
+      const { data } = await supabase.from('enrollments')
+        .select('enrolled_at')
+        .gte('enrolled_at', sixMonthsAgo);
+      
+      const grouped: Record<string, number> = {};
+      for (let i = 5; i >= 0; i--) {
+        const d = format(subMonths(new Date(), i), 'MMM yyyy');
+        grouped[d] = 0;
+      }
+      (data || []).forEach(e => {
+        const d = format(new Date(e.enrolled_at), 'MMM yyyy');
+        if (grouped[d] !== undefined) grouped[d]++;
+      });
+      return Object.entries(grouped).map(([month, count]) => ({ month, count }));
+    },
+  });
+
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
@@ -71,6 +118,39 @@ const AdminDashboardHome = () => {
             <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="primary" />
           </div>
         )}
+
+        {/* Revenue Chart */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="bg-card border-border">
+            <CardHeader><CardTitle className="text-base font-heading font-700">Daily Revenue (30 days)</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={revenueData || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                  <Line type="monotone" dataKey="amount" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader><CardTitle className="text-base font-heading font-700">Monthly Enrollments (6 months)</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={enrollmentData || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                  <Bar dataKey="count" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="bg-card border-border">
