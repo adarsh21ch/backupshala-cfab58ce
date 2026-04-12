@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bell, BookOpen, Users, IndianRupee, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Film, Settings, Unlock, Star, Tag, Megaphone, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -79,7 +80,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/" className="flex items-center">
@@ -115,6 +116,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
           <span className="text-sm text-foreground font-medium">— {profile?.creator_display_name || profile?.full_name}</span>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link to="/notifications" className="relative">
             <Bell className="h-5 w-5 text-muted-foreground" />
             {unreadCount > 0 && (

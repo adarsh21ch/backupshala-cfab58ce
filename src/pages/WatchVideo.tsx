@@ -58,7 +58,7 @@ const WatchVideo = () => {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <nav className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
         <Link to="/" className="font-heading text-xl font-800">
           <span className="text-primary">Backup</span><span className="text-accent">shala</span>

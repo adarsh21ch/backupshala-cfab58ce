@@ -164,7 +164,7 @@ const CreatorOnboarding = () => {
 
   if (profile?.is_creator && profile?.creator_approved) {
     return (
-      <div className="dark min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="max-w-md text-center">
           <Check className="mx-auto h-16 w-16 text-primary mb-4" />
           <h1 className="font-heading text-2xl font-700">You're already a creator!</h1>
@@ -176,7 +176,7 @@ const CreatorOnboarding = () => {
 
   if (profile?.is_creator && !profile?.creator_approved) {
     return (
-      <div className="dark min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="max-w-md text-center">
           <div className="mx-auto h-16 w-16 rounded-full bg-accent/10 flex items-center justify-center mb-4">
             <Loader2 className="h-8 w-8 text-accent animate-spin" />
@@ -190,10 +190,10 @@ const CreatorOnboarding = () => {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Max commission confirmation dialog */}
       <Dialog open={showMaxCommissionConfirm} onOpenChange={setShowMaxCommissionConfirm}>
-        <DialogContent className="dark bg-card border-border">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-yellow-500" />

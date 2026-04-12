@@ -239,7 +239,7 @@ const AdminFoldersTab = () => {
 
         {/* Add Videos Modal */}
         <Dialog open={addVideosOpen} onOpenChange={setAddVideosOpen}>
-          <DialogContent className="dark bg-card border-border max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogContent className="bg-card border-border max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Add Videos to Folder</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div className="relative">
@@ -276,7 +276,7 @@ const AdminFoldersTab = () => {
 
         {/* Share Modal */}
         <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-          <DialogContent className="dark bg-card border-border max-w-lg">
+          <DialogContent className="bg-card border-border max-w-lg">
             <DialogHeader><DialogTitle>Share "{folder?.name}"</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div>
@@ -370,7 +370,7 @@ const AdminFoldersTab = () => {
 
       {/* Create Folder Modal */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="dark bg-card border-border max-w-md">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader><DialogTitle>Create Video Folder</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>

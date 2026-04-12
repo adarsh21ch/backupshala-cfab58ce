@@ -477,7 +477,7 @@ const CourseBuilder = () => {
                       <Plus className="h-4 w-4 mr-1" /> Add Module
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="dark bg-card border-border max-w-xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="bg-card border-border max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="font-heading text-lg">{editingModule ? 'Edit Module' : 'Add Module'}</DialogTitle>
                     </DialogHeader>

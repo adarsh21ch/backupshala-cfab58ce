@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
@@ -34,6 +35,8 @@ const LandingNavbar = () => {
           <a href="/#standard-bundle" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Standard Bundle</a>
           <a href="/#for-creators" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">For Creators</a>
           <a href="/#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+
+          <ThemeToggle />
 
           {loading ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />

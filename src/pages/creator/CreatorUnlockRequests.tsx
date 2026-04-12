@@ -220,7 +220,7 @@ const CreatorUnlockRequests = () => {
       </div>
 
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent className="dark bg-card border-border">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Reject Access</DialogTitle>
           </DialogHeader>
