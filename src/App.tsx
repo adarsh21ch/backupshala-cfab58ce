@@ -116,6 +116,7 @@ const App = () => (
             <Route path="/refer" element={<ProtectedRoute><ReferEarn /></ProtectedRoute>} />
             <Route path="/dashboard/videos" element={<ProtectedRoute><StudentVideos /></ProtectedRoute>} />
             <Route path="/receipt/:paymentId" element={<ProtectedRoute><Receipt /></ProtectedRoute>} />
+            <Route path="/dashboard/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
 
             {/* Creator onboarding (any logged-in user) */}
             <Route path="/creator/onboarding" element={<ProtectedRoute><CreatorOnboarding /></ProtectedRoute>} />
@@ -147,9 +148,11 @@ const App = () => (
             <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
             <Route path="/admin/videos" element={<AdminRoute><AdminVideos /></AdminRoute>} />
             <Route path="/admin/creator-pro" element={<AdminRoute><AdminCreatorPro /></AdminRoute>} />
+            <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsent />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
