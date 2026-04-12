@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bell, BookOpen, Award, Users, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Compass, ShieldCheck, Film, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -68,7 +69,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center border-b border-border px-6">
@@ -127,6 +128,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}</p>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link to="/notifications" className="relative">
             <Bell className="h-5 w-5 text-muted-foreground" />
             {unreadCount > 0 && (

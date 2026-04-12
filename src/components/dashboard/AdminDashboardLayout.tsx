@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const adminNav = [
   { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -32,7 +33,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card lg:block">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/" className="flex items-center">
@@ -68,6 +69,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <p className="text-sm text-muted-foreground">Admin Panel</p>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link to="/admin/dashboard" className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/20 text-sm font-semibold text-destructive">
             {profile?.full_name?.[0]?.toUpperCase() || 'A'}
           </Link>
