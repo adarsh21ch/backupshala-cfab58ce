@@ -29,6 +29,15 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
+  const { data: wallet } = useQuery({
+    queryKey: ['my-wallet', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('wallets').select('*').eq('user_id', user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: completions } = useQuery({
     queryKey: ['all-completions', user?.id],
     queryFn: async () => {
@@ -90,7 +99,7 @@ const Dashboard = () => {
             <KPICard icon={BookOpen} label="Enrolled" value={enrollments?.length || 0} color="primary" />
             <KPICard icon={CheckCircle} label="Modules Done" value={totalModulesCompleted} color="primary" />
             <KPICard icon={Award} label="Certificates" value={certificates || 0} color="accent" />
-            <KPICard icon={IndianRupee} label="Wallet" value={formatPrice(profile?.wallet_balance || 0)} color="accent" />
+            <Link to="/dashboard/wallet"><KPICard icon={IndianRupee} label="Wallet" value={formatPrice(wallet?.balance || 0)} color="accent" /></Link>
           </div>
         )}
 
