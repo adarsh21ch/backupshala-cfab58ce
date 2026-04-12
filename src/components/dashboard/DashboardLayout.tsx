@@ -13,7 +13,7 @@ const studentNav = [
   { to: '/dashboard/certificates', label: 'Certificates', icon: Award },
   { to: '/dashboard/videos', label: 'Video Gallery', icon: Film },
   { to: '/refer', label: 'Refer & Earn', icon: Users },
-  { to: '/dashboard/payouts', label: 'Payouts', icon: Wallet },
+  { to: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { to: '/dashboard/orders', label: 'Order History', icon: ShoppingBag },
   { to: '/profile', label: 'Profile', icon: User },
 ];
