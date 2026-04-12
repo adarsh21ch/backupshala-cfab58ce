@@ -60,6 +60,9 @@ import CreatorAgreement from "./pages/CreatorAgreement";
 import ContentPolicy from "./pages/ContentPolicy";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import CancellationPolicy from "./pages/CancellationPolicy";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import OrderHistory from "./pages/OrderHistory";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient({
   defaultOptions: {
