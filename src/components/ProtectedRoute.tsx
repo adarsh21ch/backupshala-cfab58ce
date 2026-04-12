@@ -11,6 +11,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
+  if (!user.email_confirmed_at) return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email || '')}`} replace />;
   return <>{children}</>;
 };
 
