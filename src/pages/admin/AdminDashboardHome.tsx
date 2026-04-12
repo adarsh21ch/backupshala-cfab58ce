@@ -6,6 +6,8 @@ import { formatINR } from '@/lib/format';
 import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp } from 'lucide-react';
 import KPICard from '@/components/dashboard/KPICard';
 import { SkeletonKPI } from '@/components/dashboard/SkeletonCards';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 const AdminDashboardHome = () => {
   const { data: stats, isLoading } = useQuery({
