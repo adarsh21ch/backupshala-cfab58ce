@@ -88,6 +88,10 @@ const App = () => (
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
+            <Route path="/creator-agreement" element={<CreatorAgreement />} />
+            <Route path="/content-policy" element={<ContentPolicy />} />
+            <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+            <Route path="/cancellation-policy" element={<CancellationPolicy />} />
 
             {/* Student dashboard */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
