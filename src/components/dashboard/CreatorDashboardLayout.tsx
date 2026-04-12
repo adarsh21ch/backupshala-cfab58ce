@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, BookOpen, Users, IndianRupee, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Film, Settings, Unlock, Star } from 'lucide-react';
+import { Bell, BookOpen, Users, IndianRupee, User, LayoutDashboard, LogOut, Menu, X, Wallet, PenTool, Film, Settings, Unlock, Star, Tag, Megaphone, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +50,9 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
   const creatorNav = [
     ...baseCreatorNav,
+    { to: '/creator/coupons', label: 'Coupons', icon: Tag },
+    { to: '/creator/announcements', label: 'Announcements', icon: Megaphone },
+    { to: '/creator/discussions', label: 'Discussions', icon: MessageSquare },
     ...(isPro ? [{ to: '/creator/unlock-requests', label: '🔓 Unlock Requests', icon: Unlock }] : []),
     ...(!isPro ? [{ to: '/creator/upgrade', label: '⭐ Upgrade to Pro', icon: Star }] : []),
   ];
