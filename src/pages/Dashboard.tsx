@@ -11,6 +11,7 @@ import CommunityDashboardCard from '@/components/module/CommunityDashboardCard';
 import KPICard from '@/components/dashboard/KPICard';
 import EmptyState from '@/components/dashboard/EmptyState';
 import { SkeletonKPI, SkeletonCourseCard } from '@/components/dashboard/SkeletonCards';
+import LearningStreak from '@/components/dashboard/LearningStreak';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -94,6 +95,9 @@ const Dashboard = () => {
         )}
 
         {enrollments && enrollments.length > 0 && <CommunityDashboardCard />}
+        
+        {/* Learning Streak */}
+        <LearningStreak />
 
         {/* Continue Learning */}
         {inProgressEnrollments.length > 0 && (

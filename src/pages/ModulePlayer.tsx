@@ -6,13 +6,17 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users, Lock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckCircle, ChevronLeft, ChevronRight, Trophy, Play, BookOpen, Users, Lock, MessageSquare, StickyNote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useCallback } from 'react';
 import ResourceModuleView from '@/components/module/ResourceModuleView';
 import CommunityModuleView from '@/components/module/CommunityModuleView';
 import { SequentialLockScreen, MentorGateScreen, WaitingMentorScreen } from '@/components/module/GateScreens';
 import AudioNotePlayer from '@/components/module/AudioNotePlayer';
+import CourseDiscussions from '@/components/course/CourseDiscussions';
+import ModuleNotes from '@/components/module/ModuleNotes';
+import ModuleQuiz from '@/components/module/ModuleQuiz';
 
 const moduleTypeIcon = (type: string) => {
   if (type === 'resource') return <BookOpen className="h-3 w-3" />;
@@ -287,6 +291,29 @@ const ModulePlayer = () => {
                   <CheckCircle className="h-4 w-4 mr-2" /> Mark as Complete ✓
                 </Button>
               )}
+
+              {/* Quiz */}
+              {moduleType === 'video' && moduleId && courseId && (
+                <ModuleQuiz moduleId={moduleId} courseId={courseId} onPass={() => !isCompleted && markComplete.mutate()} />
+              )}
+
+              {/* Tabs: Notes & Discussion */}
+              <Tabs defaultValue="notes" className="w-full">
+                <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-4">
+                  <TabsTrigger value="notes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-0 pb-2 gap-1">
+                    <StickyNote className="h-3 w-3" /> Notes
+                  </TabsTrigger>
+                  <TabsTrigger value="discussion" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-0 pb-2 gap-1">
+                    <MessageSquare className="h-3 w-3" /> Discussion
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="notes" className="mt-4">
+                  {moduleId && <ModuleNotes moduleId={moduleId} />}
+                </TabsContent>
+                <TabsContent value="discussion" className="mt-4">
+                  {courseId && <CourseDiscussions courseId={courseId} moduleId={moduleId} creatorId={course?.creator_id || ''} />}
+                </TabsContent>
+              </Tabs>
             </>
           )}
 
