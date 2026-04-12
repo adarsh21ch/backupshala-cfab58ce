@@ -1,15 +1,14 @@
 # Project Memory
 
 ## Core
-Backupshala — Indian digital skills education platform. Backup=green(#16a34a), shala=orange(#f97316).
-Plus Jakarta Sans headings, DM Sans body, JetBrains Mono for codes.
-Landing page: light theme. Dashboard/logged-in pages: dark theme (#0c0f1a).
-Uses user_roles table for admin (not is_admin on profiles). referrer_email is immutable after signup.
-₹249 enrollment, ₹75 referral commission. Razorpay for payments (Phase 2).
-Video folder system: video_folders, video_folder_items, folder_shares tables with RLS.
-Sidebar active states use green (primary), not orange. Brand green is the dominant UI color.
+Backupshala: course marketplace + own-course platform. Primary green #16A34A, accent saffron #F97316.
+Space Grotesk headings, DM Sans body, JetBrains Mono code. Never Inter or Plus Jakarta Sans.
+Warm premium design: soft shadows (shadow-warm), rounded-xl cards, border-border/60.
+Light bg #FAFAF8 warm white, dark bg #0F1117 deep charcoal. Never cold white or pure black.
+Razorpay payments (INR). Lovable Cloud backend. user_roles table for RBAC.
+Video DRM settings hidden from creators — DB columns kept but UI removed.
+Referrer email is optional at signup, defaults to none@backupshala.com.
 
 ## Memories
-- [Brand & design tokens](mem://design/brand) — Full color palette, typography, border radius system
-- [Database schema](mem://features/database) — All tables, RLS policies, triggers
-- [User journey](mem://features/user-journey) — Signup, enrollment, learning, certification, referral flow
+- [Brand colors](mem://design/brand-colors) — Full HSL token system for light/dark modes
+- [Production plan](mem://features/production-plan) — 7-phase upgrade plan from audit
