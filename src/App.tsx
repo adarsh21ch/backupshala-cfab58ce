@@ -70,6 +70,7 @@ import InstallPrompt from "./components/InstallPrompt";
 import CreatorCoupons from "./pages/creator/CreatorCoupons";
 import CreatorAnnouncements from "./pages/creator/CreatorAnnouncements";
 import CreatorDiscussions from "./pages/creator/CreatorDiscussions";
+import { ThemeProvider } from "next-themes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,6 +84,7 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <HelmetProvider>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="backupshala-theme">
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -171,6 +173,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ThemeProvider>
   </HelmetProvider>
 );
 
