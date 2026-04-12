@@ -8,10 +8,10 @@ const includes = [
   'Content Creation & Instagram Growth',
   'Personal Branding fundamentals',
   'Sales & Communication skills',
-  'Freelancing — find clients and earn online',
-  'Private Telegram Community access',
+  'Freelancing — finding clients and working online',
+  'Community access for enrolled learners',
   'Certificate of Completion (verifiable)',
-  'Refer friends, earn ₹75 per referral',
+  'Referral program — share courses, earn commissions',
 ];
 
 const StandardBundleSpotlight = () => (
@@ -25,10 +25,10 @@ const StandardBundleSpotlight = () => (
             <span className="text-sm font-semibold text-primary">Backupshala Official</span>
           </div>
           <h2 className="font-heading text-3xl font-800 md:text-4xl">
-            Start Your Digital Journey for Just ₹249
+            Start Your Digital Skills Journey for ₹249
           </h2>
           <p className="mt-3 text-muted-foreground md:text-lg">
-            Our flagship bundle includes everything a beginner needs to build real digital skills — curated resources, expert guidance, and community access.
+            Our flagship bundle includes everything a beginner needs to build practical digital skills — curated resources, expert guidance, and community access.
           </p>
           <ul className="mt-6 space-y-3">
             {includes.map((item, i) => (
@@ -46,14 +46,11 @@ const StandardBundleSpotlight = () => (
               <Link to="/c/backupshala/backupshala-standard-bundle">Preview the Course</Link>
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">Includes 18% GST. GST invoice emailed on enrollment.</p>
+          <p className="mt-3 text-xs text-muted-foreground">Price includes 18% GST. GST invoice emailed on enrollment. Access is granted immediately after successful payment.</p>
         </div>
 
         {/* Right — visual card */}
         <div className="relative mx-auto w-full max-w-sm">
-          <div className="absolute -right-2 -top-2 z-10 rounded-sm bg-accent px-3 py-1 text-xs font-bold text-accent-foreground shadow">
-            Most Popular
-          </div>
           <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-8 text-primary-foreground shadow-2xl">
             <div className="mb-2 inline-flex items-center gap-1 rounded-pill bg-primary-foreground/20 px-3 py-1 text-xs font-semibold">
               <Star className="h-3 w-3" /> Official Course

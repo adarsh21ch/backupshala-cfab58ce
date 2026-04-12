@@ -2,15 +2,15 @@ import { UserPlus, Play, Trophy, Upload, Wrench, IndianRupee } from 'lucide-reac
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const studentSteps = [
-  { icon: UserPlus, title: 'Create Your Account', desc: 'Sign up in 30 seconds. Enter your referrer\'s email if someone told you about Backupshala.' },
-  { icon: Play, title: 'Enroll & Learn', desc: 'Choose the ₹249 Standard Bundle or any creator course. Learn through videos, resources, and podcasts at your own pace.' },
-  { icon: Trophy, title: 'Earn Your Certificate & Commissions', desc: 'Complete your course, download your verified certificate, and start earning ₹75 per friend you refer.' },
+  { icon: UserPlus, title: 'Create Your Account', desc: 'Sign up in 30 seconds. If someone referred you, enter their email during signup.' },
+  { icon: Play, title: 'Enroll & Learn', desc: 'Choose the ₹249 Standard Bundle or any creator course. Learn through videos, resources, and guides at your own pace.' },
+  { icon: Trophy, title: 'Earn Your Certificate', desc: 'Complete your course and download your verified certificate. Share it on social media and your resume.' },
 ];
 
 const creatorSteps = [
   { icon: Upload, title: 'Apply to Become a Creator', desc: 'Fill out a quick application. Tell us about your expertise and your first course. We review within 48 hours.' },
-  { icon: Wrench, title: 'Build Your Course', desc: 'Upload your videos or add curated resources. Set your own price (₹99 to ₹9,999) and commission % for referrers.' },
-  { icon: IndianRupee, title: 'Earn from Every Enrollment', desc: 'We handle payments, GST invoices, commissions, and certificates. You focus on creating. We handle the rest.' },
+  { icon: Wrench, title: 'Build Your Course', desc: 'Upload your videos or add curated resources. Set your own price (₹99 to ₹9,999) and referral commission percentage.' },
+  { icon: IndianRupee, title: 'Receive Earnings per Enrollment', desc: 'We handle payments, GST invoices, and delivery. You focus on creating great content.' },
 ];
 
 const StepCards = ({ steps }: { steps: typeof studentSteps }) => (
@@ -40,7 +40,7 @@ const HowItWorks = () => (
       <div className="mt-8">
         <Tabs defaultValue="students" className="w-full">
           <TabsList className="mx-auto">
-            <TabsTrigger value="students">For Students</TabsTrigger>
+            <TabsTrigger value="students">For Learners</TabsTrigger>
             <TabsTrigger value="creators">For Creators</TabsTrigger>
           </TabsList>
           <TabsContent value="students">

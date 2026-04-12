@@ -1,18 +1,18 @@
 import { BookOpen, GraduationCap, IndianRupee, Users } from 'lucide-react';
 
 const benefits = [
-  { icon: BookOpen, title: 'Curated Digital Skills', desc: 'Video editing, content creation, personal branding, sales, and freelancing — practical skills that earn money, not just theory.' },
+  { icon: BookOpen, title: 'Curated Digital Skills', desc: 'Video editing, content creation, personal branding, sales, and freelancing — practical skills taught by expert creators.' },
   { icon: GraduationCap, title: 'Verified Certificate', desc: 'Complete your course and earn a certificate with a unique verification code. Share on LinkedIn, WhatsApp, and Instagram.' },
-  { icon: IndianRupee, title: 'Earn ₹75 Per Referral', desc: 'Tell your friends about Backupshala. When they enroll using your email, you earn commission automatically — no limits.' },
-  { icon: Users, title: 'Private Community Access', desc: 'Every enrolled student gets access to our private Telegram community — tips, networking, and daily digital skills content.' },
+  { icon: IndianRupee, title: 'Referral Program', desc: 'Enjoyed a course? Share it with friends. When they enroll using your referral, you may earn a commission as set by the course creator.' },
+  { icon: Users, title: 'Community Access', desc: 'Enrolled students get access to the course community — for tips, networking, and learning discussions.' },
 ];
 
 const ForStudents = () => (
   <section className="py-16 md:py-24">
     <div className="container mx-auto px-4">
       <div className="text-center mb-12">
-        <p className="text-sm font-semibold text-primary mb-1">FOR STUDENTS</p>
-        <h2 className="font-heading text-3xl font-700">Learn. Get Certified. Earn.</h2>
+        <p className="text-sm font-semibold text-primary mb-1">FOR LEARNERS</p>
+        <h2 className="font-heading text-3xl font-700">Learn. Get Certified. Grow.</h2>
       </div>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {benefits.map((b, i) => (
@@ -25,6 +25,9 @@ const ForStudents = () => (
           </div>
         ))}
       </div>
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        Referral commissions vary by course and are set by each creator. Earnings are not guaranteed and depend on actual enrollments.
+      </p>
     </div>
   </section>
 );
