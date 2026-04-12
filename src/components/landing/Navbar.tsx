@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,

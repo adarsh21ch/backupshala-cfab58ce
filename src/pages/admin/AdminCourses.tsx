@@ -225,7 +225,7 @@ const AdminCourses = () => {
 
       {/* Override Modal */}
       <Dialog open={!!overrideCourse} onOpenChange={(open) => { if (!open) setOverrideCourse(null); }}>
-        <DialogContent className="dark bg-card border-border">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Override Course Settings</DialogTitle>
           </DialogHeader>
