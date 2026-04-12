@@ -64,6 +64,10 @@ import CancellationPolicy from "./pages/CancellationPolicy";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import OrderHistory from "./pages/OrderHistory";
 import CookieConsent from "./components/CookieConsent";
+import InstallPrompt from "./components/InstallPrompt";
+import CreatorCoupons from "./pages/creator/CreatorCoupons";
+import CreatorAnnouncements from "./pages/creator/CreatorAnnouncements";
+import CreatorDiscussions from "./pages/creator/CreatorDiscussions";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -136,6 +140,9 @@ const App = () => (
             <Route path="/creator/settings" element={<CreatorRoute><CreatorSettings /></CreatorRoute>} />
             <Route path="/creator/unlock-requests" element={<CreatorRoute><CreatorUnlockRequests /></CreatorRoute>} />
             <Route path="/creator/upgrade" element={<CreatorRoute><CreatorUpgrade /></CreatorRoute>} />
+            <Route path="/creator/coupons" element={<CreatorRoute><CreatorCoupons /></CreatorRoute>} />
+            <Route path="/creator/announcements" element={<CreatorRoute><CreatorAnnouncements /></CreatorRoute>} />
+            <Route path="/creator/discussions" element={<CreatorRoute><CreatorDiscussions /></CreatorRoute>} />
 
             {/* Admin panel */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
@@ -155,6 +162,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsent />
+          <InstallPrompt />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
