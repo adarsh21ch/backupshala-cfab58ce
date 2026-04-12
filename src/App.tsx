@@ -57,6 +57,8 @@ import CreatorUpgrade from "./pages/creator/CreatorUpgrade";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
 import AdminCreatorPro from "./pages/admin/AdminCreatorPro";
+import AdminRevenue from "./pages/admin/AdminRevenue";
+import AdminFeaturedListings from "./pages/admin/AdminFeaturedListings";
 import CreatorAgreement from "./pages/CreatorAgreement";
 import ContentPolicy from "./pages/ContentPolicy";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
@@ -157,6 +159,8 @@ const App = () => (
             <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
             <Route path="/admin/videos" element={<AdminRoute><AdminVideos /></AdminRoute>} />
             <Route path="/admin/creator-pro" element={<AdminRoute><AdminCreatorPro /></AdminRoute>} />
+            <Route path="/admin/revenue" element={<AdminRoute><AdminRevenue /></AdminRoute>} />
+            <Route path="/admin/featured" element={<AdminRoute><AdminFeaturedListings /></AdminRoute>} />
             <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
