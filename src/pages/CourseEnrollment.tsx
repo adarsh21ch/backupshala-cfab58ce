@@ -13,6 +13,8 @@ import { formatPrice } from '@/lib/format';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useCallback } from 'react';
 import BackButton from '@/components/BackButton';
+import { Input } from '@/components/ui/input';
+import { Tag } from 'lucide-react';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -32,6 +34,11 @@ const CourseEnrollment = () => {
   const { toast } = useToast();
   const [paying, setPaying] = useState(false);
   const [showSuccess, setShowSuccess] = useState<{ courseName: string; invoiceNumber: string } | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    coupon_id: string; code: string; discount_amount: number; discounted_price: number; original_price: number;
+  } | null>(null);
 
   const { data: course, isLoading } = useQuery({
     queryKey: ['course-enroll', courseSlug],
@@ -92,7 +99,7 @@ const CourseEnrollment = () => {
       if (!scriptLoaded) throw new Error('Failed to load payment gateway');
 
       const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { course_id: course.id },
+        body: { course_id: course.id, coupon_id: appliedCoupon?.coupon_id || undefined },
       });
 
       if (orderError || orderData?.error) {
@@ -207,6 +214,24 @@ const CourseEnrollment = () => {
   const creatorName = creator?.creator_display_name || creator?.full_name || 'Creator';
   const modules = course.modules || [];
   const commissionAmount = Math.round(course.price * (course.commission_percent / 100));
+  const displayPrice = appliedCoupon ? appliedCoupon.discounted_price : course.price;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !course?.id) return;
+    setCouponLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-coupon', {
+        body: { code: couponCode.trim(), course_id: course.id },
+      });
+      if (error || !data?.valid) throw new Error(data?.error || 'Invalid coupon');
+      setAppliedCoupon(data);
+      toast({ title: `Coupon ${data.code} applied! You save ${formatPrice(data.discount_amount)}` });
+    } catch (err: any) {
+      toast({ title: 'Invalid coupon', description: err.message, variant: 'destructive' });
+      setAppliedCoupon(null);
+    }
+    setCouponLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -215,7 +240,7 @@ const CourseEnrollment = () => {
       {/* Mobile sticky CTA */}
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background p-3 lg:hidden flex items-center justify-between gap-3">
         <div>
-          <p className="font-heading text-lg font-800 text-accent">{formatPrice(course.price)}</p>
+          <p className="font-heading text-lg font-800 text-accent">{formatPrice(displayPrice)}</p>
           <p className="text-[10px] text-muted-foreground">Incl. 18% GST</p>
         </div>
         <Button onClick={handleEnroll} disabled={paying} className="rounded-md bg-primary hover:bg-primary/90 font-semibold flex-1 max-w-[200px]">
@@ -346,7 +371,12 @@ const CourseEnrollment = () => {
               {course.thumbnail_url && (
                 <img src={course.thumbnail_url} alt={course.title} className="w-full rounded-lg aspect-video object-cover" />
               )}
-              <p className="font-heading text-3xl font-800 text-accent">{formatPrice(course.price)}</p>
+              <div>
+                <p className="font-heading text-3xl font-800 text-accent">{formatPrice(displayPrice)}</p>
+                {appliedCoupon && (
+                  <p className="text-sm text-muted-foreground line-through">{formatPrice(appliedCoupon.original_price)}</p>
+                )}
+              </div>
               <Button onClick={handleEnroll} disabled={paying} size="lg" className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold text-base">
                 {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 {enrollment ? 'Continue Learning' : paying ? 'Processing…' : 'Enroll Now'}
@@ -364,6 +394,27 @@ const CourseEnrollment = () => {
                   <p className="text-xs text-primary font-medium">
                     Referral bonus available — <Link to="/refer" className="underline">Learn more</Link>
                   </p>
+                </div>
+              )}
+              {/* Coupon code input */}
+              {!enrollment && (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Coupon code"
+                      value={couponCode}
+                      onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                      className="text-xs h-8"
+                    />
+                    <Button size="sm" variant="outline" onClick={handleApplyCoupon} disabled={couponLoading || !couponCode.trim()} className="h-8 text-xs shrink-0">
+                      <Tag className="h-3 w-3 mr-1" /> Apply
+                    </Button>
+                  </div>
+                  {appliedCoupon && (
+                    <p className="text-xs text-primary font-medium">
+                      ✅ Coupon {appliedCoupon.code} applied! You save {formatPrice(appliedCoupon.discount_amount)}
+                    </p>
+                  )}
                 </div>
               )}
               <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. GST invoice emailed after payment.</p>
