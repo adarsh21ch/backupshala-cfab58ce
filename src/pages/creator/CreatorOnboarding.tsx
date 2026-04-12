@@ -27,6 +27,9 @@ const CreatorOnboarding = () => {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [showMaxCommissionConfirm, setShowMaxCommissionConfirm] = useState(false);
+  const [agreedCreator, setAgreedCreator] = useState(false);
+  const [agreedContent, setAgreedContent] = useState(false);
+  const [agreedEarnings, setAgreedEarnings] = useState(false);
 
   // Step 1
   const [displayName, setDisplayName] = useState('');
