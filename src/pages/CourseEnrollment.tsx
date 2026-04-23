@@ -15,6 +15,10 @@ import { useState, useCallback } from 'react';
 import BackButton from '@/components/BackButton';
 import { Input } from '@/components/ui/input';
 import { Tag } from 'lucide-react';
+import UpgradeBanner from '@/components/course/UpgradeBanner';
+import UpgradeModal from '@/components/course/UpgradeModal';
+import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -60,13 +64,20 @@ const CourseEnrollment = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('enrollments')
-        .select('id')
+        .select('id, tier')
         .eq('student_id', user!.id)
         .eq('course_id', course!.id)
         .maybeSingle();
       return data;
     },
     enabled: !!user && !!course?.id,
+  });
+
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { data: platformSettings } = usePlatformSettings();
+  const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
+    setShowUpgradeModal(false);
+    refetchEnrollment();
   });
 
   const { data: reviews } = useQuery({
@@ -216,6 +227,11 @@ const CourseEnrollment = () => {
   const commissionAmount = Math.round(course.price * (course.commission_percent / 100));
   const displayPrice = appliedCoupon ? appliedCoupon.discounted_price : course.price;
 
+  const basicModuleCount = modules.filter((m: any) => (m.module_tier || 'basic') === 'basic').length;
+  const advancedModuleCount = modules.filter((m: any) => m.module_tier === 'advanced').length;
+  const isBasicEnrolled = !!enrollment && (enrollment as any).tier === 'basic' && advancedModuleCount > 0;
+  const upgradePrice = platformSettings?.upgrade_price ?? 250;
+
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !course?.id) return;
     setCouponLoading(true);
@@ -258,6 +274,15 @@ const CourseEnrollment = () => {
                 <span className="text-lg">🏆</span>
                 <p className="text-sm font-medium text-accent">Backupshala's Official Starter Bundle</p>
               </div>
+            )}
+            {isBasicEnrolled && (
+              <UpgradeBanner
+                upgradePrice={upgradePrice}
+                basicCount={basicModuleCount}
+                advancedCount={advancedModuleCount}
+                onUpgrade={() => setShowUpgradeModal(true)}
+                loading={upgradePaying}
+              />
             )}
             <div>
               <h1 className="font-heading text-2xl font-700 md:text-3xl">{course.title}</h1>
@@ -429,6 +454,15 @@ const CourseEnrollment = () => {
         </div>
       </div>
       <Footer />
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        courseTitle={course.title}
+        upgradePrice={upgradePrice}
+        modules={modules}
+        onConfirm={startUpgrade}
+        paying={upgradePaying}
+      />
     </div>
   );
 };

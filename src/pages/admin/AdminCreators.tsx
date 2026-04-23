@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle, Star, Shield, BadgeCheck } from 'lucide-react';
+import { CheckCircle, XCircle, Star, Shield, BadgeCheck, Percent } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +22,8 @@ const AdminCreators = () => {
   const [grantDialog, setGrantDialog] = useState<{ id: string; name: string } | null>(null);
   const [grantDuration, setGrantDuration] = useState('1');
   const [grantReason, setGrantReason] = useState('');
+  const [feeDialog, setFeeDialog] = useState<{ id: string; name: string; current: number | null } | null>(null);
+  const [feeValue, setFeeValue] = useState('');
 
   const { data: creators, isLoading } = useQuery({
     queryKey: ['admin-creators'],
@@ -106,6 +108,34 @@ const AdminCreators = () => {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-creators'] }); toast.success('Pro revoked'); },
   });
 
+  const setFeeMutation = useMutation({
+    mutationFn: async () => {
+      if (!feeDialog) return;
+      const trimmed = feeValue.trim();
+      const newFee: number | null = trimmed === '' ? null : Number(trimmed);
+      if (newFee !== null && (isNaN(newFee) || newFee < 0 || newFee > 49)) {
+        throw new Error('Fee must be 0–49% or empty to reset');
+      }
+      const { error } = await supabase.from('profiles')
+        .update({ custom_platform_fee: newFee })
+        .eq('id', feeDialog.id);
+      if (error) throw error;
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id,
+        action: newFee === null ? 'reset_creator_fee' : 'set_creator_fee',
+        target_type: 'creator',
+        target_id: feeDialog.id,
+        details: { previous: feeDialog.current, new: newFee },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-creators'] });
+      toast.success('Custom fee updated');
+      setFeeDialog(null); setFeeValue('');
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed'),
+  });
+
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
@@ -120,6 +150,7 @@ const AdminCreators = () => {
                   <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Tier</TableHead>
+                  <TableHead>Fee</TableHead>
                   <TableHead>Pro Expires</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -127,7 +158,7 @@ const AdminCreators = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
                 ) : (creators || []).map((c: any) => {
                   const proSub = c.creator_pro_subscriptions?.[0] || c.creator_pro_subscriptions;
                   const isPro = proSub && proSub.status === 'active';
@@ -151,6 +182,13 @@ const AdminCreators = () => {
                         <Badge variant={isPro ? 'default' : 'secondary'} className={`border-0 ${isPro ? 'bg-accent/20 text-accent' : 'bg-secondary text-muted-foreground'}`}>
                           {isPro ? '⭐ Pro' : 'Free'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {c.custom_platform_fee !== null && c.custom_platform_fee !== undefined ? (
+                          <Badge className="bg-accent/15 text-accent border-0">{c.custom_platform_fee}% custom</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Default</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {proExpires ? format(new Date(proExpires), 'dd MMM yyyy') : isPro ? 'Lifetime' : '—'}
@@ -179,6 +217,17 @@ const AdminCreators = () => {
                           )}
                           <Button size="sm" variant={c.is_verified ? 'default' : 'outline'} onClick={() => verifyMutation.mutate({ id: c.id, verified: !c.is_verified })} className="h-7 text-xs gap-1">
                             <BadgeCheck className="h-3 w-3" /> {c.is_verified ? 'Verified' : 'Verify'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => {
+                              setFeeDialog({ id: c.id, name: c.creator_display_name || c.full_name, current: c.custom_platform_fee ?? null });
+                              setFeeValue(c.custom_platform_fee !== null && c.custom_platform_fee !== undefined ? String(c.custom_platform_fee) : '');
+                            }}
+                          >
+                            <Percent className="h-3 w-3" /> Fee
                           </Button>
                         </div>
                       </TableCell>
@@ -216,6 +265,43 @@ const AdminCreators = () => {
             <Button onClick={() => grantProMutation.mutate()} disabled={grantProMutation.isPending} className="w-full">
               Grant Creator Pro
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Fee Dialog */}
+      <Dialog open={!!feeDialog} onOpenChange={() => setFeeDialog(null)}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader><DialogTitle>Custom Platform Fee — {feeDialog?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Override the default platform fee for this creator only. Range: 0–49%. Leave empty to reset to platform default.
+            </p>
+            <div>
+              <Label className="text-sm">Custom Platform Fee %</Label>
+              <Input
+                type="number"
+                value={feeValue}
+                onChange={e => setFeeValue(e.target.value)}
+                placeholder="e.g. 5"
+                min={0}
+                max={49}
+                className="mt-1 bg-secondary border-border"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Current: {feeDialog?.current !== null && feeDialog?.current !== undefined ? `${feeDialog.current}% custom` : 'Default'}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setFeeMutation.mutate()} disabled={setFeeMutation.isPending} className="flex-1">
+                Save
+              </Button>
+              {feeDialog?.current !== null && feeDialog?.current !== undefined && (
+                <Button variant="outline" onClick={() => { setFeeValue(''); setFeeMutation.mutate(); }}>
+                  Reset
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
