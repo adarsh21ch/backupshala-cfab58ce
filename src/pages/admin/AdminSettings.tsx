@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useState, useEffect, useMemo } from 'react';
 import { Save, AlertTriangle, IndianRupee } from 'lucide-react';
 import { calculateSaleSplit, getCommissionConfig } from '@/lib/tierPricing';
+import VideoSettingsSection from '@/components/admin/VideoSettingsSection';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
