@@ -227,6 +227,11 @@ const CourseEnrollment = () => {
   const commissionAmount = Math.round(course.price * (course.commission_percent / 100));
   const displayPrice = appliedCoupon ? appliedCoupon.discounted_price : course.price;
 
+  const basicModuleCount = modules.filter((m: any) => (m.module_tier || 'basic') === 'basic').length;
+  const advancedModuleCount = modules.filter((m: any) => m.module_tier === 'advanced').length;
+  const isBasicEnrolled = !!enrollment && (enrollment as any).tier === 'basic' && advancedModuleCount > 0;
+  const upgradePrice = platformSettings?.upgrade_price ?? 250;
+
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !course?.id) return;
     setCouponLoading(true);
@@ -269,6 +274,15 @@ const CourseEnrollment = () => {
                 <span className="text-lg">🏆</span>
                 <p className="text-sm font-medium text-accent">Backupshala's Official Starter Bundle</p>
               </div>
+            )}
+            {isBasicEnrolled && (
+              <UpgradeBanner
+                upgradePrice={upgradePrice}
+                basicCount={basicModuleCount}
+                advancedCount={advancedModuleCount}
+                onUpgrade={() => setShowUpgradeModal(true)}
+                loading={upgradePaying}
+              />
             )}
             <div>
               <h1 className="font-heading text-2xl font-700 md:text-3xl">{course.title}</h1>
@@ -440,6 +454,15 @@ const CourseEnrollment = () => {
         </div>
       </div>
       <Footer />
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        courseTitle={course.title}
+        upgradePrice={upgradePrice}
+        advancedCount={advancedModuleCount}
+        onConfirm={startUpgrade}
+        loading={upgradePaying}
+      />
     </div>
   );
 };
