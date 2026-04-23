@@ -65,7 +65,9 @@ const ModulePlayer = () => {
       const { data, error } = await supabase.functions.invoke('check-module-access', {
         body: { module_id: moduleId, course_id: courseId },
       });
-      if (error) return { canAccess: true }; // fail open
+      // Fail closed: if the access check fails, do NOT grant access.
+      // Otherwise progression gates (sequential / mentor approval) could be silently bypassed on transient errors.
+      if (error) return { canAccess: false, reason: 'check_failed' };
       return data;
     },
     enabled: !!moduleId && !!courseId && !!user,
