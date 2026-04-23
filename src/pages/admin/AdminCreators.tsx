@@ -22,6 +22,8 @@ const AdminCreators = () => {
   const [grantDialog, setGrantDialog] = useState<{ id: string; name: string } | null>(null);
   const [grantDuration, setGrantDuration] = useState('1');
   const [grantReason, setGrantReason] = useState('');
+  const [feeDialog, setFeeDialog] = useState<{ id: string; name: string; current: number | null } | null>(null);
+  const [feeValue, setFeeValue] = useState('');
 
   const { data: creators, isLoading } = useQuery({
     queryKey: ['admin-creators'],
