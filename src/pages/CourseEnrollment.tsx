@@ -15,6 +15,10 @@ import { useState, useCallback } from 'react';
 import BackButton from '@/components/BackButton';
 import { Input } from '@/components/ui/input';
 import { Tag } from 'lucide-react';
+import UpgradeBanner from '@/components/course/UpgradeBanner';
+import UpgradeModal from '@/components/course/UpgradeModal';
+import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -60,13 +64,20 @@ const CourseEnrollment = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('enrollments')
-        .select('id')
+        .select('id, tier')
         .eq('student_id', user!.id)
         .eq('course_id', course!.id)
         .maybeSingle();
       return data;
     },
     enabled: !!user && !!course?.id,
+  });
+
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { data: platformSettings } = usePlatformSettings();
+  const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
+    setShowUpgradeModal(false);
+    refetchEnrollment();
   });
 
   const { data: reviews } = useQuery({
