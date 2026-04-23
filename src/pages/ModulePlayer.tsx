@@ -17,6 +17,11 @@ import AudioNotePlayer from '@/components/module/AudioNotePlayer';
 import CourseDiscussions from '@/components/course/CourseDiscussions';
 import ModuleNotes from '@/components/module/ModuleNotes';
 import ModuleQuiz from '@/components/module/ModuleQuiz';
+import UpgradeBanner from '@/components/course/UpgradeBanner';
+import UpgradeModal from '@/components/course/UpgradeModal';
+import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { Sparkles } from 'lucide-react';
 
 const moduleTypeIcon = (type: string) => {
   if (type === 'resource') return <BookOpen className="h-3 w-3" />;
@@ -32,6 +37,13 @@ const ModulePlayer = () => {
   const queryClient = useQueryClient();
   const [showCelebration, setShowCelebration] = useState(false);
   const [showMentorGate, setShowMentorGate] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { data: platformSettings } = usePlatformSettings();
+  const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(courseId, () => {
+    queryClient.invalidateQueries({ queryKey: ['enrollment-tier'] });
+    queryClient.invalidateQueries({ queryKey: ['enrollment-drip'] });
+    setShowUpgradeModal(false);
+  });
 
   // Check module access (gate system)
   const { data: accessCheck, isLoading: accessLoading } = useQuery({
@@ -58,13 +70,15 @@ const ModulePlayer = () => {
   });
 
   const { data: enrollment } = useQuery({
-    queryKey: ['enrollment-drip', user?.id, courseId],
+    queryKey: ['enrollment-tier', user?.id, courseId],
     queryFn: async () => {
-      const { data } = await supabase.from('enrollments').select('enrolled_at').eq('student_id', user!.id).eq('course_id', courseId!).maybeSingle();
+      const { data } = await supabase.from('enrollments').select('enrolled_at, tier').eq('student_id', user!.id).eq('course_id', courseId!).maybeSingle();
       return data;
     },
     enabled: !!user && !!courseId,
   });
+
+  const studentTier = (enrollment as any)?.tier || 'basic';
 
   const { data: completions } = useQuery({
     queryKey: ['completions-course', user?.id, courseId],
@@ -186,7 +200,50 @@ const ModulePlayer = () => {
     );
   }
 
-  // Gate screens
+  // Tier lock — basic enrollee trying to access advanced module
+  const isTierLocked = studentTier === 'basic' && (currentModule as any)?.module_tier === 'advanced';
+  if (isTierLocked) {
+    const upgradePrice = platformSettings?.upgrade_price ?? 250;
+    const advancedCount = modules.filter((m: any) => m.module_tier === 'advanced').length;
+    return (
+      <DashboardLayout>
+        <div className="max-w-2xl mx-auto space-y-6">
+          <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+          </Link>
+          <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-accent/10 to-transparent p-8 text-center space-y-4">
+            <div className="mx-auto h-16 w-16 rounded-2xl bg-accent/15 flex items-center justify-center">
+              <Sparkles className="h-8 w-8 text-accent" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-accent">Advanced Module</p>
+              <h2 className="font-heading text-2xl font-extrabold mt-1">{currentModule?.title}</h2>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              This module is part of the <span className="font-semibold text-foreground">Advanced</span> tier. Upgrade once to unlock {advancedCount} advanced module{advancedCount > 1 ? 's' : ''} in this course.
+            </p>
+            <Button
+              onClick={() => setShowUpgradeModal(true)}
+              className="rounded-lg bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+              size="lg"
+            >
+              <Sparkles className="h-4 w-4 mr-2" /> Upgrade for ₹{upgradePrice}
+            </Button>
+          </div>
+        </div>
+        <UpgradeModal
+          open={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onConfirm={startUpgrade}
+          upgradePrice={upgradePrice}
+          modules={modules as any}
+          paying={upgradePaying}
+          courseTitle={course?.title || ''}
+        />
+      </DashboardLayout>
+    );
+  }
+
   if (accessCheck && !accessCheck.canAccess) {
     const gateInfo = accessCheck.gateInfo;
 
@@ -276,6 +333,17 @@ const ModulePlayer = () => {
             <Progress value={overallProgress} className="h-1.5 flex-1" />
             <span className="text-xs font-medium text-muted-foreground">{overallProgress}%</span>
           </div>
+
+          {/* Tier upgrade banner — only for basic enrollees in courses with advanced modules */}
+          {studentTier === 'basic' && modules.some((m: any) => m.module_tier === 'advanced') && (
+            <UpgradeBanner
+              upgradePrice={platformSettings?.upgrade_price ?? 250}
+              basicCount={modules.filter((m: any) => (m.module_tier || 'basic') === 'basic').length}
+              advancedCount={modules.filter((m: any) => m.module_tier === 'advanced').length}
+              onUpgrade={() => setShowUpgradeModal(true)}
+              loading={upgradePaying}
+            />
+          )}
 
           {/* Audio note — before video */}
           {accessCheck?.hasAudioNote && accessCheck?.audioPosition === 'before' && accessCheck?.audioR2Key && (
@@ -395,19 +463,23 @@ const ModulePlayer = () => {
                 const isDripLocked = relDays > 0 && enrollment?.enrolled_at
                   ? new Date(new Date(enrollment.enrolled_at).getTime() + relDays * 86400000) > new Date()
                   : false;
+                const isAdvancedLocked = studentTier === 'basic' && m.module_tier === 'advanced';
                 return (
                   <Link
                     key={m.id}
                     to={`/courses/${courseId}/module/${m.id}`}
-                    className={`flex items-center gap-3 p-3 text-xs transition-colors hover:bg-secondary/50 ${isCurrent ? 'bg-primary/5 border-l-2 border-primary' : ''}`}
+                    className={`flex items-center gap-3 p-3 text-xs transition-colors hover:bg-secondary/50 ${isCurrent ? 'bg-primary/5 border-l-2 border-primary' : ''} ${isAdvancedLocked ? 'opacity-70' : ''}`}
                   >
-                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold ${done ? 'bg-primary/20 text-primary' : isDripLocked ? 'bg-muted text-muted-foreground' : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? 'bg-accent/20 text-accent' : 'bg-secondary text-muted-foreground'}`}>
-                      {done ? '✓' : isDripLocked ? <Calendar className="h-3 w-3" /> : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? <Lock className="h-3 w-3" /> : moduleTypeIcon(mType)}
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold ${done ? 'bg-primary/20 text-primary' : isDripLocked ? 'bg-muted text-muted-foreground' : isAdvancedLocked ? 'bg-accent/20 text-accent' : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? 'bg-accent/20 text-accent' : 'bg-secondary text-muted-foreground'}`}>
+                      {done ? '✓' : isDripLocked ? <Calendar className="h-3 w-3" /> : isAdvancedLocked ? <Sparkles className="h-3 w-3" /> : m.is_gated && !done && i > 0 && !completedModuleIds.has(modules[i-1]?.id) ? <Lock className="h-3 w-3" /> : moduleTypeIcon(mType)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className={`truncate font-medium ${isCurrent ? 'text-primary' : isDripLocked ? 'text-muted-foreground' : ''}`}>{m.title}</p>
+                      <p className={`truncate font-medium ${isCurrent ? 'text-primary' : isDripLocked ? 'text-muted-foreground' : ''}`}>
+                        {m.title}
+                        {m.module_tier === 'advanced' && <span className="ml-1.5 text-[9px] font-bold text-accent">ADV</span>}
+                      </p>
                       <p className="text-muted-foreground">
-                        {isDripLocked ? `Unlocks in ${relDays}d` : mType === 'resource' ? '📚 Resources' : mType === 'community' ? '👥 Community' : `${m.duration_minutes}m`}
+                        {isAdvancedLocked ? '🔒 Upgrade to unlock' : isDripLocked ? `Unlocks in ${relDays}d` : mType === 'resource' ? '📚 Resources' : mType === 'community' ? '👥 Community' : `${m.duration_minutes}m`}
                       </p>
                     </div>
                   </Link>
@@ -417,6 +489,15 @@ const ModulePlayer = () => {
           </div>
         </div>
       </div>
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onConfirm={startUpgrade}
+        upgradePrice={platformSettings?.upgrade_price ?? 250}
+        modules={modules as any}
+        paying={upgradePaying}
+        courseTitle={course?.title || ''}
+      />
     </DashboardLayout>
   );
 };
