@@ -169,6 +169,8 @@ Deno.serve(async (req) => {
         razorpay_payment_id,
         invoice_number,
         paid_at: new Date().toISOString(),
+        base_amount: baseAmount,
+        gst_amount: gstAmount,
         platform_fee_amount: platformFeeAmount,
         creator_payout_amount: creatorEarningAmount,
       })
