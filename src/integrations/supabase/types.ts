@@ -413,20 +413,64 @@ export type Database = {
           },
         ]
       }
+      course_upgrades: {
+        Row: {
+          amount_paid: number
+          course_id: string
+          from_tier: string
+          id: string
+          original_payment_id: string | null
+          to_tier: string
+          upgrade_payment_id: string | null
+          upgraded_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          course_id: string
+          from_tier?: string
+          id?: string
+          original_payment_id?: string | null
+          to_tier?: string
+          upgrade_payment_id?: string | null
+          upgraded_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          course_id?: string
+          from_tier?: string
+          id?: string
+          original_payment_id?: string | null
+          to_tier?: string
+          upgrade_payment_id?: string | null
+          upgraded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
+          admin_notes: string | null
+          admin_override_expires_at: string | null
+          admin_override_label: string | null
+          admin_override_price: number | null
           allow_forward_seeking: boolean | null
           allow_speed_control: boolean | null
+          base_price: number | null
           category: string
           commission_percent: number
+          course_tier: string | null
           created_at: string
           creator_id: string
+          display_price: number | null
           full_description: string | null
           id: string
           is_featured: boolean | null
           language: string | null
           level: string | null
           min_watch_percentage_to_complete: number | null
+          original_price: number | null
           platform_fee_percent: number
           preview_video_url: string | null
           price: number
@@ -448,18 +492,26 @@ export type Database = {
           what_you_learn: string[] | null
         }
         Insert: {
+          admin_notes?: string | null
+          admin_override_expires_at?: string | null
+          admin_override_label?: string | null
+          admin_override_price?: number | null
           allow_forward_seeking?: boolean | null
           allow_speed_control?: boolean | null
+          base_price?: number | null
           category?: string
           commission_percent?: number
+          course_tier?: string | null
           created_at?: string
           creator_id: string
+          display_price?: number | null
           full_description?: string | null
           id?: string
           is_featured?: boolean | null
           language?: string | null
           level?: string | null
           min_watch_percentage_to_complete?: number | null
+          original_price?: number | null
           platform_fee_percent?: number
           preview_video_url?: string | null
           price?: number
@@ -481,18 +533,26 @@ export type Database = {
           what_you_learn?: string[] | null
         }
         Update: {
+          admin_notes?: string | null
+          admin_override_expires_at?: string | null
+          admin_override_label?: string | null
+          admin_override_price?: number | null
           allow_forward_seeking?: boolean | null
           allow_speed_control?: boolean | null
+          base_price?: number | null
           category?: string
           commission_percent?: number
+          course_tier?: string | null
           created_at?: string
           creator_id?: string
+          display_price?: number | null
           full_description?: string | null
           id?: string
           is_featured?: boolean | null
           language?: string | null
           level?: string | null
           min_watch_percentage_to_complete?: number | null
+          original_price?: number | null
           platform_fee_percent?: number
           preview_video_url?: string | null
           price?: number
@@ -731,6 +791,7 @@ export type Database = {
           payment_id: string | null
           referrer_email: string
           student_id: string
+          tier: string
         }
         Insert: {
           amount_paid?: number
@@ -742,6 +803,7 @@ export type Database = {
           payment_id?: string | null
           referrer_email?: string
           student_id: string
+          tier?: string
         }
         Update: {
           amount_paid?: number
@@ -753,6 +815,7 @@ export type Database = {
           payment_id?: string | null
           referrer_email?: string
           student_id?: string
+          tier?: string
         }
         Relationships: [
           {
@@ -1213,6 +1276,7 @@ export type Database = {
           id: string
           is_gated: boolean | null
           is_preview: boolean | null
+          module_tier: string
           module_type: string | null
           order_index: number | null
           release_after_days: number
@@ -1233,6 +1297,7 @@ export type Database = {
           id?: string
           is_gated?: boolean | null
           is_preview?: boolean | null
+          module_tier?: string
           module_type?: string | null
           order_index?: number | null
           release_after_days?: number
@@ -1253,6 +1318,7 @@ export type Database = {
           id?: string
           is_gated?: boolean | null
           is_preview?: boolean | null
+          module_tier?: string
           module_type?: string | null
           order_index?: number | null
           release_after_days?: number
@@ -1529,6 +1595,7 @@ export type Database = {
           creator_slug: string | null
           creator_website: string | null
           creator_youtube: string | null
+          custom_platform_fee: number | null
           email: string
           full_name: string
           id: string
@@ -1542,6 +1609,7 @@ export type Database = {
           total_enrolled: number
           total_referred: number
           updated_at: string
+          username: string | null
           wallet_balance: number
         }
         Insert: {
@@ -1555,6 +1623,7 @@ export type Database = {
           creator_slug?: string | null
           creator_website?: string | null
           creator_youtube?: string | null
+          custom_platform_fee?: number | null
           email: string
           full_name: string
           id: string
@@ -1568,6 +1637,7 @@ export type Database = {
           total_enrolled?: number
           total_referred?: number
           updated_at?: string
+          username?: string | null
           wallet_balance?: number
         }
         Update: {
@@ -1581,6 +1651,7 @@ export type Database = {
           creator_slug?: string | null
           creator_website?: string | null
           creator_youtube?: string | null
+          custom_platform_fee?: number | null
           email?: string
           full_name?: string
           id?: string
@@ -1594,6 +1665,7 @@ export type Database = {
           total_enrolled?: number
           total_referred?: number
           updated_at?: string
+          username?: string | null
           wallet_balance?: number
         }
         Relationships: []
