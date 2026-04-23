@@ -37,13 +37,14 @@ const AdminSettings = () => {
     if (isNaN(feeFree) || feeFree < 1 || feeFree > 49) errs.platform_fee_free = 'Must be 1–49%';
     const feePro = Number(values.platform_fee_pro);
     if (isNaN(feePro) || feePro < 1 || feePro > 49) errs.platform_fee_pro = 'Must be 1–49%';
-    const comm = Number(values.default_commission_percent);
-    if (isNaN(comm) || comm < 0 || comm > 99) errs.default_commission_percent = 'Must be 0–99%';
+    const refOfPlatform = Number(values.referral_commission_percent);
+    if (isNaN(refOfPlatform) || refOfPlatform < 0 || refOfPlatform > 100)
+      errs.referral_commission_percent = 'Must be 0–100% (of platform fee)';
+    const gateway = Number(values.gateway_fee_percent);
+    if (isNaN(gateway) || gateway < 0 || gateway > 10) errs.gateway_fee_percent = 'Must be 0–10%';
     const payout = Number(values.min_payout_amount);
     if (isNaN(payout) || payout < 1) errs.min_payout_amount = 'Must be at least ₹1';
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
-    const affComm = Number(values.affiliate_commission_percent);
-    if (isNaN(affComm) || affComm < 0 || affComm > 50) errs.affiliate_commission_percent = 'Must be 0–50%';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
