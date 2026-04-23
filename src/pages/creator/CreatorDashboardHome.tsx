@@ -104,6 +104,29 @@ const CreatorDashboard = () => {
           </div>
         )}
 
+        {/* Wallet summary banner */}
+        <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-6 flex-wrap">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                  💰 Available to withdraw
+                </p>
+                <p className="font-heading text-2xl font-800 text-primary">{formatPrice(walletInfo?.available || 0)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                  ⏳ Pending (held 3 days)
+                </p>
+                <p className="font-heading text-xl font-700 text-accent">{formatPrice(walletInfo?.pending || 0)}</p>
+              </div>
+            </div>
+            <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md font-semibold">
+              <Link to="/creator/payouts">Withdraw <ArrowRight className="h-4 w-4 ml-1.5" /></Link>
+            </Button>
+          </div>
+        </div>
+
         {/* Course performance */}
         {courses && courses.length > 0 && (
           <div>
