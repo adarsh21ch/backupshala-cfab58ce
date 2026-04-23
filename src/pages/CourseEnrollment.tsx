@@ -19,6 +19,7 @@ import UpgradeBanner from '@/components/course/UpgradeBanner';
 import UpgradeModal from '@/components/course/UpgradeModal';
 import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import CoursePreviewModal from '@/components/course/CoursePreviewModal';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -74,6 +75,7 @@ const CourseEnrollment = () => {
   });
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [previewModule, setPreviewModule] = useState<any | null>(null);
   const { data: platformSettings } = usePlatformSettings();
   const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
     setShowUpgradeModal(false);
@@ -356,8 +358,15 @@ const CourseEnrollment = () => {
                 <div className="space-y-1">
                   {modules.map((m: any, i: number) => {
                     const mType = m.module_type || 'video';
+                    const isPreviewable = m.is_preview && mType === 'video' && !enrollment;
                     return (
-                      <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                      <button
+                        key={m.id}
+                        type="button"
+                        disabled={!isPreviewable}
+                        onClick={() => isPreviewable && setPreviewModule(m)}
+                        className={`w-full text-left flex items-center gap-3 rounded-lg border border-border p-3 ${isPreviewable ? 'hover:border-primary/40 cursor-pointer transition-colors' : 'cursor-default'}`}
+                      >
                         <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-xs font-semibold">
                           {mType === 'resource' ? '📚' : mType === 'community' ? '👥' : i + 1}
                         </span>
@@ -365,10 +374,11 @@ const CourseEnrollment = () => {
                           <p className="text-sm font-medium truncate">{m.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {mType === 'resource' ? 'Resource Library' : mType === 'community' ? 'Community Access' : `${m.duration_minutes} min`}
+                            {m.is_preview && <span className="ml-2 text-primary font-semibold">· Free Preview</span>}
                           </p>
                         </div>
                         {m.is_preview ? <Play className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground/40" />}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

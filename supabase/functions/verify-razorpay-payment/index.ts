@@ -315,7 +315,7 @@ Deno.serve(async (req) => {
       .eq("id", user.id);
 
     return new Response(
-      JSON.stringify({ success: true, invoice_number }),
+      JSON.stringify({ success: true, invoice_number, payment_id: payment.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
