@@ -226,7 +226,13 @@ const CourseBuilder = () => {
     if (commissionPercent > maxCommission) setCommissionPercent(maxCommission);
   }, [maxCommission]);
 
-  const generateSlug = (t: string) => t.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+  const generateSlug = (t: string) =>
+    t.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '') // strip leading/trailing hyphens
+      .trim();
 
   useEffect(() => {
     if (isNew && title) setSlug(generateSlug(title));
