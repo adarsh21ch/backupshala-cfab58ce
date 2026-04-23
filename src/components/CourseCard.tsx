@@ -45,6 +45,7 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
   const mods = course.modules || [];
   const hasResourceModules = mods.some((m: any) => m.module_type === 'resource');
   const hasCommunityModule = mods.some((m: any) => m.module_type === 'community');
+  const hasFreePreview = mods.some((m: any) => m.is_preview === true && (m.module_type || 'video') === 'video');
 
   return (
     <div className={`group rounded-xl border bg-card overflow-hidden transition-all hover:shadow-md ${pinned ? 'border-accent/40 ring-1 ring-accent/20' : 'border-border hover:border-primary/20'}`}>
@@ -93,6 +94,11 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
 
         {/* Type badges */}
         <div className="flex flex-wrap gap-1">
+          {hasFreePreview && (
+            <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-semibold text-success flex items-center gap-0.5">
+              ▶ Free Preview
+            </span>
+          )}
           {hasCommunityModule && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary flex items-center gap-0.5">
               <Users className="h-2.5 w-2.5" /> Community
