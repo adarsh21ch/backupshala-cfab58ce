@@ -51,7 +51,7 @@ const ModulePlayer = () => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showMentorGate, setShowMentorGate] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const { data: platformSettings } = usePlatformSettings();
+  const { data: platformSettings, getSetting } = usePlatformSettings();
   const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(courseId, () => {
     queryClient.invalidateQueries({ queryKey: ['enrollment-tier'] });
     queryClient.invalidateQueries({ queryKey: ['enrollment-drip'] });
@@ -387,15 +387,69 @@ const ModulePlayer = () => {
             />
           ) : (
             <>
-              <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-card">
-                <iframe
-                  src={currentModule.video_url}
-                  title={currentModule.title}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
+              {(() => {
+                const m: any = currentModule;
+                const c: any = course;
+                // Platform-level defaults
+                const platAllowSeek = getSetting('allow_video_seeking_forward', 'false') === 'true';
+                const platAllowSpeed = getSetting('allow_video_speed_control', 'false') === 'true';
+                const platMinWatch = Number(getSetting('min_watch_percentage_to_complete', '80')) || 80;
+                const platShowWatermark = getSetting('video_watermark_enabled', 'true') === 'true';
+                const watermarkText = getSetting('video_watermark_text', 'Backupshala');
+                const watermarkPosition = (getSetting('video_watermark_position', 'bottom-right') as any);
+                const watermarkOpacity = Number(getSetting('video_watermark_opacity', '60')) || 60;
+                const watermarkSize = (getSetting('video_watermark_size', 'medium') as any);
+
+                const allowSeek = resolveBool(m.allow_seek, c?.allow_forward_seeking, platAllowSeek);
+                const allowSpeedChange = resolveBool(m.allow_speed_change, c?.allow_speed_control, platAllowSpeed);
+                const showWatermark = resolveBool(m.show_watermark, c?.video_watermark_enabled, platShowWatermark);
+                const minWatchPercent = resolveNum(m.min_watch_percent, c?.min_watch_percentage_to_complete, platMinWatch);
+
+                if (m.video_asset_id) {
+                  return (
+                    <BackupshalaVideoPlayer
+                      assetId={m.video_asset_id}
+                      moduleId={m.id}
+                      courseId={courseId}
+                      allowSeek={allowSeek}
+                      allowSpeedChange={allowSpeedChange}
+                      minWatchPercent={minWatchPercent}
+                      showWatermark={showWatermark}
+                      watermarkText={watermarkText}
+                      watermarkPosition={watermarkPosition}
+                      watermarkOpacity={watermarkOpacity}
+                      watermarkSize={watermarkSize}
+                      onComplete={handleAutoComplete}
+                    />
+                  );
+                }
+
+                // Fallback: legacy iframe (YouTube/Vimeo embed) with watermark overlay
+                return (
+                  <div className="relative">
+                    <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-card">
+                      <iframe
+                        src={m.video_url}
+                        title={m.title}
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                    {showWatermark && (
+                      <div
+                        className="pointer-events-none absolute bottom-3 right-3 text-white font-bold"
+                        style={{
+                          opacity: watermarkOpacity / 100,
+                          textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                        }}
+                      >
+                        {watermarkText}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div>
                 <h1 className="font-heading text-xl font-700">{currentModule.title}</h1>
                 {currentModule.description && <p className="mt-2 text-sm text-muted-foreground">{currentModule.description}</p>}
