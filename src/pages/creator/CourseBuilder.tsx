@@ -196,7 +196,13 @@ const CourseBuilder = () => {
       setWhatYouLearn(course.what_you_learn?.length ? course.what_you_learn : ['']);
       setRequirements(course.requirements?.length ? course.requirements : ['']);
       setTags(course.tags?.join(', ') || '');
+      setCourseTier((course as any).course_tier ?? null);
       setPrice(String(course.price));
+      const op = (course as any).original_price;
+      if (op != null) {
+        setShowOriginalPrice(true);
+        setOriginalPrice(String(op));
+      }
       setCommissionPercent(course.commission_percent);
       setStatus(course.status);
       if (course.modules) {
