@@ -21,7 +21,7 @@ const Dashboard = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('enrollments')
-        .select('*, courses(title, slug, thumbnail_url, total_modules, creator_id)')
+        .select('*, courses(title, slug, thumbnail_url, total_modules, creator_id, profiles:creator_id(creator_slug), modules(id, module_tier))')
         .eq('student_id', user!.id)
         .order('enrolled_at', { ascending: false });
       return data || [];
@@ -153,9 +153,20 @@ const Dashboard = () => {
                 const totalModules = course?.total_modules || 0;
                 const completedModules = completionsByCourse[enrollment.course_id] || 0;
                 const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+                const tier = enrollment.tier || 'basic';
+                const advancedCount = (course?.modules || []).filter((m: any) => m.module_tier === 'advanced').length;
+                const canUpgrade = tier === 'basic' && advancedCount > 0;
+                const creatorSlug = course?.profiles?.creator_slug || course?.creator_id;
                 return (
                   <div key={enrollment.id} className="rounded-xl border border-border bg-card p-5 transition-all hover:border-accent/30 hover:-translate-y-0.5">
-                    <h3 className="font-heading text-sm font-700 line-clamp-2">{course?.title}</h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-heading text-sm font-700 line-clamp-2 flex-1">{course?.title}</h3>
+                      <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                        tier === 'advanced' ? 'bg-info/15 text-info' : 'bg-primary/15 text-primary'
+                      }`}>
+                        {tier}
+                      </span>
+                    </div>
                     <p className="mt-2 text-xs text-muted-foreground">{completedModules} of {totalModules} modules</p>
                     <Progress value={progress} className="mt-2 h-1.5" />
                     <div className="mt-2 flex items-center justify-between">
@@ -166,6 +177,11 @@ const Dashboard = () => {
                     <Button asChild size="sm" className="mt-3 w-full rounded-lg" variant={progress > 0 ? 'default' : 'outline'}>
                       <Link to={`/courses/${enrollment.course_id}`}>{progress === 100 ? 'Review' : progress > 0 ? 'Continue' : 'Start'}</Link>
                     </Button>
+                    {canUpgrade && (
+                      <Button asChild size="sm" variant="ghost" className="mt-1.5 w-full rounded-lg text-accent hover:text-accent hover:bg-accent/10 text-xs h-8">
+                        <Link to={`/c/${creatorSlug}/${course.slug}`}>✨ Upgrade — unlock {advancedCount} more</Link>
+                      </Button>
+                    )}
                   </div>
                 );
               })}
