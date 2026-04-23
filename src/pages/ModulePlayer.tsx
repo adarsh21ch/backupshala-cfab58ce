@@ -70,13 +70,15 @@ const ModulePlayer = () => {
   });
 
   const { data: enrollment } = useQuery({
-    queryKey: ['enrollment-drip', user?.id, courseId],
+    queryKey: ['enrollment-tier', user?.id, courseId],
     queryFn: async () => {
-      const { data } = await supabase.from('enrollments').select('enrolled_at').eq('student_id', user!.id).eq('course_id', courseId!).maybeSingle();
+      const { data } = await supabase.from('enrollments').select('enrolled_at, tier').eq('student_id', user!.id).eq('course_id', courseId!).maybeSingle();
       return data;
     },
     enabled: !!user && !!courseId,
   });
+
+  const studentTier = (enrollment as any)?.tier || 'basic';
 
   const { data: completions } = useQuery({
     queryKey: ['completions-course', user?.id, courseId],
