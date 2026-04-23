@@ -48,8 +48,11 @@ const CourseBuilder = () => {
   const [whatYouLearn, setWhatYouLearn] = useState<string[]>(['']);
   const [requirements, setRequirements] = useState<string[]>(['']);
   const [tags, setTags] = useState('');
+  const [courseTier, setCourseTier] = useState<CourseTier | null>(null);
   const [price, setPrice] = useState('249');
-  const [commissionPercent, setCommissionPercent] = useState(30);
+  const [originalPrice, setOriginalPrice] = useState('');
+  const [showOriginalPrice, setShowOriginalPrice] = useState(false);
+  const [commissionPercent, setCommissionPercent] = useState(70);
   const [status, setStatus] = useState('draft');
 
   // Video settings kept in DB but hidden from UI — managed by platform
