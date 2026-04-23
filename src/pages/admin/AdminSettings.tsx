@@ -284,6 +284,9 @@ const AdminSettings = () => {
             </CardContent>
           </Card>
 
+          {/* ===== Video & Player Settings ===== */}
+          <VideoSettingsSection values={values} setVal={setVal} />
+
           <div className="sticky bottom-4 z-10">
             <Button onClick={() => { if (validate()) saveMutation.mutate(); else toast.error('Fix the highlighted errors'); }}
               disabled={saveMutation.isPending}
