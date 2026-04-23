@@ -1,152 +1,100 @@
 
 
-# Backupshala — Complete Production Upgrade Plan
+# Backupshala — Audit-Driven Polish Plan
 
-This is a large-scope upgrade covering visual overhaul, bug fixes, payment safety, emails, admin upgrades, student UX, creator polish, mobile responsiveness, compliance, SEO, and general polish. The work will be split into phases executed in order.
+This plan executes the 10 parts from your prompt in dependency order. Nothing marked BUILT in the audit is touched.
 
----
+## Step 1 — Verify wallet trigger (Part 6)
+- Run a SELECT on `information_schema.triggers` for `on_auth_user_created_wallet`.
+- If missing, migration: `CREATE TRIGGER on_auth_user_created_wallet AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_wallet();`
+- Edge function fallback `ensureWallet()` already exists in `verify-razorpay-payment` — leave it.
 
-## Phase 1: Visual Identity Overhaul + Bug Fixes
+## Step 2 — Schema: per-module video settings (Part 2)
+Migration on `public.modules`:
+- `allow_seek BOOLEAN DEFAULT NULL`
+- `allow_speed_change BOOLEAN DEFAULT NULL`
+- `min_watch_percent INTEGER DEFAULT NULL`
+- `show_watermark BOOLEAN DEFAULT NULL`
+- `video_source TEXT DEFAULT 'url'` with CHECK constraint
+- New platform_settings rows: `video_watermark_position=bottom-right`, `video_watermark_opacity=60`, `video_watermark_size=medium`, `max_preview_modules_per_course=2`
 
-### 1A. Brand & Color System Update
-- Update `src/index.css` CSS variables: light bg `#FAFAF8`, dark bg `#0F1117`/`#111827`, card dark `#1C2333`, text dark `#F1F0EE`
-- Update `tailwind.config.ts`: add `DM Sans` body + `Space Grotesk` headings font families, consistent border radius (`12px` cards, `8px` inputs, `6px` badges)
-- Update `index.html` to import `DM Sans` and `Space Grotesk` from Google Fonts (replace `Plus Jakarta Sans`)
-- Update all Card components globally via `card.tsx` default classes: soft warm shadows, no harsh borders
-- Update Button variants in `button.tsx`: saffron primary, outlined secondary
-- Update KPICard, sidebar active states (left accent bar in saffron), form input styles
+## Step 3 — Wire `BackupshalaVideoPlayer.tsx` to settings (Part 1A–1D, Part 10)
+Add props: `allowSeek`, `allowSpeedChange`, `minWatchPercent`, `showWatermark`, `watermarkText`, `watermarkPosition`, `watermarkOpacity`, `watermarkSize`, `isPreview`.
 
-### 1B. Bug Fixes
-- **Profile.tsx (line 27)**: Replace `useState(() => {...})` with `useEffect` to sync form state when profile loads. Remove the render-phase state sync on lines 37-42.
-- **Signup.tsx**: Make `referrerEmail` optional — remove validation requiring it (line 33), default to `none@backupshala.com` if blank, update label and helper text
-- **Video settings cleanup**: Remove `vsSpeedControl`, `vsForwardSeeking`, `vsWatermark`, `vsWatchPercent` toggles from CourseBuilder UI (lines 54-58 and their corresponding UI). Keep DB columns but hide from creators. Add note: "Video playback is managed by our secure player."
+Changes inside the player:
+1. **Watermark** — replace hardcoded div with conditional render driven by props; position computed from `watermarkPosition` (corner classes) and `watermarkOpacity`/`watermarkSize`.
+2. **Seek prevention** — add `keydown` handler blocking `ArrowRight`/`L` when `!allowSeek`; allow `ArrowLeft`/`J` always; in `handleTimeUpdate`, snap back to `maxWatchedSeconds` if user jumps past it.
+3. **Speed control** — new state `speed`, popover with `[0.5, 0.75, 1, 1.25, 1.5, 2]`, persisted to `localStorage` key `bs_video_speed`, button placed between volume and fullscreen, rendered only when `allowSpeedChange`.
+4. **Mobile touch** — add `onTouchStart={resetControlsTimer}` to container; ensure control buttons hit 44×44 px minimum.
+5. **Preview mode** — when `isPreview`, skip progress fetch + tracking interval + `update-watch-progress` calls.
 
----
+In `ModulePlayer.tsx`:
+- Fetch course row (settings columns) + `usePlatformSettings` defaults.
+- Add `resolveSetting(moduleVal, courseVal, platformVal)` helper.
+- Pass resolved props into `BackupshalaVideoPlayer`.
 
-## Phase 2: Email Verification + Razorpay Webhook
+In `CourseBuilder.tsx` module editor: collapsible "Advanced Module Settings" with the four override toggles + min-watch input. Empty/null = inherit.
 
-### 2A. Email Verification Flow
-- Disable auto-confirm via `configure_auth` tool
-- Create `/verify-email` page showing "Check your inbox" message with resend button
-- Update `Signup.tsx` to redirect to `/verify-email` after signup instead of `/explore`
-- Update `ProtectedRoute` to check `user.email_confirmed_at` and redirect unverified users to `/verify-email`
-- Add route in `App.tsx`
+## Step 4 — Remove legacy `VideoPlayer.tsx` (Part 1E)
+- Search imports of `@/components/video/VideoPlayer`.
+- Replace each with `BackupshalaVideoPlayer` using equivalent props.
+- Delete the file.
 
-### 2B. Razorpay Webhook Edge Function
-- Create `supabase/functions/razorpay-webhook/index.ts`
-- Verify `x-razorpay-signature` using HMAC SHA256 with `RAZORPAY_KEY_SECRET`
-- Handle `payment.captured` (create enrollment if missing) and `payment.failed` (update status)
-- DB migration: create `webhook_logs` table (id, event_type, payload jsonb, processed_at, status) with admin-only RLS
+## Step 5 — Free preview modal (Part 3)
+New component `CoursePreviewModal.tsx` used in `CourseEnrollment.tsx`:
+- Responsive: `Drawer` (mobile) / `Dialog` (desktop, max-w 800).
+- Renders `BackupshalaVideoPlayer` with `isPreview`, watermark forced on, no progress save.
+- On `ended` or 10-min timer: overlay CTA "Enroll Now — ₹{tier price}" → `/enroll/:slug`. Logged-out users routed via `/signup?redirect=...`.
+- Click handler on `is_preview` modules in CourseEnrollment list opens this modal.
+- Add green "▶ Free Preview" badge on `CourseCard.tsx` when course has any preview module (lightweight join in Explore query).
 
-### 2C. Invoice/Receipt Page
-- Create `/receipt/:paymentId` page accessible only to the buyer
-- Display: Backupshala logo, invoice number, date, buyer info, course name, amount, GST breakdown, Razorpay payment ID
-- Add print-optimized CSS with `@media print`
-- Add "View Receipt" link in student dashboard and enrollment success
+## Step 6 — Fix `ForCreators.tsx` (Part 4)
+- Replace component to read `usePlatformSettings`.
+- Compute earnings: `floor(price * (1 - gateway%/100) * (1 - platform_fee_free/100))`.
+- Replace hero copy + add "No monthly fee. No hidden charges." trust line.
+- Replace static example block with **dynamic Basic / Advanced earnings cards**.
+- Add **interactive calculator**: tier toggle, sales slider (5–500), monthly + annual projection.
+- Add **fee breakdown accordion** with itemised math.
+- Add **"Zero upfront cost"** section + Creator Pro optional disclaimer.
+- AdminSettings amber note suggesting raising `platform_fee_free` to differentiate Pro.
 
----
+## Step 7 — Withdrawal modal mobile drawer (Part 5)
+In `Wallet.tsx`:
+- Use `useIsMobile()` (already in `src/hooks/use-mobile.tsx`).
+- Extract withdrawal form into `WithdrawalForm` component.
+- Render inside `Drawer` on mobile (handle bar, sticky submit), `Dialog` on desktop.
 
-## Phase 3: Transactional Emails
+## Step 8 — Receipt deep link (Part 7)
+- `verify-razorpay-payment/index.ts`: change success notification `action_url` from `/courses` to `/receipt/${paymentId}`.
+- `CourseEnrollment.tsx` post-payment success block: add **"Download Receipt"** button → `/receipt/:paymentId` alongside "Start Learning".
 
-- Set up email infrastructure using Lovable's built-in email system (not Resend — the prompt suggested Resend but Lovable Cloud has built-in support)
-- Scaffold transactional email templates:
-  1. `enrollment-confirmation` — triggered after enrollment
-  2. `certificate-issued` — triggered after certificate generation
-  3. `payout-processed` — triggered on admin payout approval
-  4. `payout-rejected` — triggered on admin payout rejection
-- Wire up triggers in the relevant UI flows using `supabase.functions.invoke('send-transactional-email', ...)`
+## Step 9 — Admin Video Settings panel (Part 8)
+New section in `AdminSettings.tsx`:
+- **Watermark**: enabled toggle, text input, position select (4 corners), opacity slider (10–80), size select (S/M/L), live 16:9 preview box mirroring exact overlay.
+- **Defaults**: forward seek toggle, speed control toggle, min-watch % input, max preview modules input.
+- Single save button → upserts all keys + writes `admin_audit_log` entry.
+- Update CourseBuilder preview-module limit to read `max_preview_modules_per_course` from settings (no hardcoded 2).
 
----
+## Step 10 — Legacy commission key cleanup (Part 9)
+- Grep code for `default_commission_percent` and the legacy `platform_fee_percent` (excluding `platform_fee_free`/`_pro`).
+- Replace each usage with the correct fee key based on creator tier (`is_creator_pro ? platform_fee_pro : platform_fee_free`).
+- Add amber legacy-keys notice in AdminSettings near the fees block.
 
-## Phase 4: Admin Panel Upgrades
+## Step 11 — QA checklist
+- New signup → `wallets` row exists.
+- Disable seek on a course → keyboard right-arrow blocked + toast.
+- Toggle speed control off → button vanishes.
+- Logged-out preview → plays with watermark, CTA on end.
+- ForCreators numbers update after admin edits `platform_fee_free`.
+- Withdrawal opens as bottom sheet on 375px viewport.
+- Successful payment notification deep-links to `/receipt/:id`.
+- Admin watermark position change reflects in next video play.
 
-### 4A. Audit Log
-- DB migration: create `admin_audit_log` table (id, admin_id, action, target_type, target_id, details jsonb, created_at) with admin-only RLS
-- Create helper function `logAdminAction(action, targetType, targetId, details)` used across admin pages
-- Add logging to: creator approve/reject, course approve/reject, payout approve/reject, settings updates
-- Create `/admin/audit-log` page with paginated table, add to admin sidebar
+## Files touched (summary)
+**Create**: `src/components/course/CoursePreviewModal.tsx`, `src/components/wallet/WithdrawalForm.tsx`, `src/components/admin/VideoSettingsSection.tsx`
+**Edit**: `src/components/video/BackupshalaVideoPlayer.tsx`, `src/pages/ModulePlayer.tsx`, `src/pages/creator/CourseBuilder.tsx`, `src/pages/CourseEnrollment.tsx`, `src/components/CourseCard.tsx`, `src/components/landing/ForCreators.tsx`, `src/pages/Wallet.tsx`, `src/pages/admin/AdminSettings.tsx`, `supabase/functions/verify-razorpay-payment/index.ts`, plus any files still importing legacy `VideoPlayer` or legacy fee keys
+**Delete**: `src/components/video/VideoPlayer.tsx`
+**Migrations**: modules columns + platform_settings seeds + wallet trigger (if missing)
 
-### 4B. CSV Export
-- Add "Export CSV" button to AdminPayments (already has one — verify others)
-- Add to AdminStudents, AdminCommissions, AdminPayouts
-
-### 4C. Revenue Charts
-- Add Recharts line chart (daily revenue, last 30 days) to AdminDashboardHome
-- Add bar chart (monthly enrollments, last 6 months)
-- Add date range filter (7d / 30d / 3mo / custom)
-
-### 4D. Date Filters
-- Add From/To date pickers to Payments, Commissions, Payouts admin tables
-
----
-
-## Phase 5: Student Experience
-
-### 5A. Course Review Modal
-- After course completion, show a modal with star rating (1-5) + optional text
-- Submit to existing `course_reviews` table (already exists with proper RLS)
-- Show average rating on course cards and detail page
-
-### 5B. Student Order History
-- Create `/dashboard/orders` page showing past payments
-- Add "Order History" to student sidebar
-- Show: course name, date, amount, payment ID, status, receipt link
-
-### 5C. Cookie Consent Banner
-- Sticky bottom banner on first visit for non-logged-in users
-- Store consent in localStorage, hide once accepted
-
----
-
-## Phase 6: Creator Polish + Mobile
-
-### 6A. Creator UX
-- Add character counters on title (100) and description (500) in CourseBuilder
-- Add empty state for 0 modules
-- Add monthly earnings bar chart to CreatorEarnings using Recharts
-
-### 6B. Mobile Responsiveness Audit
-- Navbar: hamburger menu with slide-in drawer (already partially built — polish it)
-- Dashboard KPI cards: 2x2 grid on mobile
-- Student sidebar: bottom nav bar on mobile (already exists — verify)
-- Explore: horizontal scrollable category pills on mobile
-- CourseEnrollment: sticky bottom CTA on mobile
-- Admin sidebar: collapsible drawer on mobile (already built — verify)
-
----
-
-## Phase 7: Compliance, SEO, General Polish
-
-### 7A. Trust & Compliance
-- Checkout page: add "Price includes 18% GST" note
-- Course cards: replace referral earnings badge with "Referral bonus available"
-- Add "Report this course" link on CourseDetail page
-- Verify all legal pages linked in footer on all page layouts
-
-### 7B. SEO Meta Tags
-- Add `react-helmet-async` for per-page `<title>` and meta tags
-- Add to: Index, Explore, CourseEnrollment, CourseDetail pages
-- Add `loading="lazy"` to course card images
-
-### 7C. General Polish
-- Skeleton loaders on all data fetches (audit existing, add missing)
-- Empty states on all lists/tables
-- Disable + loading spinner on submit buttons
-- Confirmation dialogs before destructive admin actions
-- `document.title` updates on all pages
-- `transition-all duration-200` on interactive elements
-
----
-
-## Technical Notes
-
-- **Font change**: Replacing `Plus Jakarta Sans` with `Space Grotesk` for headings, keeping `DM Sans` for body, keeping `JetBrains Mono` for code
-- **FK verification**: All Supabase queries use FK syntax but no FKs are defined — need migration to add FK constraints on courses.creator_id, enrollments.student_id/course_id, payments.student_id/course_id/creator_id, etc.
-- **Email system**: Will use Lovable's built-in email infrastructure (not Resend) since the project runs on Lovable Cloud
-- **Webhook secret**: `RAZORPAY_KEY_SECRET` is already configured in secrets
-- **Existing CSV export**: AdminPayments already has CSV export — will extend pattern to other admin tables
-- **course_reviews table**: Already exists with proper RLS policies — no migration needed for reviews
-- **Memory update**: Will update brand design memory to reflect new color tokens and typography
-
-This is approximately 6-8 implementation sessions. Phase 1 and 2 are the highest priority and should be done first.
+**Not touched**: auth, tier system, payment flow, certificates, R2 upload, progress tracking, resume prompt, admin panel structure, dashboard nav, sticky CTA, receipt page, gate system.
 
