@@ -13,8 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import PriceBreakdown from '@/components/PriceBreakdown';
+import TierSelector from '@/components/course/TierSelector';
+import { getCommissionConfig, type CourseTier } from '@/lib/tierPricing';
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Link2, FolderOpen, Info, Lock } from 'lucide-react';
+import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Link2, FolderOpen, Info, Lock, Star, Zap } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import GateSettingsForm from '@/components/module/GateSettingsForm';
@@ -30,7 +32,7 @@ const CourseBuilder = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: platformSettings } = usePlatformSettings();
+  const { data: platformSettings, getSetting: getPlatSetting } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -46,8 +48,11 @@ const CourseBuilder = () => {
   const [whatYouLearn, setWhatYouLearn] = useState<string[]>(['']);
   const [requirements, setRequirements] = useState<string[]>(['']);
   const [tags, setTags] = useState('');
+  const [courseTier, setCourseTier] = useState<CourseTier | null>(null);
   const [price, setPrice] = useState('249');
-  const [commissionPercent, setCommissionPercent] = useState(30);
+  const [originalPrice, setOriginalPrice] = useState('');
+  const [showOriginalPrice, setShowOriginalPrice] = useState(false);
+  const [commissionPercent, setCommissionPercent] = useState(70);
   const [status, setStatus] = useState('draft');
 
   // Video settings kept in DB but hidden from UI — managed by platform
@@ -191,7 +196,13 @@ const CourseBuilder = () => {
       setWhatYouLearn(course.what_you_learn?.length ? course.what_you_learn : ['']);
       setRequirements(course.requirements?.length ? course.requirements : ['']);
       setTags(course.tags?.join(', ') || '');
+      setCourseTier((course as any).course_tier ?? null);
       setPrice(String(course.price));
+      const op = (course as any).original_price;
+      if (op != null) {
+        setShowOriginalPrice(true);
+        setOriginalPrice(String(op));
+      }
       setCommissionPercent(course.commission_percent);
       setStatus(course.status);
       if (course.modules) {
@@ -231,6 +242,10 @@ const CourseBuilder = () => {
         requirements: requirements.filter(r => r.trim()),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         price: priceNum,
+        course_tier: courseTier,
+        base_price: priceNum,
+        display_price: priceNum,
+        original_price: showOriginalPrice && Number(originalPrice) > priceNum ? Number(originalPrice) : null,
         commission_percent: commissionPercent,
         total_modules: modules.length,
         allow_speed_control: vsSpeedControl,
@@ -732,38 +747,67 @@ const CourseBuilder = () => {
 
           {/* Pricing */}
           <TabsContent value="pricing" className="mt-4 space-y-4">
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="rounded-xl border border-border bg-card p-6 space-y-6">
               {status === 'published' && (
                 <div className="flex items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 p-3">
                   <AlertTriangle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                  <p className="text-xs text-accent">This course is live. Changing the price or commission will set status back to pending review for admin approval.</p>
+                  <p className="text-xs text-accent">This course is live. Changing the tier will set status back to pending review.</p>
                 </div>
               )}
 
-              <div className="rounded-lg border border-border bg-secondary/30 p-3">
-                <p className="text-xs text-muted-foreground">Platform Fee: <span className="font-semibold text-foreground">{platformFeePercent}%</span> (set by Backupshala)</p>
-              </div>
+              <TierSelector
+                selected={courseTier}
+                onChange={(t) => {
+                  setCourseTier(t);
+                  const newPrice = t === 'advanced' ? platformSettings.advanced_price : platformSettings.basic_price;
+                  setPrice(String(newPrice));
+                }}
+                basicPrice={platformSettings.basic_price}
+                advancedPrice={platformSettings.advanced_price}
+                commissionConfig={getCommissionConfig(getPlatSetting ? Object.fromEntries([
+                  ['platform_fee_free', String(platformSettings.platform_fee_percent)],
+                  ['platform_fee_pro', getPlatSetting('platform_fee_pro', '10')],
+                  ['gateway_fee_percent', getPlatSetting('gateway_fee_percent', '2')],
+                  ['referral_commission_percent', getPlatSetting('referral_commission_percent', '70')],
+                  ['gst_enabled', getPlatSetting('gst_enabled', 'false')],
+                  ['gst_rate_percent', getPlatSetting('gst_rate_percent', '18')],
+                ]) : {})}
+                isPro={isPro}
+              />
 
-              <div>
-                <Label>Price (₹)</Label>
-                <Input type="number" value={price} onChange={e => setPrice(e.target.value)} min={99} max={9999} className="mt-1 rounded-lg" />
-                {(priceNum < 99 || priceNum > 9999) && priceNum > 0 && (
-                  <p className="mt-1 text-xs text-destructive">Price must be ₹99–₹9,999</p>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between">
-                  <Label>Referral Commission: {commissionPercent}%</Label>
-                  <span className="text-xs text-muted-foreground">Referrer earns {formatPrice(Math.round(priceNum * (commissionPercent / 100)))} per enrollment</span>
-                </div>
-                <input type="range" min={0} max={maxCommission} value={commissionPercent} onChange={e => setCommissionPercent(Number(e.target.value))} className="mt-2 w-full accent-accent" />
-                <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>{maxCommission}%</span></div>
-              </div>
-              {priceNum >= 99 && priceNum <= 9999 && (
-                <PriceBreakdown price={priceNum} platformFeePercent={platformFeePercent} commissionPercent={commissionPercent} />
+              {courseTier && (
+                <>
+                  <div className="rounded-lg border border-border bg-secondary/30 p-3">
+                    <p className="text-xs text-muted-foreground">
+                      Selected price: <span className="font-semibold text-foreground">{formatPrice(priceNum)}</span> · Platform fee: <span className="font-semibold text-foreground">{platformFeePercent}%</span>
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Switch checked={showOriginalPrice} onCheckedChange={setShowOriginalPrice} />
+                      <div>
+                        <p className="text-sm font-medium">Show crossed-out price</p>
+                        <p className="text-xs text-muted-foreground">Adds urgency on the course card</p>
+                      </div>
+                    </div>
+                    {showOriginalPrice && (
+                      <Input
+                        type="number"
+                        value={originalPrice}
+                        onChange={e => setOriginalPrice(e.target.value)}
+                        placeholder={`e.g. ${priceNum * 4} (must be > ${priceNum})`}
+                        className="rounded-lg"
+                      />
+                    )}
+                  </div>
+
+                  <PriceBreakdown price={priceNum} platformFeePercent={platformFeePercent} commissionPercent={commissionPercent} />
+                </>
               )}
-              <Button onClick={saveCourse} disabled={saving} className="rounded-md bg-primary hover:bg-primary/90">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+
+              <Button onClick={saveCourse} disabled={saving || !courseTier} className="rounded-md bg-primary hover:bg-primary/90">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Pricing'}
               </Button>
             </div>
           </TabsContent>
