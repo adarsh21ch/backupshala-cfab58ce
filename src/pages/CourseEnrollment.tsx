@@ -478,6 +478,14 @@ const CourseEnrollment = () => {
         onConfirm={startUpgrade}
         paying={upgradePaying}
       />
+      <CoursePreviewModal
+        open={!!previewModule}
+        onClose={() => setPreviewModule(null)}
+        module={previewModule}
+        courseTitle={course.title}
+        enrollPath={`/c/${creatorSlug}/${courseSlug}`}
+        enrollPrice={displayPrice}
+      />
     </div>
   );
 };

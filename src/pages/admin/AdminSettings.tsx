@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useState, useEffect, useMemo } from 'react';
 import { Save, AlertTriangle, IndianRupee } from 'lucide-react';
 import { calculateSaleSplit, getCommissionConfig } from '@/lib/tierPricing';
+import VideoSettingsSection from '@/components/admin/VideoSettingsSection';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
@@ -282,6 +283,9 @@ const AdminSettings = () => {
               <ToggleField k="maintenance_mode" label="Maintenance Mode" hint="Blocks new signups & purchases when on." />
             </CardContent>
           </Card>
+
+          {/* ===== Video & Player Settings ===== */}
+          <VideoSettingsSection values={values} setVal={setVal} />
 
           <div className="sticky bottom-4 z-10">
             <Button onClick={() => { if (validate()) saveMutation.mutate(); else toast.error('Fix the highlighted errors'); }}

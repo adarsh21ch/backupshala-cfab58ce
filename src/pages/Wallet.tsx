@@ -3,33 +3,27 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
-import { Wallet as WalletIcon, ArrowDownCircle, ArrowUpCircle, Loader2, IndianRupee, Info } from 'lucide-react';
+import { Wallet as WalletIcon, Info } from 'lucide-react';
 import { formatPrice, timeAgo } from '@/lib/format';
 import BackButton from '@/components/BackButton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import WithdrawalForm from '@/components/wallet/WithdrawalForm';
 
 const Wallet = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [showWithdraw, setShowWithdraw] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'bank'>('upi');
-  const [amount, setAmount] = useState('');
-  const [upiId, setUpiId] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [accountHolder, setAccountHolder] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [confirmAccount, setConfirmAccount] = useState('');
-  const [ifscCode, setIfscCode] = useState('');
   const [filter, setFilter] = useState('all');
 
-  const { data: wallet, isLoading: walletLoading } = useQuery({
+  const { data: wallet } = useQuery({
     queryKey: ['my-wallet', user?.id],
     queryFn: async () => {
       const { data } = await supabase.from('wallets').select('*').eq('user_id', user!.id).maybeSingle();
@@ -82,11 +76,10 @@ const Wallet = () => {
   }) || [];
 
   const submitWithdrawal = useMutation({
-    mutationFn: async () => {
-      const amt = Number(amount);
+    mutationFn: async (payload: any) => {
+      const amt = Number(payload.amount);
       if (!amt || amt < 500) throw new Error('Minimum withdrawal is ₹500');
       if (amt > actualAvailable) throw new Error('Amount exceeds available balance');
-      if (paymentMethod === 'bank' && accountNumber !== confirmAccount) throw new Error('Account numbers do not match');
 
       const record: any = {
         user_id: user!.id,
@@ -94,21 +87,23 @@ const Wallet = () => {
         amount: amt,
       };
 
-      if (paymentMethod === 'upi') {
-        if (!upiId.trim()) throw new Error('UPI ID is required');
-        record.upi_id = upiId.trim();
+      if (payload.method === 'upi') {
+        if (!payload.upiId?.trim()) throw new Error('UPI ID is required');
+        record.upi_id = payload.upiId.trim();
       } else {
-        if (!bankName.trim() || !accountHolder.trim() || !accountNumber.trim() || !ifscCode.trim()) throw new Error('All bank details required');
-        record.bank_name = bankName.trim();
-        record.account_holder_name = accountHolder.trim();
-        record.account_number = accountNumber.trim();
-        record.ifsc_code = ifscCode.trim();
+        if (!payload.bankName?.trim() || !payload.accountHolder?.trim() || !payload.accountNumber?.trim() || !payload.ifscCode?.trim()) {
+          throw new Error('All bank details required');
+        }
+        if (payload.accountNumber !== payload.confirmAccount) throw new Error('Account numbers do not match');
+        record.bank_name = payload.bankName.trim();
+        record.account_holder_name = payload.accountHolder.trim();
+        record.account_number = payload.accountNumber.trim();
+        record.ifsc_code = payload.ifscCode.trim().toUpperCase();
       }
 
       const { error } = await supabase.from('payout_requests').insert(record);
       if (error) throw error;
 
-      // Deduct from wallet immediately (reserve)
       if (wallet) {
         await supabase.from('wallets').update({
           balance: Math.max(0, Number(wallet.balance) - amt),
@@ -120,7 +115,7 @@ const Wallet = () => {
           type: 'debit',
           amount: amt,
           source: 'withdrawal_processed',
-          description: `Withdrawal request of ₹${amt} via ${paymentMethod === 'upi' ? 'UPI' : 'Bank Transfer'}`,
+          description: `Withdrawal request of ₹${amt} via ${payload.method === 'upi' ? 'UPI' : 'Bank Transfer'}`,
           status: 'pending',
         });
       }
@@ -128,8 +123,6 @@ const Wallet = () => {
     onSuccess: () => {
       toast({ title: 'Withdrawal request submitted! 🎉', description: 'We\'ll process it within 3-5 business days.' });
       setShowWithdraw(false);
-      setAmount('');
-      setUpiId('');
       queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
     },
@@ -137,6 +130,15 @@ const Wallet = () => {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });
     },
   });
+
+  const formContent = (
+    <WithdrawalForm
+      availableBalance={actualAvailable}
+      onSubmit={(payload) => submitWithdrawal.mutate(payload)}
+      onCancel={() => setShowWithdraw(false)}
+      submitting={submitWithdrawal.isPending}
+    />
+  );
 
   return (
     <DashboardLayout>
@@ -167,7 +169,7 @@ const Wallet = () => {
             <span>Total Withdrawn: {formatPrice(wallet?.total_withdrawn || 0)}</span>
           </div>
           <Button
-            className="mt-4 w-full sm:w-auto rounded-md bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+            className="mt-4 w-full sm:w-auto rounded-md bg-accent hover:bg-accent/90 text-accent-foreground font-semibold min-h-[44px]"
             disabled={!canWithdraw}
             onClick={() => setShowWithdraw(true)}
           >
@@ -256,69 +258,28 @@ const Wallet = () => {
           )}
         </div>
 
-        {/* Withdrawal Modal */}
-        <Dialog open={showWithdraw} onOpenChange={setShowWithdraw}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Request Withdrawal</DialogTitle>
-              <DialogDescription>Available Balance: {formatPrice(actualAvailable)}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Amount to withdraw (₹)</Label>
-                <Input
-                  type="number"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  placeholder={`Min ₹500, Max ₹${Math.round(actualAvailable)}`}
-                  min={500}
-                  max={actualAvailable}
-                  className="mt-1"
-                />
-                {Number(amount) > 0 && Number(amount) < 500 && (
-                  <p className="text-xs text-destructive mt-1">Minimum withdrawal is ₹500</p>
-                )}
-              </div>
-
-              <div>
-                <Label>Payment Method</Label>
-                <div className="flex gap-2 mt-1">
-                  <button onClick={() => setPaymentMethod('upi')} className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${paymentMethod === 'upi' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>UPI</button>
-                  <button onClick={() => setPaymentMethod('bank')} className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${paymentMethod === 'bank' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>Bank Transfer</button>
-                </div>
-              </div>
-
-              {paymentMethod === 'upi' ? (
-                <div>
-                  <Label>UPI ID</Label>
-                  <Input value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@upi" className="mt-1" />
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div><Label>Account Holder Name</Label><Input value={accountHolder} onChange={e => setAccountHolder(e.target.value)} className="mt-1" /></div>
-                  <div><Label>Account Number</Label><Input value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="mt-1" /></div>
-                  <div><Label>Confirm Account Number</Label><Input value={confirmAccount} onChange={e => setConfirmAccount(e.target.value)} className="mt-1" /></div>
-                  <div><Label>IFSC Code</Label><Input value={ifscCode} onChange={e => setIfscCode(e.target.value.toUpperCase())} className="mt-1" /></div>
-                  <div><Label>Bank Name</Label><Input value={bankName} onChange={e => setBankName(e.target.value)} className="mt-1" /></div>
-                </div>
-              )}
-
-              <div className="rounded-lg border border-accent/30 bg-accent/5 p-3">
-                <p className="text-xs text-muted-foreground">
-                  Withdrawals are processed within 3-5 business days. You will receive a notification once processed.
-                </p>
-              </div>
-
-              <Button
-                onClick={() => submitWithdrawal.mutate()}
-                disabled={submitWithdrawal.isPending || Number(amount) < 500 || Number(amount) > actualAvailable}
-                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
-              >
-                {submitWithdrawal.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Request Withdrawal'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Responsive Withdrawal: Drawer on mobile, Dialog on desktop */}
+        {isMobile ? (
+          <Drawer open={showWithdraw} onOpenChange={setShowWithdraw}>
+            <DrawerContent className="max-h-[90vh]">
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Request Withdrawal</DrawerTitle>
+                <DrawerDescription>Available Balance: {formatPrice(actualAvailable)}</DrawerDescription>
+              </DrawerHeader>
+              <div className="px-4 pb-6 overflow-y-auto">{formContent}</div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={showWithdraw} onOpenChange={setShowWithdraw}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Request Withdrawal</DialogTitle>
+                <DialogDescription>Available Balance: {formatPrice(actualAvailable)}</DialogDescription>
+              </DialogHeader>
+              {formContent}
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </DashboardLayout>
   );

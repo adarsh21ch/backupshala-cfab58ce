@@ -105,7 +105,7 @@ const ExploreContent = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('courses')
-        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug, is_verified), modules(module_type)')
+        .select('*, profiles(full_name, avatar_url, creator_display_name, creator_slug, is_verified), modules(module_type, is_preview)')
         .eq('status', 'published');
       return data || [];
     },
