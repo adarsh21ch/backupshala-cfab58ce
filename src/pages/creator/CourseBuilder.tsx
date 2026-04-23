@@ -16,7 +16,7 @@ import PriceBreakdown from '@/components/PriceBreakdown';
 import TierSelector from '@/components/course/TierSelector';
 import { getCommissionConfig, type CourseTier } from '@/lib/tierPricing';
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Link2, FolderOpen, Info, Lock, Star, Zap } from 'lucide-react';
+import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Lock, Info } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import GateSettingsForm from '@/components/module/GateSettingsForm';
@@ -547,59 +547,15 @@ const CourseBuilder = () => {
 
                       {/* Video Lesson Fields */}
                       {mModuleType === 'video' && (
-                        <>
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">🎬 Video Source</p>
-                            <p className="text-xs text-muted-foreground mb-3">How do you want to add the video?</p>
-                            <div className="grid grid-cols-2 gap-3">
-                              <button onClick={() => setMVideoSource('gallery')}
-                                className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all ${mVideoSource === 'gallery' ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'}`}>
-                                <FolderOpen className={`h-5 w-5 ${mVideoSource === 'gallery' ? 'text-accent' : 'text-muted-foreground'}`} />
-                                <span className="text-xs font-semibold">From Video Gallery</span>
-                                <span className="text-[10px] text-muted-foreground">Pick an uploaded video</span>
-                              </button>
-                              <button onClick={() => setMVideoSource('youtube')}
-                                className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all ${mVideoSource === 'youtube' ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'}`}>
-                                <Link2 className={`h-5 w-5 ${mVideoSource === 'youtube' ? 'text-accent' : 'text-muted-foreground'}`} />
-                                <span className="text-xs font-semibold">YouTube Embed URL</span>
-                                <span className="text-[10px] text-muted-foreground">Paste a YouTube embed URL</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {mVideoSource === 'youtube' && (
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">🔗 YouTube Embed URL</p>
-                              <Input
-                                value={mVideoUrl} onChange={e => setMVideoUrl(e.target.value)}
-                                placeholder="https://www.youtube.com/embed/VIDEO_ID_HERE"
-                                className="rounded-lg font-mono text-xs"
-                              />
-                              <div className="mt-3 rounded-lg bg-secondary/50 border border-border p-3 space-y-1.5">
-                                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                                  <Info className="h-3 w-3" /> How to get this URL:
-                                </p>
-                                <ol className="text-[11px] text-muted-foreground space-y-0.5 pl-4 list-decimal">
-                                  <li>Open your YouTube video</li>
-                                  <li>Click <span className="font-medium text-foreground">Share → Embed</span></li>
-                                  <li>Copy the URL from <code className="text-[10px] bg-secondary px-1 rounded">src="..."</code> — starts with <code className="text-[10px] bg-secondary px-1 rounded">https://www.youtube.com/embed/</code></li>
-                                  <li>Paste it above</li>
-                                </ol>
-                                <p className="text-[11px] text-accent flex items-center gap-1 mt-1">
-                                  <AlertTriangle className="h-3 w-3" /> Make sure your video is set to <span className="font-semibold">Unlisted</span> on YouTube
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {mVideoSource === 'gallery' && (
-                            <div className="rounded-lg border border-dashed border-border p-6 text-center">
-                              <FolderOpen className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-                              <p className="text-xs text-muted-foreground">Video gallery picker coming soon.</p>
-                              <p className="text-[10px] text-muted-foreground mt-1">For now, use YouTube Embed URL.</p>
-                            </div>
-                          )}
-                        </>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">🎬 Video</p>
+                          <ModuleVideoPicker
+                            courseId={id || ''}
+                            moduleTitle={mTitle}
+                            videoUrl={mVideoUrl}
+                            onChange={setMVideoUrl}
+                          />
+                        </div>
                       )}
 
                       {/* Resource Library Fields */}
