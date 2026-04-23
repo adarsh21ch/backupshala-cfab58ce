@@ -33,7 +33,13 @@ Deno.serve(async (req) => {
       userId = user?.id || null;
     }
 
-    if (!is_public_watch) {
+    // Server-side decision: a request is "public watch" only if it has NO module/course context
+    // (i.e. it's a standalone Backupshala video on the /watch/:bsv page). The client cannot opt
+    // itself into public mode for course content by sending is_public_watch=true.
+    const isStandaloneWatch = !module_id && !course_id;
+    const allowPublic = is_public_watch && isStandaloneWatch;
+
+    if (!allowPublic) {
       if (!userId) throw new Error("Authentication required");
 
       const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });

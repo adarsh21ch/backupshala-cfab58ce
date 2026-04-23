@@ -47,30 +47,18 @@ const CreatorUpgrade = () => {
   const selectedPrice = isAnnual ? annualPrice : monthlyPrice;
   const savingsPercent = Math.round((1 - annualPrice / (monthlyPrice * 12)) * 100);
 
+  // Creator Pro can only be granted via verified Razorpay payment (server-side edge function)
+  // or by an admin from the admin panel. Direct client-side self-grant has been removed for security.
   const startProMutation = useMutation({
     mutationFn: async () => {
-      const now = new Date();
-      const duration = isAnnual ? 365 : 30;
-      const expiresAt = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000);
-
-      const { error } = await supabase.from('creator_pro_subscriptions').upsert({
-        creator_id: user!.id,
-        plan: 'pro',
-        status: 'active',
-        pro_started_at: now.toISOString(),
-        pro_ends_at: expiresAt.toISOString(),
-        amount_per_month: isAnnual ? Math.round(annualPrice / 12) : monthlyPrice,
-        updated_at: now.toISOString(),
-      }, { onConflict: 'creator_id' });
-      if (error) throw error;
-      await supabase.from('profiles').update({ is_creator_pro: true }).eq('id', user!.id);
+      throw new Error('Razorpay payment for Creator Pro is not yet wired up. Please contact support to upgrade.');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['creator-pro-subscription'] });
-      queryClient.invalidateQueries({ queryKey: ['creator-pro-sub'] });
-      toast({ title: 'You are now a Creator Pro member 🎉', description: 'All Pro features are now unlocked!' });
-    },
-    onError: () => toast({ title: 'Failed to upgrade', variant: 'destructive' }),
+    onError: (err: any) =>
+      toast({
+        title: 'Upgrade unavailable',
+        description: err?.message || 'Please contact support to upgrade.',
+        variant: 'destructive',
+      }),
   });
 
   if (isAdmin) {
