@@ -10,18 +10,20 @@ const VerifyCertificate = () => {
     queryKey: ['verify', certCode],
     queryFn: async () => {
       if (!certCode) return null;
-      const { data } = await supabase
-        .from('certificates')
-        .select('*, courses(title)')
-        .eq('certificate_code', certCode)
-        .maybeSingle();
-      if (!data) return null;
-      // Fetch student and creator names separately
-      const [student, creator] = await Promise.all([
-        supabase.from('profiles').select('full_name').eq('id', data.student_id).single(),
-        supabase.from('profiles').select('full_name, creator_display_name').eq('id', data.creator_id).single(),
+      const { data: certRows } = await supabase.rpc('verify_certificate', { _code: certCode });
+      const cert = certRows?.[0];
+      if (!cert) return null;
+      const [{ data: course }, { data: creator }] = await Promise.all([
+        supabase.from('courses').select('title').eq('id', cert.course_id).maybeSingle(),
+        supabase.from('public_creator_profiles').select('full_name, creator_display_name').eq('id', cert.creator_id).maybeSingle(),
       ]);
-      return { ...data, student_name: student.data?.full_name, creator_name: creator.data?.creator_display_name || creator.data?.full_name };
+      // Student name is intentionally not exposed publicly — show masked label.
+      return {
+        ...cert,
+        courses: course,
+        student_name: 'Verified Student',
+        creator_name: creator?.creator_display_name || creator?.full_name || 'Creator',
+      };
     },
     enabled: !!certCode,
   });
