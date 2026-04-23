@@ -3,17 +3,18 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight, Trophy, Wallet } from 'lucide-react';
-import { useState } from 'react';
-import { formatPrice, timeAgo } from '@/lib/format';
+import { Copy, Check, IndianRupee, TrendingUp, Users, ArrowUpRight, Wallet, Share2, MessageCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { formatPrice } from '@/lib/format';
 import { Link } from 'react-router-dom';
 import BackButton from '@/components/BackButton';
-
-const BUNDLE_SLUG = 'backupshala-standard-bundle';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { toast } from 'sonner';
 
 const ReferEarn = () => {
   const { user, profile } = useAuth();
   const [copied, setCopied] = useState<string | null>(null);
+  const { data: settings } = usePlatformSettings();
 
   const { data: wallet } = useQuery({
     queryKey: ['my-wallet', user?.id],
@@ -40,7 +41,11 @@ const ReferEarn = () => {
   const { data: publishedCourses } = useQuery({
     queryKey: ['published-courses-refer'],
     queryFn: async () => {
-      const { data } = await supabase.from('courses').select('id, title, slug, price, commission_percent').eq('status', 'published');
+      const { data } = await supabase
+        .from('courses')
+        .select('id, title, slug, price, profiles!courses_creator_id_fkey(creator_slug)')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
       return data || [];
     },
   });
@@ -57,24 +62,54 @@ const ReferEarn = () => {
     enabled: !!profile,
   });
 
+  // Per-course earnings — group commissions by course
+  const courseEarnings = useMemo(() => {
+    if (!commissions) return [];
+    const map = new Map<string, { title: string; sales: number; total: number }>();
+    commissions.forEach((c: any) => {
+      const id = c.course_id;
+      const title = c.courses?.title || 'Unknown course';
+      const cur = map.get(id) || { title, sales: 0, total: 0 };
+      cur.sales += 1;
+      cur.total += Number(c.amount);
+      map.set(id, cur);
+    });
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  }, [commissions]);
+
   const totalCommissionEarned = commissions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0;
   const enrolledReferrals = commissions?.length || 0;
   const availableBalance = wallet?.balance || 0;
 
-  const referralLink = profile?.creator_slug
-    ? `${window.location.origin}/ref/${profile.creator_slug}`
-    : `${window.location.origin}/signup?ref=${encodeURIComponent(profile?.email || '')}`;
+  // Referrer earns = platform_fee * referral_pct
+  const platformFeePct = settings?.platform_fee_percent ?? 10;
+  const referralPct = Number((settings as any)?.default_commission_percent ?? 70);
 
-  const whatsappMsg = `Hey! I'm learning digital skills on Backupshala — a platform with expert-led courses and verified certificates. Sign up using my link: ${referralLink} 📚`;
+  const computeReferrerEarn = (price: number) => {
+    const gateway = Math.round(price * 0.02);
+    const net = price - gateway;
+    const platformFee = Math.round(net * (platformFeePct / 100));
+    return Math.round(platformFee * (referralPct / 100));
+  };
+
+  const refKey = profile?.creator_slug || (profile?.email ? encodeURIComponent(profile.email) : '');
+  const baseLink = profile?.creator_slug
+    ? `${window.location.origin}/ref/${profile.creator_slug}`
+    : `${window.location.origin}/signup?ref=${refKey}`;
+
+  const courseLink = (path: string) => `${window.location.origin}${path}?ref=${refKey}`;
 
   const copyToClipboard = async (text: string, key: string) => {
     await navigator.clipboard.writeText(text);
     setCopied(key);
+    toast.success('Link copied!');
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const bundleCourse = publishedCourses?.find(c => c.slug === BUNDLE_SLUG);
-  const bundleCommission = bundleCourse ? Math.round(bundleCourse.price * (bundleCourse.commission_percent / 100)) : 75;
+  const shareWA = (title: string, link: string) => {
+    const msg = `I found a great course on Backupshala! Check it out:\n\n"${title}"\n${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
 
   return (
     <DashboardLayout>
@@ -106,39 +141,81 @@ const ReferEarn = () => {
           </div>
         </div>
 
-        {/* Referral Link */}
+        {/* Generic Referral Link */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h2 className="font-heading text-base font-600">Your Referral Link</h2>
+          <h2 className="font-heading text-base font-600">Your Sign-up Link</h2>
+          <p className="text-xs text-muted-foreground">Share this link to invite anyone to Backupshala. You earn when they buy any course.</p>
           <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 font-mono text-sm text-primary break-all">
-            {referralLink}
+            {baseLink}
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              onClick={() => copyToClipboard(referralLink, 'link')}
-              className="flex-1 rounded-md"
-              variant={copied === 'link' ? 'default' : 'outline'}
-            >
-              {copied === 'link' ? <><Check className="h-4 w-4 mr-1" /> Copied!</> : <><Copy className="h-4 w-4 mr-1" /> Copy Link</>}
+            <Button onClick={() => copyToClipboard(baseLink, 'base')} variant={copied === 'base' ? 'default' : 'outline'} className="flex-1">
+              {copied === 'base' ? <><Check className="h-4 w-4 mr-1" /> Copied!</> : <><Copy className="h-4 w-4 mr-1" /> Copy Link</>}
             </Button>
-            <Button
-              onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMsg)}`, '_blank')}
-              className="flex-1 rounded-md bg-[#25D366] hover:bg-[#25D366]/90 text-white"
-            >
-              Share on WhatsApp
+            <Button onClick={() => shareWA('Backupshala — learn digital skills', baseLink)} className="flex-1 bg-[#25D366] hover:bg-[#25D366]/90 text-white">
+              <MessageCircle className="h-4 w-4 mr-1" /> Share on WhatsApp
             </Button>
           </div>
         </div>
 
-        {/* Best to Refer */}
-        {bundleCourse && (
-          <div className="rounded-xl border border-accent/30 bg-accent/5 p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-accent" />
-              <h2 className="font-heading text-sm font-600 text-accent">Best Course to Refer</h2>
+        {/* Per-Course Sharing */}
+        {publishedCourses && publishedCourses.length > 0 && (
+          <div>
+            <h2 className="font-heading text-base font-600 mb-3">Share a specific course</h2>
+            <p className="text-xs text-muted-foreground mb-4">Pick a course and copy a link tagged with your referral. Your commission comes from the platform fee — never from the creator.</p>
+            <div className="space-y-3">
+              {publishedCourses.map((c: any) => {
+                const path = `/c/${c.profiles?.creator_slug || 'creator'}/${c.slug}`;
+                const link = courseLink(path);
+                const earn = computeReferrerEarn(Number(c.price) || 0);
+                return (
+                  <div key={c.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{c.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Price {formatPrice(c.price)} · You earn up to <span className="text-primary font-semibold">{formatPrice(earn)}</span> per sale
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button size="sm" variant="outline" onClick={() => copyToClipboard(link, c.id)} className="flex-1 text-xs">
+                        {copied === c.id ? <><Check className="h-3 w-3 mr-1" /> Copied</> : <><Copy className="h-3 w-3 mr-1" /> Copy my link</>}
+                      </Button>
+                      <Button size="sm" onClick={() => shareWA(c.title, link)} className="flex-1 text-xs bg-[#25D366] hover:bg-[#25D366]/90 text-white">
+                        <Share2 className="h-3 w-3 mr-1" /> WhatsApp
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div>
-              <p className="text-sm font-medium">{bundleCourse.title}</p>
-              <p className="text-xs text-muted-foreground">Price: {formatPrice(bundleCourse.price)} | You earn: <span className="text-primary font-semibold">{formatPrice(bundleCommission)}</span></p>
+          </div>
+        )}
+
+        {/* Earnings by course */}
+        {courseEarnings.length > 0 && (
+          <div>
+            <h2 className="font-heading text-base font-600 mb-3">Your referral earnings by course</h2>
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="px-4 py-3 font-medium text-muted-foreground">Course</th>
+                    <th className="px-4 py-3 font-medium text-muted-foreground text-right">Sales</th>
+                    <th className="px-4 py-3 font-medium text-muted-foreground text-right">Earned</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {courseEarnings.map((row, i) => (
+                    <tr key={i}>
+                      <td className="px-4 py-3 text-xs">{row.title}</td>
+                      <td className="px-4 py-3 text-xs text-right">{row.sales}</td>
+                      <td className="px-4 py-3 text-xs text-right font-semibold text-primary">{formatPrice(row.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -154,51 +231,20 @@ const ReferEarn = () => {
           </Button>
         </div>
 
-        {/* Referral Activity */}
+        {/* Recent Activity */}
         <div>
           <h2 className="font-heading text-base font-600 mb-4">Recent Referral Activity</h2>
           {commissions && commissions.length > 0 ? (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left">
-                      <th className="px-4 py-3 font-medium text-muted-foreground">Date</th>
-                      <th className="px-4 py-3 font-medium text-muted-foreground">Course</th>
-                      <th className="px-4 py-3 font-medium text-muted-foreground">Commission</th>
-                      <th className="px-4 py-3 font-medium text-muted-foreground">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {commissions.map(c => (
-                      <tr key={c.id}>
-                        <td className="px-4 py-3 text-xs">{new Date(c.created_at).toLocaleDateString('en-IN')}</td>
-                        <td className="px-4 py-3 text-xs">{(c as any).courses?.title || '—'}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-primary">+{formatPrice(c.amount)}</td>
-                        <td className="px-4 py-3">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c.status === 'credited' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'}`}>
-                            {c.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="md:hidden divide-y divide-border">
-                {commissions.map(c => (
-                  <div key={c.id} className="p-4 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{(c as any).courses?.title || '—'}</p>
-                      <span className="font-semibold text-primary text-sm">+{formatPrice(c.amount)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString('en-IN')}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c.status === 'credited' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'}`}>{c.status}</span>
-                    </div>
+            <div className="rounded-xl border border-border bg-card divide-y divide-border">
+              {commissions.slice(0, 10).map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between p-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{c.courses?.title || '—'}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString('en-IN')}</p>
                   </div>
-                ))}
-              </div>
+                  <span className="text-sm font-semibold text-primary">+{formatPrice(c.amount)}</span>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="rounded-xl border border-border bg-card p-8 text-center">
