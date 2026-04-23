@@ -200,7 +200,50 @@ const ModulePlayer = () => {
     );
   }
 
-  // Gate screens
+  // Tier lock — basic enrollee trying to access advanced module
+  const isTierLocked = studentTier === 'basic' && (currentModule as any)?.module_tier === 'advanced';
+  if (isTierLocked) {
+    const upgradePrice = platformSettings?.upgrade_price ?? 250;
+    const advancedCount = modules.filter((m: any) => m.module_tier === 'advanced').length;
+    return (
+      <DashboardLayout>
+        <div className="max-w-2xl mx-auto space-y-6">
+          <Link to={`/courses/${courseId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ChevronLeft className="h-4 w-4" /> Back to {course?.title}
+          </Link>
+          <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-accent/10 to-transparent p-8 text-center space-y-4">
+            <div className="mx-auto h-16 w-16 rounded-2xl bg-accent/15 flex items-center justify-center">
+              <Sparkles className="h-8 w-8 text-accent" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-accent">Advanced Module</p>
+              <h2 className="font-heading text-2xl font-extrabold mt-1">{currentModule?.title}</h2>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              This module is part of the <span className="font-semibold text-foreground">Advanced</span> tier. Upgrade once to unlock {advancedCount} advanced module{advancedCount > 1 ? 's' : ''} in this course.
+            </p>
+            <Button
+              onClick={() => setShowUpgradeModal(true)}
+              className="rounded-lg bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+              size="lg"
+            >
+              <Sparkles className="h-4 w-4 mr-2" /> Upgrade for ₹{upgradePrice}
+            </Button>
+          </div>
+        </div>
+        <UpgradeModal
+          open={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onConfirm={startUpgrade}
+          upgradePrice={upgradePrice}
+          modules={modules as any}
+          paying={upgradePaying}
+          courseTitle={course?.title || ''}
+        />
+      </DashboardLayout>
+    );
+  }
+
   if (accessCheck && !accessCheck.canAccess) {
     const gateInfo = accessCheck.gateInfo;
 
