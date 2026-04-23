@@ -126,8 +126,12 @@ Deno.serve(async (req) => {
     // Generate invoice number
     const invoice_number = "INV-" + new Date().getFullYear() + "-" + Math.random().toString(36).substr(2, 6).toUpperCase();
 
-    // Server-side fee calculation
+    // ====== SERVER-SIDE FEE CALCULATION (CANONICAL) ======
+    // Rule: Creator ALWAYS gets creator_share% of net (after gateway).
+    // Platform keeps the rest. Referral commission comes ONLY out of platform fee,
+    // never out of the creator's share. Capped at platform fee amount.
     const coursePrice = Number(payment.amount_total);
+
     const { data: creatorProfile } = await supabase
       .from("profiles")
       .select("is_creator_pro")
@@ -135,11 +139,27 @@ Deno.serve(async (req) => {
       .single();
 
     const isCreatorPro = creatorProfile?.is_creator_pro === true;
-    const freeFeePct = Number(await getSettingValue(supabase, "platform_fee_free", "20"));
+    const freeFeePct = Number(await getSettingValue(supabase, "platform_fee_free", "10"));
     const proFeePct = Number(await getSettingValue(supabase, "platform_fee_pro", "10"));
-    const feePct = isCreatorPro ? proFeePct : freeFeePct;
-    const platformFeeAmount = Math.round((coursePrice * feePct) / 100);
-    const creatorEarningAmount = coursePrice - platformFeeAmount;
+    const platformFeePct = isCreatorPro ? proFeePct : freeFeePct;
+    const creatorSharePct = 100 - platformFeePct; // creator always gets this %
+
+    // GST handling (toggle-driven from settings)
+    const gstEnabled = (await getSettingValue(supabase, "gst_enabled", "false")) === "true";
+    const gstRate = Number(await getSettingValue(supabase, "gst_rate_percent", "18"));
+    const baseAmount = gstEnabled
+      ? Math.round((coursePrice / (1 + gstRate / 100)) * 100) / 100
+      : coursePrice;
+    const gstAmount = gstEnabled ? Math.round((coursePrice - baseAmount) * 100) / 100 : 0;
+
+    // Gateway fee comes off the base (the working amount we split)
+    const gatewayFeePct = Number(await getSettingValue(supabase, "gateway_fee_percent", "2"));
+    const gatewayFeeAmount = Math.round((baseAmount * gatewayFeePct) / 100 * 100) / 100;
+    const netAmount = Math.round((baseAmount - gatewayFeeAmount) * 100) / 100;
+
+    // Creator gets fixed share of net. Platform keeps the rest.
+    const creatorEarningAmount = Math.round(netAmount * (creatorSharePct / 100) * 100) / 100;
+    const platformFeeAmount = Math.round((netAmount - creatorEarningAmount) * 100) / 100;
 
     // Update payment with server-calculated fees
     await supabase
@@ -149,6 +169,8 @@ Deno.serve(async (req) => {
         razorpay_payment_id,
         invoice_number,
         paid_at: new Date().toISOString(),
+        base_amount: baseAmount,
+        gst_amount: gstAmount,
         platform_fee_amount: platformFeeAmount,
         creator_payout_amount: creatorEarningAmount,
       })
@@ -191,9 +213,12 @@ Deno.serve(async (req) => {
     // Get hold periods from settings
     const referralHoldDays = Number(await getSettingValue(supabase, "referral_hold_days", "7"));
     const creatorHoldDays = Number(await getSettingValue(supabase, "creator_hold_days", "3"));
-    const commissionPct = Number(await getSettingValue(supabase, "affiliate_commission_percent", "15"));
+    // referral_commission_percent is now: % OF PLATFORM FEE (not % of sale)
+    const referralOfPlatformPct = Number(
+      await getSettingValue(supabase, "referral_commission_percent", "70")
+    );
 
-    // Handle referral commission
+    // Handle referral commission — comes ONLY from platform fee, never from creator
     if (student?.referrer_email && student.referrer_email !== "none@backupshala.com") {
       const { data: referrer } = await supabase
         .from("profiles")
@@ -203,42 +228,46 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (referrer) {
-        const commissionAmount = Math.round(coursePrice * (commissionPct / 100));
+        // Take referral % of platform fee, capped at platform fee
+        let commissionAmount = Math.round(platformFeeAmount * (referralOfPlatformPct / 100) * 100) / 100;
+        if (commissionAmount > platformFeeAmount) commissionAmount = platformFeeAmount;
+        if (commissionAmount < 0) commissionAmount = 0;
 
-        await supabase.from("commissions").insert({
-          referrer_email: student.referrer_email,
-          referrer_user_id: referrer.id,
-          student_id: user.id,
-          course_id,
-          payment_id: payment.id,
-          amount: commissionAmount,
-          status: "credited",
-          commission_type: "referral",
-        });
+        if (commissionAmount > 0) {
+          await supabase.from("commissions").insert({
+            referrer_email: student.referrer_email,
+            referrer_user_id: referrer.id,
+            student_id: user.id,
+            course_id,
+            payment_id: payment.id,
+            amount: commissionAmount,
+            status: "credited",
+            commission_type: "referral",
+          });
 
-        // Credit referrer's wallet
-        const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
-        await creditWallet(
-          supabase,
-          referrer.id,
-          commissionAmount,
-          "referral_commission",
-          `Commission for referring ${course?.title} to ${(student.full_name || "Someone").split(" ")[0]}`,
-          payment.id,
-          referralHoldDays
-        );
+          const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
+          await creditWallet(
+            supabase,
+            referrer.id,
+            commissionAmount,
+            "referral_commission",
+            `Commission for referring ${course?.title} to ${(student.full_name || "Someone").split(" ")[0]}`,
+            payment.id,
+            referralHoldDays
+          );
 
-        await supabase.from("notifications").insert({
-          user_id: referrer.id,
-          title: `You earned ₹${commissionAmount} commission! 💰`,
-          message: `${(student.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available to withdraw on ${holdDate.toLocaleDateString("en-IN")}.`,
-          type: "commission",
-          action_url: "/refer",
-        });
+          await supabase.from("notifications").insert({
+            user_id: referrer.id,
+            title: `You earned ₹${commissionAmount} commission! 💰`,
+            message: `${(student.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available to withdraw on ${holdDate.toLocaleDateString("en-IN")}.`,
+            type: "commission",
+            action_url: "/refer",
+          });
+        }
       }
     }
 
-    // Credit creator's wallet
+    // Credit creator's wallet — ALWAYS the full creator share, never reduced by referral
     await creditWallet(
       supabase,
       payment.creator_id,
