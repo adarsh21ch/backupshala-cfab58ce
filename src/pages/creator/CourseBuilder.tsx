@@ -16,10 +16,12 @@ import PriceBreakdown from '@/components/PriceBreakdown';
 import TierSelector from '@/components/course/TierSelector';
 import { getCommissionConfig, type CourseTier } from '@/lib/tierPricing';
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Link2, FolderOpen, Info, Lock, Star, Zap } from 'lucide-react';
+import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Lock, Info } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import GateSettingsForm from '@/components/module/GateSettingsForm';
+import ThumbnailUpload from '@/components/course/ThumbnailUpload';
+import ModuleVideoPicker from '@/components/video/ModuleVideoPicker';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -196,8 +198,17 @@ const CourseBuilder = () => {
       setWhatYouLearn(course.what_you_learn?.length ? course.what_you_learn : ['']);
       setRequirements(course.requirements?.length ? course.requirements : ['']);
       setTags(course.tags?.join(', ') || '');
-      setCourseTier((course as any).course_tier ?? null);
+
+      // Force tier re-selection if existing tier doesn't match current platform tier prices
+      const existingTier = (course as any).course_tier as CourseTier | null;
+      const basicPrice = platformSettings.basic_price;
+      const advancedPrice = platformSettings.advanced_price;
+      const tierMatchesPrice =
+        (existingTier === 'basic' && Number(course.price) === basicPrice) ||
+        (existingTier === 'advanced' && Number(course.price) === advancedPrice);
+      setCourseTier(tierMatchesPrice ? existingTier : null);
       setPrice(String(course.price));
+
       const op = (course as any).original_price;
       if (op != null) {
         setShowOriginalPrice(true);
@@ -209,7 +220,7 @@ const CourseBuilder = () => {
         setModules([...course.modules].sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)));
       }
     }
-  }, [course]);
+  }, [course, platformSettings.basic_price, platformSettings.advanced_price]);
 
   useEffect(() => {
     if (commissionPercent > maxCommission) setCommissionPercent(maxCommission);
@@ -353,8 +364,11 @@ const CourseBuilder = () => {
     const previewModules = modules.filter(m => m.is_preview);
     if (modules.length < 3) { toast({ title: 'Add at least 3 modules', variant: 'destructive' }); return; }
     if (previewModules.length === 0) { toast({ title: 'Add at least 1 preview module', variant: 'destructive' }); return; }
-    if (!thumbnailUrl.trim()) { toast({ title: 'Add a thumbnail URL', variant: 'destructive' }); return; }
-    if (priceNum < 99) { toast({ title: 'Price must be at least ₹99', variant: 'destructive' }); return; }
+    if (!thumbnailUrl.trim()) { toast({ title: 'Upload a thumbnail image', variant: 'destructive' }); return; }
+    if (courseTier !== 'basic' && courseTier !== 'advanced') {
+      toast({ title: 'Select a course tier (Basic or Advanced) under Pricing', variant: 'destructive' });
+      return;
+    }
 
     await saveCourse();
     const { error } = await supabase.from('courses').update({ status: 'pending_review' }).eq('id', id!);
@@ -363,12 +377,23 @@ const CourseBuilder = () => {
     toast({ title: 'Submitted for review! ✓' });
   };
 
+  const moduleCountShortBy = Math.max(0, 3 - modules.length);
   const checks = [
     { label: 'Title and description added', ok: !!title.trim() && !!shortDesc.trim() },
     { label: 'Thumbnail added', ok: !!thumbnailUrl.trim() },
     { label: 'At least 1 preview module', ok: modules.some(m => m.is_preview) },
-    { label: 'At least 3 modules total', ok: modules.length >= 3 },
-    { label: 'Price set (₹99+)', ok: priceNum >= 99 },
+    {
+      label: modules.length >= 3
+        ? 'At least 3 modules total'
+        : `Add ${moduleCountShortBy} more module${moduleCountShortBy === 1 ? '' : 's'} (you have ${modules.length})`,
+      ok: modules.length >= 3,
+    },
+    {
+      label: courseTier
+        ? `Course tier selected (${courseTier === 'advanced' ? 'Advanced' : 'Basic'})`
+        : 'Select a course tier (Basic or Advanced)',
+      ok: courseTier === 'basic' || courseTier === 'advanced',
+    },
   ];
   const allChecked = checks.every(c => c.ok);
 
@@ -444,8 +469,10 @@ const CourseBuilder = () => {
                 </div>
               </div>
               <div>
-                <Label>Thumbnail URL</Label>
-                <Input value={thumbnailUrl} onChange={e => setThumbnailUrl(e.target.value)} placeholder="https://..." className="mt-1 rounded-lg" />
+                <Label>Course Thumbnail</Label>
+                <div className="mt-1">
+                  <ThumbnailUpload value={thumbnailUrl} onChange={setThumbnailUrl} />
+                </div>
               </div>
               <div>
                 <Label>Preview Video URL (YouTube embed)</Label>
@@ -529,59 +556,15 @@ const CourseBuilder = () => {
 
                       {/* Video Lesson Fields */}
                       {mModuleType === 'video' && (
-                        <>
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">🎬 Video Source</p>
-                            <p className="text-xs text-muted-foreground mb-3">How do you want to add the video?</p>
-                            <div className="grid grid-cols-2 gap-3">
-                              <button onClick={() => setMVideoSource('gallery')}
-                                className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all ${mVideoSource === 'gallery' ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'}`}>
-                                <FolderOpen className={`h-5 w-5 ${mVideoSource === 'gallery' ? 'text-accent' : 'text-muted-foreground'}`} />
-                                <span className="text-xs font-semibold">From Video Gallery</span>
-                                <span className="text-[10px] text-muted-foreground">Pick an uploaded video</span>
-                              </button>
-                              <button onClick={() => setMVideoSource('youtube')}
-                                className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all ${mVideoSource === 'youtube' ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'}`}>
-                                <Link2 className={`h-5 w-5 ${mVideoSource === 'youtube' ? 'text-accent' : 'text-muted-foreground'}`} />
-                                <span className="text-xs font-semibold">YouTube Embed URL</span>
-                                <span className="text-[10px] text-muted-foreground">Paste a YouTube embed URL</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {mVideoSource === 'youtube' && (
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">🔗 YouTube Embed URL</p>
-                              <Input
-                                value={mVideoUrl} onChange={e => setMVideoUrl(e.target.value)}
-                                placeholder="https://www.youtube.com/embed/VIDEO_ID_HERE"
-                                className="rounded-lg font-mono text-xs"
-                              />
-                              <div className="mt-3 rounded-lg bg-secondary/50 border border-border p-3 space-y-1.5">
-                                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                                  <Info className="h-3 w-3" /> How to get this URL:
-                                </p>
-                                <ol className="text-[11px] text-muted-foreground space-y-0.5 pl-4 list-decimal">
-                                  <li>Open your YouTube video</li>
-                                  <li>Click <span className="font-medium text-foreground">Share → Embed</span></li>
-                                  <li>Copy the URL from <code className="text-[10px] bg-secondary px-1 rounded">src="..."</code> — starts with <code className="text-[10px] bg-secondary px-1 rounded">https://www.youtube.com/embed/</code></li>
-                                  <li>Paste it above</li>
-                                </ol>
-                                <p className="text-[11px] text-accent flex items-center gap-1 mt-1">
-                                  <AlertTriangle className="h-3 w-3" /> Make sure your video is set to <span className="font-semibold">Unlisted</span> on YouTube
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {mVideoSource === 'gallery' && (
-                            <div className="rounded-lg border border-dashed border-border p-6 text-center">
-                              <FolderOpen className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-                              <p className="text-xs text-muted-foreground">Video gallery picker coming soon.</p>
-                              <p className="text-[10px] text-muted-foreground mt-1">For now, use YouTube Embed URL.</p>
-                            </div>
-                          )}
-                        </>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">🎬 Video</p>
+                          <ModuleVideoPicker
+                            courseId={id || ''}
+                            moduleTitle={mTitle}
+                            videoUrl={mVideoUrl}
+                            onChange={setMVideoUrl}
+                          />
+                        </div>
                       )}
 
                       {/* Resource Library Fields */}

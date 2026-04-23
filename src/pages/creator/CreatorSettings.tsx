@@ -125,16 +125,12 @@ const CreatorSettings = () => {
               />
             </div>
 
-            {/* Video Watermark */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm">Video Watermark</Label>
-                <p className="text-xs text-muted-foreground">Show "Backupshala" watermark on your course videos</p>
-              </div>
-              <Switch
-                checked={settings.video_watermark_enabled}
-                onCheckedChange={c => setSettings(prev => ({ ...prev, video_watermark_enabled: c }))}
-              />
+            {/* Watermark — platform-controlled, not editable by creator */}
+            <div className="rounded-lg border border-border bg-secondary/30 p-3">
+              <p className="text-sm font-medium">Video Watermark</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                The "Backupshala" watermark is always shown on your course videos to protect your content. This is a platform-wide policy and cannot be disabled.
+              </p>
             </div>
 
             <Button

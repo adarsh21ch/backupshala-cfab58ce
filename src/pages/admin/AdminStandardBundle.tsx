@@ -188,7 +188,7 @@ const AdminStandardBundle = () => {
             <Card className="bg-card border-border max-w-2xl">
               <CardHeader><CardTitle className="text-base">Manage Bundle</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-xs text-muted-foreground">Current price: <span className="font-semibold text-accent">{formatPrice(bundle.price)}</span> · Commission: {bundle.commission_percent}% · Platform fee: {bundle.platform_fee_percent}%</p>
+                <p className="text-xs text-muted-foreground">Current price: <span className="font-semibold text-accent">{formatPrice(bundle.price)}</span> · <span className="font-semibold text-primary">Platform Course — 100% revenue retained · No creator commission</span></p>
                 <div className="flex gap-2 flex-wrap">
                   <Button asChild size="sm" variant="outline" className="rounded-md">
                     <Link to={`/creator/courses/${bundle.id}/edit`}><BookOpen className="h-4 w-4 mr-1" /> Edit Course Content</Link>
