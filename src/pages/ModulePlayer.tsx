@@ -17,6 +17,11 @@ import AudioNotePlayer from '@/components/module/AudioNotePlayer';
 import CourseDiscussions from '@/components/course/CourseDiscussions';
 import ModuleNotes from '@/components/module/ModuleNotes';
 import ModuleQuiz from '@/components/module/ModuleQuiz';
+import UpgradeBanner from '@/components/course/UpgradeBanner';
+import UpgradeModal from '@/components/course/UpgradeModal';
+import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { Sparkles } from 'lucide-react';
 
 const moduleTypeIcon = (type: string) => {
   if (type === 'resource') return <BookOpen className="h-3 w-3" />;
