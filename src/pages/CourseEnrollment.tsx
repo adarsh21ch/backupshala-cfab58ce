@@ -37,7 +37,7 @@ const CourseEnrollment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [paying, setPaying] = useState(false);
-  const [showSuccess, setShowSuccess] = useState<{ courseName: string; invoiceNumber: string } | null>(null);
+  const [showSuccess, setShowSuccess] = useState<{ courseName: string; invoiceNumber: string; paymentId: string } | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -145,9 +145,9 @@ const CourseEnrollment = () => {
               throw new Error(verifyData?.error || 'Verification failed');
             }
 
-            setShowSuccess({ courseName: course.title, invoiceNumber: verifyData.invoice_number });
+            setShowSuccess({ courseName: course.title, invoiceNumber: verifyData.invoice_number, paymentId: verifyData.payment_id || '' });
             refetchEnrollment();
-            setTimeout(() => navigate('/courses'), 6000);
+            setTimeout(() => navigate('/courses'), 8000);
           } catch (err: any) {
             toast({ title: 'Payment verification failed', description: err.message, variant: 'destructive' });
           } finally {
@@ -183,6 +183,11 @@ const CourseEnrollment = () => {
           <Button onClick={() => navigate('/courses')} className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold">
             Start Learning Now
           </Button>
+          {showSuccess.paymentId && (
+            <Button onClick={() => navigate(`/receipt/${showSuccess.paymentId}`)} variant="outline" className="w-full rounded-md font-semibold">
+              📄 Download Receipt
+            </Button>
+          )}
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
             <p className="text-xs text-primary font-medium">🎉 You're in! As an enrolled student, you now have access to our private community.</p>
             <Button variant="outline" size="sm" className="mt-2 rounded-md text-xs" onClick={() => window.open('https://t.me/backupshala', '_blank')}>
