@@ -19,6 +19,7 @@ import UpgradeBanner from '@/components/course/UpgradeBanner';
 import UpgradeModal from '@/components/course/UpgradeModal';
 import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import CoursePreviewModal from '@/components/course/CoursePreviewModal';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -37,7 +38,7 @@ const CourseEnrollment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [paying, setPaying] = useState(false);
-  const [showSuccess, setShowSuccess] = useState<{ courseName: string; invoiceNumber: string } | null>(null);
+  const [showSuccess, setShowSuccess] = useState<{ courseName: string; invoiceNumber: string; paymentId: string } | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -74,6 +75,7 @@ const CourseEnrollment = () => {
   });
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [previewModule, setPreviewModule] = useState<any | null>(null);
   const { data: platformSettings } = usePlatformSettings();
   const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
     setShowUpgradeModal(false);
@@ -145,9 +147,9 @@ const CourseEnrollment = () => {
               throw new Error(verifyData?.error || 'Verification failed');
             }
 
-            setShowSuccess({ courseName: course.title, invoiceNumber: verifyData.invoice_number });
+            setShowSuccess({ courseName: course.title, invoiceNumber: verifyData.invoice_number, paymentId: verifyData.payment_id || '' });
             refetchEnrollment();
-            setTimeout(() => navigate('/courses'), 6000);
+            setTimeout(() => navigate('/courses'), 8000);
           } catch (err: any) {
             toast({ title: 'Payment verification failed', description: err.message, variant: 'destructive' });
           } finally {
@@ -183,6 +185,11 @@ const CourseEnrollment = () => {
           <Button onClick={() => navigate('/courses')} className="w-full rounded-md bg-primary hover:bg-primary/90 font-semibold">
             Start Learning Now
           </Button>
+          {showSuccess.paymentId && (
+            <Button onClick={() => navigate(`/receipt/${showSuccess.paymentId}`)} variant="outline" className="w-full rounded-md font-semibold">
+              📄 Download Receipt
+            </Button>
+          )}
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
             <p className="text-xs text-primary font-medium">🎉 You're in! As an enrolled student, you now have access to our private community.</p>
             <Button variant="outline" size="sm" className="mt-2 rounded-md text-xs" onClick={() => window.open('https://t.me/backupshala', '_blank')}>
@@ -351,8 +358,15 @@ const CourseEnrollment = () => {
                 <div className="space-y-1">
                   {modules.map((m: any, i: number) => {
                     const mType = m.module_type || 'video';
+                    const isPreviewable = m.is_preview && mType === 'video' && !enrollment;
                     return (
-                      <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                      <button
+                        key={m.id}
+                        type="button"
+                        disabled={!isPreviewable}
+                        onClick={() => isPreviewable && setPreviewModule(m)}
+                        className={`w-full text-left flex items-center gap-3 rounded-lg border border-border p-3 ${isPreviewable ? 'hover:border-primary/40 cursor-pointer transition-colors' : 'cursor-default'}`}
+                      >
                         <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-xs font-semibold">
                           {mType === 'resource' ? '📚' : mType === 'community' ? '👥' : i + 1}
                         </span>
@@ -360,10 +374,11 @@ const CourseEnrollment = () => {
                           <p className="text-sm font-medium truncate">{m.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {mType === 'resource' ? 'Resource Library' : mType === 'community' ? 'Community Access' : `${m.duration_minutes} min`}
+                            {m.is_preview && <span className="ml-2 text-primary font-semibold">· Free Preview</span>}
                           </p>
                         </div>
                         {m.is_preview ? <Play className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground/40" />}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
       title: "Enrollment Confirmed! 🎓",
       message: `You are now enrolled in ${course?.title}. Start learning now!`,
       type: "success",
-      action_url: "/courses",
+      action_url: `/receipt/${payment.id}`,
     });
 
     // Update student total_enrolled
@@ -315,7 +315,7 @@ Deno.serve(async (req) => {
       .eq("id", user.id);
 
     return new Response(
-      JSON.stringify({ success: true, invoice_number }),
+      JSON.stringify({ success: true, invoice_number, payment_id: payment.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
