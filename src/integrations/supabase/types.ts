@@ -2491,6 +2491,43 @@ export type Database = {
       }
     }
     Functions: {
+      get_my_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          creator_approved: boolean
+          creator_category: string | null
+          creator_display_name: string | null
+          creator_instagram: string | null
+          creator_slug: string | null
+          creator_website: string | null
+          creator_youtube: string | null
+          custom_platform_fee: number | null
+          email: string
+          full_name: string
+          id: string
+          is_admin: boolean
+          is_creator: boolean
+          is_creator_pro: boolean | null
+          is_verified: boolean
+          phone: string | null
+          referrer_email: string
+          total_earned: number
+          total_enrolled: number
+          total_referred: number
+          updated_at: string
+          username: string | null
+          wallet_balance: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
