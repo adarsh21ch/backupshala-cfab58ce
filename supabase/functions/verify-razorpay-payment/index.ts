@@ -213,9 +213,12 @@ Deno.serve(async (req) => {
     // Get hold periods from settings
     const referralHoldDays = Number(await getSettingValue(supabase, "referral_hold_days", "7"));
     const creatorHoldDays = Number(await getSettingValue(supabase, "creator_hold_days", "3"));
-    const commissionPct = Number(await getSettingValue(supabase, "affiliate_commission_percent", "15"));
+    // referral_commission_percent is now: % OF PLATFORM FEE (not % of sale)
+    const referralOfPlatformPct = Number(
+      await getSettingValue(supabase, "referral_commission_percent", "70")
+    );
 
-    // Handle referral commission
+    // Handle referral commission — comes ONLY from platform fee, never from creator
     if (student?.referrer_email && student.referrer_email !== "none@backupshala.com") {
       const { data: referrer } = await supabase
         .from("profiles")
@@ -225,42 +228,46 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (referrer) {
-        const commissionAmount = Math.round(coursePrice * (commissionPct / 100));
+        // Take referral % of platform fee, capped at platform fee
+        let commissionAmount = Math.round(platformFeeAmount * (referralOfPlatformPct / 100) * 100) / 100;
+        if (commissionAmount > platformFeeAmount) commissionAmount = platformFeeAmount;
+        if (commissionAmount < 0) commissionAmount = 0;
 
-        await supabase.from("commissions").insert({
-          referrer_email: student.referrer_email,
-          referrer_user_id: referrer.id,
-          student_id: user.id,
-          course_id,
-          payment_id: payment.id,
-          amount: commissionAmount,
-          status: "credited",
-          commission_type: "referral",
-        });
+        if (commissionAmount > 0) {
+          await supabase.from("commissions").insert({
+            referrer_email: student.referrer_email,
+            referrer_user_id: referrer.id,
+            student_id: user.id,
+            course_id,
+            payment_id: payment.id,
+            amount: commissionAmount,
+            status: "credited",
+            commission_type: "referral",
+          });
 
-        // Credit referrer's wallet
-        const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
-        await creditWallet(
-          supabase,
-          referrer.id,
-          commissionAmount,
-          "referral_commission",
-          `Commission for referring ${course?.title} to ${(student.full_name || "Someone").split(" ")[0]}`,
-          payment.id,
-          referralHoldDays
-        );
+          const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
+          await creditWallet(
+            supabase,
+            referrer.id,
+            commissionAmount,
+            "referral_commission",
+            `Commission for referring ${course?.title} to ${(student.full_name || "Someone").split(" ")[0]}`,
+            payment.id,
+            referralHoldDays
+          );
 
-        await supabase.from("notifications").insert({
-          user_id: referrer.id,
-          title: `You earned ₹${commissionAmount} commission! 💰`,
-          message: `${(student.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available to withdraw on ${holdDate.toLocaleDateString("en-IN")}.`,
-          type: "commission",
-          action_url: "/refer",
-        });
+          await supabase.from("notifications").insert({
+            user_id: referrer.id,
+            title: `You earned ₹${commissionAmount} commission! 💰`,
+            message: `${(student.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available to withdraw on ${holdDate.toLocaleDateString("en-IN")}.`,
+            type: "commission",
+            action_url: "/refer",
+          });
+        }
       }
     }
 
-    // Credit creator's wallet
+    // Credit creator's wallet — ALWAYS the full creator share, never reduced by referral
     await creditWallet(
       supabase,
       payment.creator_id,
