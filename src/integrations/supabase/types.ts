@@ -1266,6 +1266,8 @@ export type Database = {
       }
       modules: {
         Row: {
+          allow_seek: boolean | null
+          allow_speed_change: boolean | null
           backupshala_video_link: string | null
           bsv_code: string | null
           course_id: string
@@ -1276,17 +1278,22 @@ export type Database = {
           id: string
           is_gated: boolean | null
           is_preview: boolean | null
+          min_watch_percent: number | null
           module_tier: string
           module_type: string | null
           order_index: number | null
           release_after_days: number
           resources: Json | null
+          show_watermark: boolean | null
           title: string
           video_asset_id: string | null
           video_id: string | null
+          video_source: string | null
           video_url: string
         }
         Insert: {
+          allow_seek?: boolean | null
+          allow_speed_change?: boolean | null
           backupshala_video_link?: string | null
           bsv_code?: string | null
           course_id: string
@@ -1297,17 +1304,22 @@ export type Database = {
           id?: string
           is_gated?: boolean | null
           is_preview?: boolean | null
+          min_watch_percent?: number | null
           module_tier?: string
           module_type?: string | null
           order_index?: number | null
           release_after_days?: number
           resources?: Json | null
+          show_watermark?: boolean | null
           title: string
           video_asset_id?: string | null
           video_id?: string | null
+          video_source?: string | null
           video_url: string
         }
         Update: {
+          allow_seek?: boolean | null
+          allow_speed_change?: boolean | null
           backupshala_video_link?: string | null
           bsv_code?: string | null
           course_id?: string
@@ -1318,14 +1330,17 @@ export type Database = {
           id?: string
           is_gated?: boolean | null
           is_preview?: boolean | null
+          min_watch_percent?: number | null
           module_tier?: string
           module_type?: string | null
           order_index?: number | null
           release_after_days?: number
           resources?: Json | null
+          show_watermark?: boolean | null
           title?: string
           video_asset_id?: string | null
           video_id?: string | null
+          video_source?: string | null
           video_url?: string
         }
         Relationships: [
