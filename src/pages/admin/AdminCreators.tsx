@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle, Star, Shield, BadgeCheck } from 'lucide-react';
+import { CheckCircle, XCircle, Star, Shield, BadgeCheck, Percent } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -106,6 +106,34 @@ const AdminCreators = () => {
       });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-creators'] }); toast.success('Pro revoked'); },
+  });
+
+  const setFeeMutation = useMutation({
+    mutationFn: async () => {
+      if (!feeDialog) return;
+      const trimmed = feeValue.trim();
+      const newFee: number | null = trimmed === '' ? null : Number(trimmed);
+      if (newFee !== null && (isNaN(newFee) || newFee < 0 || newFee > 49)) {
+        throw new Error('Fee must be 0–49% or empty to reset');
+      }
+      const { error } = await supabase.from('profiles')
+        .update({ custom_platform_fee: newFee })
+        .eq('id', feeDialog.id);
+      if (error) throw error;
+      await supabase.from('admin_audit_log').insert({
+        admin_id: user!.id,
+        action: newFee === null ? 'reset_creator_fee' : 'set_creator_fee',
+        target_type: 'creator',
+        target_id: feeDialog.id,
+        details: { previous: feeDialog.current, new: newFee },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-creators'] });
+      toast.success('Custom fee updated');
+      setFeeDialog(null); setFeeValue('');
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed'),
   });
 
   return (
