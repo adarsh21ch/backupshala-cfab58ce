@@ -72,7 +72,7 @@ const AdminSettings = () => {
     { key: 'platform_name', label: 'Platform Name', type: 'text' },
     { key: 'platform_fee_free', label: 'Platform Fee % (Free Creators)', type: 'number' },
     { key: 'platform_fee_pro', label: 'Platform Fee % (Pro Creators)', type: 'number' },
-    { key: 'default_commission_percent', label: 'Default Referral Commission %', type: 'number' },
+    { key: 'gateway_fee_percent', label: 'Payment Gateway Fee % (Razorpay)', type: 'number' },
     { key: 'min_payout_amount', label: 'Minimum Payout Amount (₹)', type: 'number' },
     { key: 'support_email', label: 'Support Email', type: 'email' },
     { key: 'razorpay_enabled', label: 'Razorpay Enabled (true/false)', type: 'text' },
@@ -80,9 +80,16 @@ const AdminSettings = () => {
   ];
 
   const affiliateConfig = [
-    { key: 'affiliate_commission_percent', label: 'Affiliate Commission %', type: 'number' },
+    { key: 'referral_commission_percent', label: 'Referral Commission % (of platform fee)', type: 'number' },
+    { key: 'referral_hold_days', label: 'Referral Hold Period (days)', type: 'number' },
+    { key: 'creator_hold_days', label: 'Creator Earning Hold Period (days)', type: 'number' },
     { key: 'min_affiliate_payout', label: 'Min Affiliate Payout (₹)', type: 'number' },
     { key: 'allow_non_student_affiliates', label: 'Allow Non-Student Affiliates (true/false)', type: 'text' },
+  ];
+
+  const gstConfig = [
+    { key: 'gst_enabled', label: 'GST Enabled (true/false)', type: 'text' },
+    { key: 'gst_rate_percent', label: 'GST Rate %', type: 'number' },
   ];
 
   const proConfig = [
@@ -91,6 +98,22 @@ const AdminSettings = () => {
     { key: 'creator_pro_enabled', label: 'Creator Pro Enabled (true/false)', type: 'text' },
     { key: 'creator_pro_trial_days', label: 'Creator Pro Trial Days', type: 'number' },
   ];
+
+  // Live calculation preview
+  const previewSale = 249;
+  const platformFeePct = Number(values.platform_fee_free) || 10;
+  const gatewayPct = Number(values.gateway_fee_percent) || 2;
+  const refOfPlatformPct = Number(values.referral_commission_percent) || 70;
+  const gstOn = values.gst_enabled === 'true';
+  const gstPct = Number(values.gst_rate_percent) || 18;
+  const baseAmt = gstOn ? previewSale / (1 + gstPct / 100) : previewSale;
+  const gstAmt = gstOn ? previewSale - baseAmt : 0;
+  const gatewayAmt = baseAmt * (gatewayPct / 100);
+  const netAmt = baseAmt - gatewayAmt;
+  const creatorAmt = netAmt * ((100 - platformFeePct) / 100);
+  const platformAmt = netAmt - creatorAmt;
+  const referralAmt = Math.min(platformAmt * (refOfPlatformPct / 100), platformAmt);
+  const platformKeeps = platformAmt - referralAmt;
 
   const renderFields = (config: typeof settingsConfig) => config.map(cfg => (
     <div key={cfg.key} className="space-y-1.5">
