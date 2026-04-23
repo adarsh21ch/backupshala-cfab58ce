@@ -21,6 +21,8 @@ interface CourseCardProps {
     total_reviews: number;
     creator_id: string;
     is_featured?: boolean;
+    course_tier?: 'basic' | 'advanced' | null;
+    original_price?: number | null;
     profiles?: {
       full_name: string;
       avatar_url: string | null;
@@ -56,6 +58,12 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
         )}
         <div className="absolute top-2 left-2 flex gap-1.5">
           <span className="rounded-md bg-background/90 px-2 py-0.5 text-xs font-medium backdrop-blur-sm">{course.category}</span>
+          {course.course_tier === 'basic' && (
+            <span className="rounded-md bg-primary/90 px-2 py-0.5 text-[10px] font-bold text-primary-foreground backdrop-blur-sm">BASIC</span>
+          )}
+          {course.course_tier === 'advanced' && (
+            <span className="rounded-md bg-info/90 px-2 py-0.5 text-[10px] font-bold text-info-foreground backdrop-blur-sm">ADVANCED</span>
+          )}
           {course.is_featured && (
             <span className="rounded-md bg-accent/90 px-2 py-0.5 text-[10px] font-bold text-accent-foreground backdrop-blur-sm">Featured</span>
           )}
@@ -114,10 +122,10 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
           )}
         </div>
         <div className="flex items-center justify-between pt-1">
-          <div>
+          <div className="flex items-baseline gap-2">
             <span className="font-heading text-lg font-700 text-accent">{formatPrice(course.price)}</span>
-            {commissionAmount > 0 && (
-              <Link to="/refer" className="text-[10px] text-primary hover:underline">Referral bonus available</Link>
+            {course.original_price && course.original_price > course.price && (
+              <span className="text-xs text-muted-foreground line-through">{formatPrice(course.original_price)}</span>
             )}
           </div>
           <Button asChild size="sm" className="rounded-md text-xs h-8 px-3">
