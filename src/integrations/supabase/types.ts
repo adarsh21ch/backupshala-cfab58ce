@@ -467,6 +467,7 @@ export type Database = {
           full_description: string | null
           id: string
           is_featured: boolean | null
+          is_platform_course: boolean
           language: string | null
           level: string | null
           min_watch_percentage_to_complete: number | null
@@ -508,6 +509,7 @@ export type Database = {
           full_description?: string | null
           id?: string
           is_featured?: boolean | null
+          is_platform_course?: boolean
           language?: string | null
           level?: string | null
           min_watch_percentage_to_complete?: number | null
@@ -549,6 +551,7 @@ export type Database = {
           full_description?: string | null
           id?: string
           is_featured?: boolean | null
+          is_platform_course?: boolean
           language?: string | null
           level?: string | null
           min_watch_percentage_to_complete?: number | null
