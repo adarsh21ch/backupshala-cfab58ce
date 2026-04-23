@@ -15,7 +15,7 @@ const Receipt = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('payments')
-        .select('*, courses(title, slug)')
+        .select('*, courses(title, slug, course_tier)')
         .eq('id', paymentId!)
         .eq('student_id', user!.id)
         .maybeSingle();
@@ -23,6 +23,19 @@ const Receipt = () => {
       return data;
     },
     enabled: !!user && !!paymentId,
+  });
+
+  const { data: upgrade } = useQuery({
+    queryKey: ['receipt-upgrade', paymentId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('course_upgrades')
+        .select('id, from_tier, to_tier, amount_paid')
+        .eq('upgrade_payment_id', paymentId!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!paymentId,
   });
 
   const { data: profile } = useQuery({
@@ -102,12 +115,35 @@ const Receipt = () => {
           {/* Course details */}
           <div className="rounded-lg border border-border p-4 mb-6 print:border-gray-300">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 print:text-gray-500">Item</p>
-            <div className="flex justify-between items-start">
-              <div>
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">{course?.title || 'Course'}</p>
-                <p className="text-xs text-muted-foreground mt-1 print:text-gray-500">Digital course enrollment</p>
+                <p className="text-xs text-muted-foreground mt-1 print:text-gray-500">
+                  {upgrade
+                    ? `Tier upgrade: ${upgrade.from_tier} → ${upgrade.to_tier}`
+                    : course?.course_tier === 'advanced'
+                      ? 'Advanced tier enrollment'
+                      : course?.course_tier === 'basic'
+                        ? 'Basic tier enrollment'
+                        : 'Digital course enrollment'}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {upgrade ? (
+                    <span className="rounded-md bg-info/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-info print:bg-blue-50 print:text-blue-700">
+                      Upgrade
+                    </span>
+                  ) : course?.course_tier ? (
+                    <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                      course.course_tier === 'advanced'
+                        ? 'bg-info/15 text-info print:bg-blue-50 print:text-blue-700'
+                        : 'bg-primary/15 text-primary print:bg-green-50 print:text-green-700'
+                    }`}>
+                      {course.course_tier}
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              <p className="font-heading font-700">{formatPrice(payment.amount_total)}</p>
+              <p className="font-heading font-700 whitespace-nowrap">{formatPrice(payment.amount_total)}</p>
             </div>
           </div>
 
