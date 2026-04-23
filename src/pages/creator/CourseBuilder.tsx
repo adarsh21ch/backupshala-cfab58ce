@@ -198,8 +198,17 @@ const CourseBuilder = () => {
       setWhatYouLearn(course.what_you_learn?.length ? course.what_you_learn : ['']);
       setRequirements(course.requirements?.length ? course.requirements : ['']);
       setTags(course.tags?.join(', ') || '');
-      setCourseTier((course as any).course_tier ?? null);
+
+      // Force tier re-selection if existing tier doesn't match current platform tier prices
+      const existingTier = (course as any).course_tier as CourseTier | null;
+      const basicPrice = platformSettings.basic_price;
+      const advancedPrice = platformSettings.advanced_price;
+      const tierMatchesPrice =
+        (existingTier === 'basic' && Number(course.price) === basicPrice) ||
+        (existingTier === 'advanced' && Number(course.price) === advancedPrice);
+      setCourseTier(tierMatchesPrice ? existingTier : null);
       setPrice(String(course.price));
+
       const op = (course as any).original_price;
       if (op != null) {
         setShowOriginalPrice(true);
@@ -211,7 +220,7 @@ const CourseBuilder = () => {
         setModules([...course.modules].sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)));
       }
     }
-  }, [course]);
+  }, [course, platformSettings.basic_price, platformSettings.advanced_price]);
 
   useEffect(() => {
     if (commissionPercent > maxCommission) setCommissionPercent(maxCommission);
