@@ -14,12 +14,10 @@ const CreatorProfile = () => {
     queryKey: ['creator', creatorSlug],
     queryFn: async () => {
       const { data } = await supabase
-        .from('profiles')
+        .from('public_creator_profiles')
         .select('*')
         .eq('creator_slug', creatorSlug!)
-        .eq('is_creator', true)
-        .eq('creator_approved', true)
-        .single();
+        .maybeSingle();
       return data;
     },
     enabled: !!creatorSlug,
