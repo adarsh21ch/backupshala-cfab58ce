@@ -37,6 +37,13 @@ const ModulePlayer = () => {
   const queryClient = useQueryClient();
   const [showCelebration, setShowCelebration] = useState(false);
   const [showMentorGate, setShowMentorGate] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { data: platformSettings } = usePlatformSettings();
+  const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(courseId, () => {
+    queryClient.invalidateQueries({ queryKey: ['enrollment-tier'] });
+    queryClient.invalidateQueries({ queryKey: ['enrollment-drip'] });
+    setShowUpgradeModal(false);
+  });
 
   // Check module access (gate system)
   const { data: accessCheck, isLoading: accessLoading } = useQuery({
