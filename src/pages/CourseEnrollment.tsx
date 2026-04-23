@@ -456,12 +456,12 @@ const CourseEnrollment = () => {
       <Footer />
       <UpgradeModal
         open={showUpgradeModal}
-        onOpenChange={setShowUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
         courseTitle={course.title}
         upgradePrice={upgradePrice}
-        advancedCount={advancedModuleCount}
+        modules={modules}
         onConfirm={startUpgrade}
-        loading={upgradePaying}
+        paying={upgradePaying}
       />
     </div>
   );
