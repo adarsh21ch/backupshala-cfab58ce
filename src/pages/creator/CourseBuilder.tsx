@@ -32,7 +32,7 @@ const CourseBuilder = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: platformSettings } = usePlatformSettings();
+  const { data: platformSettings, getSetting: getPlatSetting } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
