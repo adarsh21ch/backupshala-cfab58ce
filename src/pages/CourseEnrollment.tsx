@@ -20,6 +20,7 @@ import UpgradeModal from '@/components/course/UpgradeModal';
 import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import CoursePreviewModal from '@/components/course/CoursePreviewModal';
+import ShareCourseModal from '@/components/course/ShareCourseModal';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -76,6 +77,7 @@ const CourseEnrollment = () => {
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [previewModule, setPreviewModule] = useState<any | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const { data: platformSettings } = usePlatformSettings();
   const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
     setShowUpgradeModal(false);
@@ -458,11 +460,8 @@ const CourseEnrollment = () => {
                 </div>
               )}
               <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. GST invoice emailed after payment.</p>
-              <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => {
-                const msg = encodeURIComponent(`Check out "${course.title}" on Backupshala: ${window.location.href}`);
-                window.open(`https://wa.me/?text=${msg}`, '_blank');
-              }}>
-                <Share2 className="h-3 w-3 mr-1" /> Share this course
+              <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => setShareOpen(true)}>
+                <Share2 className="h-3 w-3 mr-1" /> Share & Earn
               </Button>
             </div>
           </div>
@@ -485,6 +484,13 @@ const CourseEnrollment = () => {
         courseTitle={course.title}
         enrollPath={`/c/${creatorSlug}/${courseSlug}`}
         enrollPrice={displayPrice}
+      />
+      <ShareCourseModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        courseTitle={course.title}
+        coursePath={`/c/${creatorSlug}/${courseSlug}`}
+        estimatedCommission={Math.round(displayPrice * (platformSettings?.platform_fee_percent ?? 10) / 100 * 0.7)}
       />
     </div>
   );

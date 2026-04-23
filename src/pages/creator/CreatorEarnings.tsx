@@ -121,12 +121,15 @@ const CreatorEarnings = () => {
         )}
 
         {/* Self-referral tip */}
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-          <p className="text-sm font-medium text-primary mb-1">💡 Pro Tip: Maximize Your Income</p>
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+          <p className="text-sm font-medium text-primary">💡 Pro Tip: Maximize Your Income</p>
           <p className="text-xs text-muted-foreground">
-            When you personally share your course with someone, tell them to enter YOUR email when they sign up on Backupshala. 
-            You'll earn both your creator payout AND the referral commission — maximizing your income per enrollment.
+            Share your referral link to earn commission on top of your creator earnings. Every time someone signs up through your link
+            and buys any course, you earn commission from the platform fee.
           </p>
+          <Button asChild variant="outline" size="sm" className="rounded-md text-xs">
+            <Link to="/refer">Get my referral link →</Link>
+          </Button>
         </div>
 
         {/* Transactions */}

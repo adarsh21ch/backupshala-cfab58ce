@@ -192,6 +192,14 @@ const AdminSettings = () => {
                 <NumberField k="gateway_fee_percent" label="Razorpay Gateway Fee" suffix="%" hint="Typical: 2%" />
                 <NumberField k="referral_commission_percent" label="Referral % (of platform fee)" suffix="%" hint="Default 70% → ₹17 of ₹25 platform fee" />
               </div>
+              {Number(values.platform_fee_free) === Number(values.platform_fee_pro) && Number(values.platform_fee_free) > 0 && (
+                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
+                  <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    Creator Pro fee equals Free creator fee (both {values.platform_fee_free}%). Consider setting Free creator fee higher (e.g. 20%) to make Creator Pro's lower fee a meaningful incentive for creators.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

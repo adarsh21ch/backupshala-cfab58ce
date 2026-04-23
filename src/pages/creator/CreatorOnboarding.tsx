@@ -104,7 +104,13 @@ const CreatorOnboarding = () => {
   const priceNum = Number(price) || 0;
   const creatorReceives = priceNum - Math.round(priceNum * (platformFeePercent / 100)) - Math.round(priceNum * (commissionPercent / 100));
 
-  const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+  const generateSlug = (title: string) =>
+    title.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
 
   const handleGoToStep4 = () => {
     if (priceNum < 99 || priceNum > 9999) { toast({ title: 'Price must be ₹99-₹9,999', variant: 'destructive' }); return; }

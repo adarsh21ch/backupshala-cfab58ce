@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useNavigate } from 'react-router-dom';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const LandingNavbar = () => {
   const [open, setOpen] = useState(false);
@@ -22,6 +22,8 @@ const LandingNavbar = () => {
     await signOut();
     navigate('/');
   };
+
+  const closeAnd = (cb?: () => void) => () => { setOpen(false); cb?.(); };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -79,35 +81,67 @@ const LandingNavbar = () => {
           )}
         </div>
 
-        <button className="md:hidden" onClick={() => setOpen(!open)}>
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </div>
-
-      {open && (
-        <div className="border-t border-border bg-background px-4 py-4 md:hidden">
-          <div className="flex flex-col gap-3">
-            <Link to="/explore" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">Explore Courses</Link>
-            <a href="/#standard-bundle" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">Standard Bundle</a>
-            <a href="/#for-creators" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">For Creators</a>
-            <a href="/#how-it-works" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">How It Works</a>
-            {user ? (
-              <>
-                <Link to="/dashboard" onClick={() => setOpen(false)} className="text-sm font-medium text-primary">Dashboard</Link>
-                <Link to="/profile" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground">Profile</Link>
-                <button onClick={() => { setOpen(false); handleLogout(); }} className="text-left text-sm font-medium text-destructive">Log Out</button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" onClick={() => setOpen(false)} className="text-sm font-medium text-foreground">Login</Link>
-                <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md w-full">
-                  <Link to="/signup">Get Started Free</Link>
+        {/* Mobile slide-in drawer */}
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <button className="md:hidden p-2 -mr-2" aria-label="Open menu">
+              <Menu className="h-6 w-6" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[80vw] max-w-sm p-0 flex flex-col">
+            <SheetHeader className="border-b border-border p-4 text-left">
+              <SheetTitle className="font-heading text-lg">
+                <span className="text-primary">Backup</span><span className="text-accent">shala</span>
+              </SheetTitle>
+              {user && (
+                <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
+                    {profile?.full_name?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{profile?.full_name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+              )}
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-4 space-y-1">
+              <Link to="/explore" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Explore Courses</Link>
+              <a href="/#standard-bundle" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Standard Bundle</a>
+              <a href="/#for-creators" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">For Creators</a>
+              <a href="/#how-it-works" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">How It Works</a>
+              {user && (
+                <>
+                  <div className="my-2 h-px bg-border" />
+                  <Link to="/dashboard" onClick={closeAnd()} className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-medium text-primary hover:bg-secondary">
+                    <LayoutDashboard className="h-4 w-4" /> Dashboard
+                  </Link>
+                  <Link to="/profile" onClick={closeAnd()} className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">
+                    <User className="h-4 w-4" /> Profile
+                  </Link>
+                </>
+              )}
+            </div>
+            <div className="border-t border-border p-4 space-y-2">
+              <ThemeToggle />
+              {user ? (
+                <Button onClick={closeAnd(handleLogout)} variant="outline" className="w-full justify-start gap-2 text-destructive">
+                  <LogOut className="h-4 w-4" /> Log Out
                 </Button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+              ) : (
+                <>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/login" onClick={closeAnd()}>Login</Link>
+                  </Button>
+                  <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Link to="/signup" onClick={closeAnd()}>Get Started Free</Link>
+                  </Button>
+                </>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
     </nav>
   );
 };
