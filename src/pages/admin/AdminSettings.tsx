@@ -148,17 +148,42 @@ const AdminSettings = () => {
       <div className="space-y-6">
         <h1 className="text-2xl font-heading font-bold">Platform Settings</h1>
 
-        <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 max-w-2xl">
-          <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4 max-w-2xl">
+          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-yellow-400">Important</p>
+            <p className="text-sm font-medium text-warning">Important</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Changing platform fees only affects <strong>NEW courses</strong> created after this change.
+              Creator <strong>always</strong> receives {100 - platformFeePct}% of the net amount. Referral commission is taken
+              <strong> from the platform fee only</strong>, never from the creator's share.
             </p>
           </div>
         </div>
 
         <div className="grid gap-6 max-w-2xl">
+          {/* Live calculation preview */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Live Earnings Preview (₹{previewSale} sale)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Customer pays</span><span className="font-medium">₹{previewSale.toFixed(2)}</span></div>
+              {gstOn && (
+                <>
+                  <div className="flex justify-between text-xs"><span className="text-muted-foreground">– GST ({gstPct}%)</span><span>−₹{gstAmt.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-muted-foreground">Base amount</span><span>₹{baseAmt.toFixed(2)}</span></div>
+                </>
+              )}
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">– Gateway fee ({gatewayPct}%)</span><span>−₹{gatewayAmt.toFixed(2)}</span></div>
+              <div className="flex justify-between text-xs border-t border-border pt-2"><span className="text-muted-foreground">Net working amount</span><span>₹{netAmt.toFixed(2)}</span></div>
+              <div className="flex justify-between font-medium pt-1"><span className="text-primary">Creator earns ({100 - platformFeePct}%)</span><span className="text-primary">₹{creatorAmt.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Platform fee ({platformFeePct}%)</span><span>₹{platformAmt.toFixed(2)}</span></div>
+              <div className="ml-4 space-y-1 text-xs">
+                <div className="flex justify-between"><span className="text-accent">↳ Referral ({refOfPlatformPct}% of platform fee)</span><span className="text-accent">₹{referralAmt.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">↳ Platform keeps</span><span>₹{platformKeeps.toFixed(2)}</span></div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-card border-border">
             <CardHeader><CardTitle className="text-base">General Settings</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -172,9 +197,22 @@ const AdminSettings = () => {
           </Card>
 
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">Affiliate Program</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Referral Program</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {renderFields(affiliateConfig)}
+              <p className="text-xs text-muted-foreground">
+                The referral % is applied to the <strong>platform fee</strong> of each sale, not the sale amount. This guarantees creators always receive their full share.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader><CardTitle className="text-base">GST</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {renderFields(gstConfig)}
+              <p className="text-xs text-muted-foreground">
+                Enable only after crossing ₹20 lakh annual revenue. When enabled, prices are treated as GST-inclusive and receipts show the tax breakdown.
+              </p>
             </CardContent>
           </Card>
 
