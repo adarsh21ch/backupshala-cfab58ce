@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import CreatorDashboardLayout from '@/components/dashboard/CreatorDashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, IndianRupee, BookOpen, Wallet, Clock } from 'lucide-react';
+import { Users, IndianRupee, BookOpen, Wallet, Clock, ArrowRight } from 'lucide-react';
 import { formatPrice, timeAgo } from '@/lib/format';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,20 @@ const CreatorDashboard = () => {
       return { gross, platformFees: fees, commissions: comms, net };
     },
     enabled: !!courses && courses.length > 0,
+  });
+
+  const { data: walletInfo } = useQuery({
+    queryKey: ['creator-wallet-summary', user?.id],
+    queryFn: async () => {
+      const { data: payouts } = await supabase
+        .from('creator_payouts')
+        .select('amount, status')
+        .eq('creator_id', user!.id);
+      const available = payouts?.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0) || 0;
+      const pending = payouts?.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount), 0) || 0;
+      return { available, pending };
+    },
+    enabled: !!user,
   });
 
   if (profile?.is_creator && !profile?.creator_approved) {
