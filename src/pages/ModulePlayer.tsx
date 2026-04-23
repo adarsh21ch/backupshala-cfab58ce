@@ -334,6 +334,17 @@ const ModulePlayer = () => {
             <span className="text-xs font-medium text-muted-foreground">{overallProgress}%</span>
           </div>
 
+          {/* Tier upgrade banner — only for basic enrollees in courses with advanced modules */}
+          {studentTier === 'basic' && modules.some((m: any) => m.module_tier === 'advanced') && (
+            <UpgradeBanner
+              upgradePrice={platformSettings?.upgrade_price ?? 250}
+              basicCount={modules.filter((m: any) => (m.module_tier || 'basic') === 'basic').length}
+              advancedCount={modules.filter((m: any) => m.module_tier === 'advanced').length}
+              onUpgrade={() => setShowUpgradeModal(true)}
+              loading={upgradePaying}
+            />
+          )}
+
           {/* Audio note — before video */}
           {accessCheck?.hasAudioNote && accessCheck?.audioPosition === 'before' && accessCheck?.audioR2Key && (
             <AudioNotePlayer
