@@ -150,6 +150,7 @@ const AdminCreators = () => {
                   <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Tier</TableHead>
+                  <TableHead>Fee</TableHead>
                   <TableHead>Pro Expires</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -157,7 +158,7 @@ const AdminCreators = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
                 ) : (creators || []).map((c: any) => {
                   const proSub = c.creator_pro_subscriptions?.[0] || c.creator_pro_subscriptions;
                   const isPro = proSub && proSub.status === 'active';
@@ -181,6 +182,13 @@ const AdminCreators = () => {
                         <Badge variant={isPro ? 'default' : 'secondary'} className={`border-0 ${isPro ? 'bg-accent/20 text-accent' : 'bg-secondary text-muted-foreground'}`}>
                           {isPro ? '⭐ Pro' : 'Free'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {c.custom_platform_fee !== null && c.custom_platform_fee !== undefined ? (
+                          <Badge className="bg-accent/15 text-accent border-0">{c.custom_platform_fee}% custom</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Default</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {proExpires ? format(new Date(proExpires), 'dd MMM yyyy') : isPro ? 'Lifetime' : '—'}
@@ -209,6 +217,17 @@ const AdminCreators = () => {
                           )}
                           <Button size="sm" variant={c.is_verified ? 'default' : 'outline'} onClick={() => verifyMutation.mutate({ id: c.id, verified: !c.is_verified })} className="h-7 text-xs gap-1">
                             <BadgeCheck className="h-3 w-3" /> {c.is_verified ? 'Verified' : 'Verify'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => {
+                              setFeeDialog({ id: c.id, name: c.creator_display_name || c.full_name, current: c.custom_platform_fee ?? null });
+                              setFeeValue(c.custom_platform_fee !== null && c.custom_platform_fee !== undefined ? String(c.custom_platform_fee) : '');
+                            }}
+                          >
+                            <Percent className="h-3 w-3" /> Fee
                           </Button>
                         </div>
                       </TableCell>
@@ -246,6 +265,43 @@ const AdminCreators = () => {
             <Button onClick={() => grantProMutation.mutate()} disabled={grantProMutation.isPending} className="w-full">
               Grant Creator Pro
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Fee Dialog */}
+      <Dialog open={!!feeDialog} onOpenChange={() => setFeeDialog(null)}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader><DialogTitle>Custom Platform Fee — {feeDialog?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Override the default platform fee for this creator only. Range: 0–49%. Leave empty to reset to platform default.
+            </p>
+            <div>
+              <Label className="text-sm">Custom Platform Fee %</Label>
+              <Input
+                type="number"
+                value={feeValue}
+                onChange={e => setFeeValue(e.target.value)}
+                placeholder="e.g. 5"
+                min={0}
+                max={49}
+                className="mt-1 bg-secondary border-border"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Current: {feeDialog?.current !== null && feeDialog?.current !== undefined ? `${feeDialog.current}% custom` : 'Default'}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setFeeMutation.mutate()} disabled={setFeeMutation.isPending} className="flex-1">
+                Save
+              </Button>
+              {feeDialog?.current !== null && feeDialog?.current !== undefined && (
+                <Button variant="outline" onClick={() => { setFeeValue(''); setFeeMutation.mutate(); }}>
+                  Reset
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
