@@ -1,43 +1,45 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 
-interface WithdrawalFormProps {
-  paymentMethod: 'upi' | 'bank';
-  setPaymentMethod: (m: 'upi' | 'bank') => void;
+export interface WithdrawalPayload {
+  method: 'upi' | 'bank';
   amount: string;
-  setAmount: (v: string) => void;
   upiId: string;
-  setUpiId: (v: string) => void;
   bankName: string;
-  setBankName: (v: string) => void;
   accountHolder: string;
-  setAccountHolder: (v: string) => void;
   accountNumber: string;
-  setAccountNumber: (v: string) => void;
   confirmAccount: string;
-  setConfirmAccount: (v: string) => void;
   ifscCode: string;
-  setIfscCode: (v: string) => void;
-  actualAvailable: number;
-  isPending: boolean;
-  onSubmit: () => void;
 }
 
-const WithdrawalForm = ({
-  paymentMethod, setPaymentMethod, amount, setAmount, upiId, setUpiId,
-  bankName, setBankName, accountHolder, setAccountHolder, accountNumber, setAccountNumber,
-  confirmAccount, setConfirmAccount, ifscCode, setIfscCode, actualAvailable, isPending, onSubmit,
-}: WithdrawalFormProps) => {
+interface WithdrawalFormProps {
+  availableBalance: number;
+  submitting: boolean;
+  onSubmit: (payload: WithdrawalPayload) => void;
+  onCancel?: () => void;
+}
+
+const WithdrawalForm = ({ availableBalance, submitting, onSubmit }: WithdrawalFormProps) => {
+  const [method, setMethod] = useState<'upi' | 'bank'>('upi');
+  const [amount, setAmount] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountHolder, setAccountHolder] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [confirmAccount, setConfirmAccount] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+
   const amt = Number(amount);
-  const disabled = isPending || amt < 500 || amt > actualAvailable;
+  const disabled = submitting || amt < 500 || amt > availableBalance;
 
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
-        Available Balance: <span className="font-semibold text-foreground">{formatPrice(actualAvailable)}</span>
+        Available Balance: <span className="font-semibold text-foreground">{formatPrice(availableBalance)}</span>
       </div>
 
       <div>
@@ -47,9 +49,9 @@ const WithdrawalForm = ({
           inputMode="numeric"
           value={amount}
           onChange={e => setAmount(e.target.value)}
-          placeholder={`Min ₹500, Max ₹${Math.round(actualAvailable)}`}
+          placeholder={`Min ₹500, Max ₹${Math.round(availableBalance)}`}
           min={500}
-          max={actualAvailable}
+          max={availableBalance}
           className="mt-1"
         />
         {Number(amount) > 0 && Number(amount) < 500 && (
@@ -62,22 +64,22 @@ const WithdrawalForm = ({
         <div className="flex gap-2 mt-1">
           <button
             type="button"
-            onClick={() => setPaymentMethod('upi')}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-1 sm:flex-none ${paymentMethod === 'upi' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+            onClick={() => setMethod('upi')}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-1 sm:flex-none ${method === 'upi' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
           >
             UPI
           </button>
           <button
             type="button"
-            onClick={() => setPaymentMethod('bank')}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-1 sm:flex-none ${paymentMethod === 'bank' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+            onClick={() => setMethod('bank')}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-1 sm:flex-none ${method === 'bank' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
           >
             Bank Transfer
           </button>
         </div>
       </div>
 
-      {paymentMethod === 'upi' ? (
+      {method === 'upi' ? (
         <div>
           <Label>UPI ID</Label>
           <Input value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@upi" className="mt-1" />
@@ -99,11 +101,11 @@ const WithdrawalForm = ({
       </div>
 
       <Button
-        onClick={onSubmit}
+        onClick={() => onSubmit({ method, amount, upiId, bankName, accountHolder, accountNumber, confirmAccount, ifscCode })}
         disabled={disabled}
-        className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold min-h-[44px]"
+        className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold min-h-[44px] sticky bottom-0"
       >
-        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Request Withdrawal'}
+        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Request Withdrawal'}
       </Button>
     </div>
   );
