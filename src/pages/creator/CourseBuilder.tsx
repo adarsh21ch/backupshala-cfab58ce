@@ -20,6 +20,8 @@ import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTri
 import { formatPrice } from '@/lib/format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import GateSettingsForm from '@/components/module/GateSettingsForm';
+import ThumbnailUpload from '@/components/course/ThumbnailUpload';
+import ModuleVideoPicker from '@/components/video/ModuleVideoPicker';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -353,8 +355,11 @@ const CourseBuilder = () => {
     const previewModules = modules.filter(m => m.is_preview);
     if (modules.length < 3) { toast({ title: 'Add at least 3 modules', variant: 'destructive' }); return; }
     if (previewModules.length === 0) { toast({ title: 'Add at least 1 preview module', variant: 'destructive' }); return; }
-    if (!thumbnailUrl.trim()) { toast({ title: 'Add a thumbnail URL', variant: 'destructive' }); return; }
-    if (priceNum < 99) { toast({ title: 'Price must be at least ₹99', variant: 'destructive' }); return; }
+    if (!thumbnailUrl.trim()) { toast({ title: 'Upload a thumbnail image', variant: 'destructive' }); return; }
+    if (courseTier !== 'basic' && courseTier !== 'advanced') {
+      toast({ title: 'Select a course tier (Basic or Advanced) under Pricing', variant: 'destructive' });
+      return;
+    }
 
     await saveCourse();
     const { error } = await supabase.from('courses').update({ status: 'pending_review' }).eq('id', id!);
@@ -363,12 +368,23 @@ const CourseBuilder = () => {
     toast({ title: 'Submitted for review! ✓' });
   };
 
+  const moduleCountShortBy = Math.max(0, 3 - modules.length);
   const checks = [
     { label: 'Title and description added', ok: !!title.trim() && !!shortDesc.trim() },
     { label: 'Thumbnail added', ok: !!thumbnailUrl.trim() },
     { label: 'At least 1 preview module', ok: modules.some(m => m.is_preview) },
-    { label: 'At least 3 modules total', ok: modules.length >= 3 },
-    { label: 'Price set (₹99+)', ok: priceNum >= 99 },
+    {
+      label: modules.length >= 3
+        ? 'At least 3 modules total'
+        : `Add ${moduleCountShortBy} more module${moduleCountShortBy === 1 ? '' : 's'} (you have ${modules.length})`,
+      ok: modules.length >= 3,
+    },
+    {
+      label: courseTier
+        ? `Course tier selected (${courseTier === 'advanced' ? 'Advanced' : 'Basic'})`
+        : 'Select a course tier (Basic or Advanced)',
+      ok: courseTier === 'basic' || courseTier === 'advanced',
+    },
   ];
   const allChecked = checks.every(c => c.ok);
 
@@ -444,8 +460,10 @@ const CourseBuilder = () => {
                 </div>
               </div>
               <div>
-                <Label>Thumbnail URL</Label>
-                <Input value={thumbnailUrl} onChange={e => setThumbnailUrl(e.target.value)} placeholder="https://..." className="mt-1 rounded-lg" />
+                <Label>Course Thumbnail</Label>
+                <div className="mt-1">
+                  <ThumbnailUpload value={thumbnailUrl} onChange={setThumbnailUrl} />
+                </div>
               </div>
               <div>
                 <Label>Preview Video URL (YouTube embed)</Label>
