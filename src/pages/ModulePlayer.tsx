@@ -22,6 +22,19 @@ import UpgradeModal from '@/components/course/UpgradeModal';
 import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { Sparkles } from 'lucide-react';
+import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
+
+// Resolve a player setting: module override > course override > platform default
+const resolveBool = (m: boolean | null | undefined, c: boolean | null | undefined, p: boolean): boolean => {
+  if (m !== null && m !== undefined) return m;
+  if (c !== null && c !== undefined) return c;
+  return p;
+};
+const resolveNum = (m: number | null | undefined, c: number | null | undefined, p: number): number => {
+  if (m !== null && m !== undefined) return m;
+  if (c !== null && c !== undefined) return c;
+  return p;
+};
 
 const moduleTypeIcon = (type: string) => {
   if (type === 'resource') return <BookOpen className="h-3 w-3" />;
