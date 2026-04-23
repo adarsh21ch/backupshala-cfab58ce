@@ -489,6 +489,15 @@ const ModulePlayer = () => {
           </div>
         </div>
       </div>
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onConfirm={startUpgrade}
+        upgradePrice={platformSettings?.upgrade_price ?? 250}
+        modules={modules as any}
+        paying={upgradePaying}
+        courseTitle={course?.title || ''}
+      />
     </DashboardLayout>
   );
 };
