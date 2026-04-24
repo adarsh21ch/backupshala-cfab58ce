@@ -473,6 +473,23 @@ const BackupshalaVideoPlayer = ({
           </div>
         )}
 
+        {/* Personal moving watermark — student identity, anti-piracy. Always on for logged-in users. */}
+        {personalWatermarkText && (
+          <div
+            className={`absolute pointer-events-none select-none z-[11] ${personalWatermarkPositions[personalWmIndex]}`}
+            style={{
+              color: 'rgba(255,255,255,0.35)',
+              fontSize: 'clamp(9px, 1vw, 11px)',
+              fontFamily: "'Space Grotesk', sans-serif",
+              letterSpacing: '0.5px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+              transition: 'top 0.6s ease, bottom 0.6s ease, left 0.6s ease, right 0.6s ease',
+            }}
+          >
+            {personalWatermarkText}
+          </div>
+        )}
+
         {/* Resume prompt */}
         {showResumePrompt && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20" onClick={e => e.stopPropagation()}>
