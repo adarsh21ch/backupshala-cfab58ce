@@ -311,6 +311,80 @@ const BackupshalaVideoPlayer = ({
     return () => window.removeEventListener('keydown', handler);
   }, [isPlaying, allowSeek, skipProgress, showSeekBlockedToast]);
 
+  // ─── CONTENT PROTECTION ─────────────────────────────────────
+  // Personal moving watermark — rotates corner every 30s
+  const personalWatermarkPositions = useMemo(
+    () => [
+      'bottom-3 left-3',
+      'top-3 right-3',
+      'bottom-3 right-3',
+      'top-3 left-3',
+    ],
+    []
+  );
+  const [personalWmIndex, setPersonalWmIndex] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setPersonalWmIndex(i => (i + 1) % personalWatermarkPositions.length);
+    }, 30000);
+    return () => clearInterval(id);
+  }, [personalWatermarkPositions.length]);
+
+  const personalWatermarkText = useMemo(() => {
+    if (!user || isPreview) return null;
+    const firstName = (profile?.full_name || user.user_metadata?.full_name || 'User').split(' ')[0]?.toUpperCase() || 'USER';
+    const email = profile?.email || user.email || '';
+    const [local, domain] = email.split('@');
+    if (!local || !domain) return firstName;
+    const masked = `${local.substring(0, 3)}***@${domain}`;
+    return `${firstName} · ${masked}`;
+  }, [user, profile, isPreview]);
+
+  // Pause on tab/window blur (do NOT auto-resume)
+  useEffect(() => {
+    const onBlur = () => {
+      const v = videoRef.current;
+      if (v && !v.paused) v.pause();
+    };
+    const onVisibility = () => {
+      if (document.hidden) onBlur();
+    };
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
+
+  // Block screenshot / save / print shortcuts while player is mounted
+  useEffect(() => {
+    const block = (e: KeyboardEvent) => {
+      if (e.key === 'PrintScreen') { e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 's' || e.key === 'S')) { e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P' || e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', block);
+    return () => document.removeEventListener('keydown', block);
+  }, []);
+
+  // DevTools detection — pause if devtools likely open
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const threshold = 160;
+      const open = window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold;
+      if (open) {
+        const v = videoRef.current;
+        if (v && !v.paused) v.pause();
+      }
+    }, 1500);
+    return () => clearInterval(id);
+  }, []);
+  // ────────────────────────────────────────────────────────────
+
+
   // Auto-dismiss resume prompt
   useEffect(() => {
     if (!showResumePrompt) return;
