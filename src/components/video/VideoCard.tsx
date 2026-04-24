@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Copy, Play, Eye, BookOpen, Share2 } from 'lucide-react';
+import { Copy, Play, Eye, BookOpen, Share2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDuration, getR2ThumbnailUrl } from '@/lib/videoTypes';
 
@@ -19,15 +19,18 @@ interface VideoCardProps {
     total_views?: number;
     is_active?: boolean;
     is_featured?: boolean;
+    uploaded_by?: string | null;
   };
   variant?: 'admin' | 'creator' | 'student';
+  /** Whether the current user owns this asset (only used in creator variant). */
+  isOwner?: boolean;
   onPreview?: (assetId: string) => void;
   onUseInCourse?: (assetId: string) => void;
   onDeactivate?: (assetId: string) => void;
   onDelete?: (assetId: string) => void;
 }
 
-const VideoCard = ({ asset, variant = 'student', onPreview, onUseInCourse, onDeactivate, onDelete }: VideoCardProps) => {
+const VideoCard = ({ asset, variant = 'student', isOwner = false, onPreview, onUseInCourse, onDeactivate, onDelete }: VideoCardProps) => {
   const thumbnail = getR2ThumbnailUrl(asset.thumbnail_key) || '/placeholder.svg';
 
   const copyShareLink = () => {
@@ -87,6 +90,18 @@ const VideoCard = ({ asset, variant = 'student', onPreview, onUseInCourse, onDea
           {variant === 'student' && (
             <Button size="sm" className="h-7 text-xs flex-1 gap-1 bg-primary hover:bg-primary/90" onClick={() => onPreview?.(asset.id)}>
               <Play className="h-3 w-3" /> Watch
+            </Button>
+          )}
+          {variant === 'creator' && isOwner && onDelete && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => onDelete(asset.id)}
+              title="Delete video"
+              aria-label="Delete video"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
