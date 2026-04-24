@@ -80,6 +80,8 @@ const CourseEnrollment = () => {
   const [previewModule, setPreviewModule] = useState<any | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const { data: platformSettings } = usePlatformSettings();
+  const { data: eligibility } = useCourseReferralEligibility(course?.id);
+  const canRefer = !!eligibility?.eligible;
   const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
     setShowUpgradeModal(false);
     refetchEnrollment();
@@ -463,9 +465,15 @@ const CourseEnrollment = () => {
                 </div>
               )}
               <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. GST invoice emailed after payment.</p>
-              <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => setShareOpen(true)}>
-                <Share2 className="h-3 w-3 mr-1" /> Share & Earn
-              </Button>
+              {canRefer ? (
+                <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => setShareOpen(true)}>
+                  <Share2 className="h-3 w-3 mr-1" /> Share & Earn
+                </Button>
+              ) : user ? (
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Enroll to unlock referral commission on this course
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -488,12 +496,24 @@ const CourseEnrollment = () => {
         enrollPath={`/c/${creatorSlug}/${courseSlug}`}
         enrollPrice={displayPrice}
       />
-      <ShareCourseModal
+      <ShareEarnModal
         open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        courseTitle={course.title}
-        coursePath={`/c/${creatorSlug}/${courseSlug}`}
-        estimatedCommission={Math.round(displayPrice * (platformSettings?.platform_fee_percent ?? 10) / 100 * 0.7)}
+        onOpenChange={setShareOpen}
+        course={{
+          id: course.id,
+          title: course.title,
+          slug: course.slug,
+          price: displayPrice,
+          short_description: course.short_description,
+          is_platform_course: course.is_platform_course,
+          platform_fee_percent: course.platform_fee_percent,
+          profiles: { creator_slug: creator?.creator_slug || creatorSlug },
+        }}
+        estimatedEarning={
+          course.is_platform_course
+            ? Math.round(displayPrice * ((platformSettings as any)?.platform_course_referral_percent ?? 15) / 100)
+            : Math.round(displayPrice * (course.platform_fee_percent ?? 10) / 100 * ((platformSettings as any)?.referral_commission_percent ?? 70) / 100)
+        }
       />
     </div>
   );
