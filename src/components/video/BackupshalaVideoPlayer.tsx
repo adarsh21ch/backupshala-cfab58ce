@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDuration } from '@/lib/videoTypes';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle, RotateCcw, Gauge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 type WatermarkPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 type WatermarkSize = 'small' | 'medium' | 'large';
@@ -61,6 +62,7 @@ const BackupshalaVideoPlayer = ({
   watermarkSize = 'medium',
   onProgress, onComplete, onReady, onEnded, autoPlay = false,
 }: BackupshalaVideoPlayerProps) => {
+  const { user, profile } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -309,6 +311,80 @@ const BackupshalaVideoPlayer = ({
     return () => window.removeEventListener('keydown', handler);
   }, [isPlaying, allowSeek, skipProgress, showSeekBlockedToast]);
 
+  // ─── CONTENT PROTECTION ─────────────────────────────────────
+  // Personal moving watermark — rotates corner every 30s
+  const personalWatermarkPositions = useMemo(
+    () => [
+      'bottom-3 left-3',
+      'top-3 right-3',
+      'bottom-3 right-3',
+      'top-3 left-3',
+    ],
+    []
+  );
+  const [personalWmIndex, setPersonalWmIndex] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setPersonalWmIndex(i => (i + 1) % personalWatermarkPositions.length);
+    }, 30000);
+    return () => clearInterval(id);
+  }, [personalWatermarkPositions.length]);
+
+  const personalWatermarkText = useMemo(() => {
+    if (!user || isPreview) return null;
+    const firstName = (profile?.full_name || user.user_metadata?.full_name || 'User').split(' ')[0]?.toUpperCase() || 'USER';
+    const email = profile?.email || user.email || '';
+    const [local, domain] = email.split('@');
+    if (!local || !domain) return firstName;
+    const masked = `${local.substring(0, 3)}***@${domain}`;
+    return `${firstName} · ${masked}`;
+  }, [user, profile, isPreview]);
+
+  // Pause on tab/window blur (do NOT auto-resume)
+  useEffect(() => {
+    const onBlur = () => {
+      const v = videoRef.current;
+      if (v && !v.paused) v.pause();
+    };
+    const onVisibility = () => {
+      if (document.hidden) onBlur();
+    };
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
+
+  // Block screenshot / save / print shortcuts while player is mounted
+  useEffect(() => {
+    const block = (e: KeyboardEvent) => {
+      if (e.key === 'PrintScreen') { e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 's' || e.key === 'S')) { e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P' || e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', block);
+    return () => document.removeEventListener('keydown', block);
+  }, []);
+
+  // DevTools detection — pause if devtools likely open
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const threshold = 160;
+      const open = window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold;
+      if (open) {
+        const v = videoRef.current;
+        if (v && !v.paused) v.pause();
+      }
+    }, 1500);
+    return () => clearInterval(id);
+  }, []);
+  // ────────────────────────────────────────────────────────────
+
+
   // Auto-dismiss resume prompt
   useEffect(() => {
     if (!showResumePrompt) return;
@@ -394,6 +470,23 @@ const BackupshalaVideoPlayer = ({
             }}
           >
             {watermarkText}
+          </div>
+        )}
+
+        {/* Personal moving watermark — student identity, anti-piracy. Always on for logged-in users. */}
+        {personalWatermarkText && (
+          <div
+            className={`absolute pointer-events-none select-none z-[11] ${personalWatermarkPositions[personalWmIndex]}`}
+            style={{
+              color: 'rgba(255,255,255,0.35)',
+              fontSize: 'clamp(9px, 1vw, 11px)',
+              fontFamily: "'Space Grotesk', sans-serif",
+              letterSpacing: '0.5px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+              transition: 'top 0.6s ease, bottom 0.6s ease, left 0.6s ease, right 0.6s ease',
+            }}
+          >
+            {personalWatermarkText}
           </div>
         )}
 
