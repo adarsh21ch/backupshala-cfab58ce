@@ -729,7 +729,7 @@ const CourseBuilder = () => {
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => openEditModule(m)} className="text-xs">✏️</Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id)} className="text-destructive hover:text-destructive text-xs">🗑</Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id, m.title)} className="text-destructive hover:text-destructive text-xs">🗑</Button>
                     </div>
                   ))}
                 </div>
