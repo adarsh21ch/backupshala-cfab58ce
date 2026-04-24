@@ -40,12 +40,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { course_id } = await req.json();
+    const { course_id, ref_username } = await req.json();
     if (!course_id) {
       return new Response(JSON.stringify({ error: "course_id required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Resolve ?ref=username to a referrer profile (server-side trust check)
+    let resolvedReferrerId: string | null = null;
+    if (ref_username && typeof ref_username === "string") {
+      const cleaned = ref_username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30);
+      if (cleaned) {
+        const { data: refProfile } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("username", cleaned)
+          .neq("id", user.id)
+          .maybeSingle();
+        if (refProfile) resolvedReferrerId = refProfile.id;
+      }
     }
 
     // Check if already enrolled
