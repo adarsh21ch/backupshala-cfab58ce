@@ -399,6 +399,20 @@ const CourseBuilder = () => {
     { value: 'community' as const, label: 'Community Module', desc: 'Community & Telegram access', icon: Users2, emoji: '👥' },
   ];
 
+  // Build step list for the progress bar
+  const stepBasicDone = !!title.trim() && shortDesc.trim().length >= 50 && !!thumbnailUrl.trim();
+  const stepModulesDone = modules.length >= 3 && modules.some(m => m.is_preview);
+  const stepPricingDone = !validatePrice(price);
+  const stepPublishDone = status === 'published' || status === 'pending_review';
+  const tabOrder = ['basic', 'modules', 'pricing', 'publish'];
+  const currentStepIdx = Math.max(0, tabOrder.indexOf(activeTab === 'video-settings' || activeTab === 'gate-settings' ? 'modules' : activeTab));
+  const progressSteps = [
+    { label: 'Basic Info', done: stepBasicDone },
+    { label: 'Add Modules', done: stepModulesDone },
+    { label: 'Set Price', done: stepPricingDone },
+    { label: 'Publish', done: stepPublishDone },
+  ];
+
   return (
     <CreatorDashboardLayout>
       <div className="space-y-6">
@@ -409,7 +423,9 @@ const CourseBuilder = () => {
           <h1 className="font-heading text-2xl font-700">{isNew ? 'Create Course' : 'Edit Course'}</h1>
         </div>
 
-        <Tabs defaultValue="basic" className="w-full">
+        <CourseBuilderProgress steps={progressSteps} current={currentStepIdx} />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start bg-card border border-border rounded-lg p-1 flex-wrap">
             <TabsTrigger value="basic" className="rounded-md text-xs">Basic Info</TabsTrigger>
             <TabsTrigger value="modules" className="rounded-md text-xs">Modules ({modules.length})</TabsTrigger>
