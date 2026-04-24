@@ -20,7 +20,8 @@ import UpgradeModal from '@/components/course/UpgradeModal';
 import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import CoursePreviewModal from '@/components/course/CoursePreviewModal';
-import ShareCourseModal from '@/components/course/ShareCourseModal';
+import ShareEarnModal from '@/components/course/ShareEarnModal';
+import { useCourseReferralEligibility } from '@/hooks/useReferralEligibility';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
