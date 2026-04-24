@@ -46,6 +46,8 @@ const AdminCourses = () => {
   const [overridePrice, setOverridePrice] = useState('');
   const [overrideReason, setOverrideReason] = useState('');
 
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+
   const { data: courses, isLoading } = useQuery({
     queryKey: ['admin-courses'],
     queryFn: async () => {
