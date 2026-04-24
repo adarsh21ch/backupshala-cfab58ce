@@ -85,7 +85,30 @@ const AdminCourses = () => {
     },
   });
 
-  const overrideMutation = useMutation({
+  const deleteMutation = useMutation({
+    mutationFn: async (course: any) => {
+      // Block delete if any students enrolled
+      const { count } = await supabase
+        .from('enrollments')
+        .select('id', { count: 'exact', head: true })
+        .eq('course_id', course.id);
+      if ((count || 0) > 0) {
+        throw new Error(`Course has ${count} enrolled student${count === 1 ? '' : 's'} — cannot delete. Suspend it instead.`);
+      }
+      await supabase.from('modules').delete().eq('course_id', course.id);
+      const { error } = await supabase.from('courses').delete().eq('id', course.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Course deleted');
+      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      setDeleteTarget(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Delete failed');
+      setDeleteTarget(null);
+    },
+  });
     mutationFn: async () => {
       if (!overrideCourse || !overrideReason.trim()) throw new Error('Reason required');
 
