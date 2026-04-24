@@ -49,11 +49,8 @@ const AdminSettings = () => {
     num('platform_fee_pro', 1, 49, 'Pro creator fee');
     num('referral_commission_percent', 0, 100, 'Referral %');
     num('gateway_fee_percent', 0, 10, 'Gateway %');
-    num('basic_price', 1, 10000, 'Basic price');
-    num('advanced_price', 1, 20000, 'Advanced price');
-    if (Number(values.advanced_price) <= Number(values.basic_price)) {
-      errs.advanced_price = 'Advanced price must be > Basic price';
-    }
+    num('basic_price', 1, 49999, 'Standard course default');
+    num('advanced_price', 1, 49999, 'Premium course default');
     if (values.gst_enabled === 'true') num('gst_rate_percent', 0, 50, 'GST rate');
     num('min_payout_amount', 1, 100000, 'Min payout');
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
