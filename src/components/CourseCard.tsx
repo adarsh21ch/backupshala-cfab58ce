@@ -59,12 +59,6 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
         )}
         <div className="absolute top-2 left-2 flex gap-1.5">
           <span className="rounded-md bg-background/90 px-2 py-0.5 text-xs font-medium backdrop-blur-sm">{course.category}</span>
-          {course.course_tier === 'basic' && (
-            <span className="rounded-md bg-primary/90 px-2 py-0.5 text-[10px] font-bold text-primary-foreground backdrop-blur-sm">BASIC</span>
-          )}
-          {course.course_tier === 'advanced' && (
-            <span className="rounded-md bg-info/90 px-2 py-0.5 text-[10px] font-bold text-info-foreground backdrop-blur-sm">ADVANCED</span>
-          )}
           {course.is_featured && (
             <span className="rounded-md bg-accent/90 px-2 py-0.5 text-[10px] font-bold text-accent-foreground backdrop-blur-sm">Featured</span>
           )}

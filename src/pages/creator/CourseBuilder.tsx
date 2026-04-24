@@ -12,9 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
-import PriceBreakdown from '@/components/PriceBreakdown';
-import TierSelector from '@/components/course/TierSelector';
-import { getCommissionConfig, type CourseTier } from '@/lib/tierPricing';
+import PriceInput, { validatePrice, MIN_PRICE } from '@/components/course/PriceInput';
+import CreatorEarningsBreakdown from '@/components/course/CreatorEarningsBreakdown';
 import { useState, useEffect } from 'react';
 import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Lock, Info } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
@@ -50,8 +49,7 @@ const CourseBuilder = () => {
   const [whatYouLearn, setWhatYouLearn] = useState<string[]>(['']);
   const [requirements, setRequirements] = useState<string[]>(['']);
   const [tags, setTags] = useState('');
-  const [courseTier, setCourseTier] = useState<CourseTier | null>(null);
-  const [price, setPrice] = useState('249');
+  const [price, setPrice] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const [showOriginalPrice, setShowOriginalPrice] = useState(false);
   const [commissionPercent, setCommissionPercent] = useState(70);
@@ -198,16 +196,7 @@ const CourseBuilder = () => {
       setWhatYouLearn(course.what_you_learn?.length ? course.what_you_learn : ['']);
       setRequirements(course.requirements?.length ? course.requirements : ['']);
       setTags(course.tags?.join(', ') || '');
-
-      // Force tier re-selection if existing tier doesn't match current platform tier prices
-      const existingTier = (course as any).course_tier as CourseTier | null;
-      const basicPrice = platformSettings.basic_price;
-      const advancedPrice = platformSettings.advanced_price;
-      const tierMatchesPrice =
-        (existingTier === 'basic' && Number(course.price) === basicPrice) ||
-        (existingTier === 'advanced' && Number(course.price) === advancedPrice);
-      setCourseTier(tierMatchesPrice ? existingTier : null);
-      setPrice(String(course.price));
+      setPrice(course.price ? String(course.price) : '');
 
       const op = (course as any).original_price;
       if (op != null) {
@@ -220,7 +209,7 @@ const CourseBuilder = () => {
         setModules([...course.modules].sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)));
       }
     }
-  }, [course, platformSettings.basic_price, platformSettings.advanced_price]);
+  }, [course]);
 
   useEffect(() => {
     if (commissionPercent > maxCommission) setCommissionPercent(maxCommission);
@@ -259,7 +248,7 @@ const CourseBuilder = () => {
         requirements: requirements.filter(r => r.trim()),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         price: priceNum,
-        course_tier: courseTier,
+        course_tier: null,
         base_price: priceNum,
         display_price: priceNum,
         original_price: showOriginalPrice && Number(originalPrice) > priceNum ? Number(originalPrice) : null,
@@ -371,10 +360,8 @@ const CourseBuilder = () => {
     if (modules.length < 3) { toast({ title: 'Add at least 3 modules', variant: 'destructive' }); return; }
     if (previewModules.length === 0) { toast({ title: 'Add at least 1 preview module', variant: 'destructive' }); return; }
     if (!thumbnailUrl.trim()) { toast({ title: 'Upload a thumbnail image', variant: 'destructive' }); return; }
-    if (courseTier !== 'basic' && courseTier !== 'advanced') {
-      toast({ title: 'Select a course tier (Basic or Advanced) under Pricing', variant: 'destructive' });
-      return;
-    }
+    const priceErr = validatePrice(price);
+    if (priceErr) { toast({ title: priceErr, variant: 'destructive' }); return; }
 
     await saveCourse();
     const { error } = await supabase.from('courses').update({ status: 'pending_review' }).eq('id', id!);
@@ -384,10 +371,11 @@ const CourseBuilder = () => {
   };
 
   const moduleCountShortBy = Math.max(0, 3 - modules.length);
+  const priceErr = validatePrice(price);
   const checks = [
-    { label: 'Title and description added', ok: !!title.trim() && !!shortDesc.trim() },
-    { label: 'Thumbnail added', ok: !!thumbnailUrl.trim() },
-    { label: 'At least 1 preview module', ok: modules.some(m => m.is_preview) },
+    { label: 'Title and description added (min 50 chars description)', ok: !!title.trim() && shortDesc.trim().length >= 50 },
+    { label: 'Thumbnail uploaded (image file)', ok: !!thumbnailUrl.trim() },
+    { label: 'At least 1 preview module marked', ok: modules.some(m => m.is_preview) },
     {
       label: modules.length >= 3
         ? 'At least 3 modules total'
@@ -395,10 +383,8 @@ const CourseBuilder = () => {
       ok: modules.length >= 3,
     },
     {
-      label: courseTier
-        ? `Course tier selected (${courseTier === 'advanced' ? 'Advanced' : 'Basic'})`
-        : 'Select a course tier (Basic or Advanced)',
-      ok: courseTier === 'basic' || courseTier === 'advanced',
+      label: priceErr ? `Course price set (₹${MIN_PRICE} minimum)` : `Course price set (${formatPrice(priceNum)})`,
+      ok: !priceErr,
     },
   ];
   const allChecked = checks.every(c => c.ok);
@@ -734,68 +720,32 @@ const CourseBuilder = () => {
             </div>
           </TabsContent>
 
-          {/* Pricing */}
+          {/* Pricing — Free price input + live earnings breakdown */}
           <TabsContent value="pricing" className="mt-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-6 space-y-6">
               {status === 'published' && (
                 <div className="flex items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 p-3">
                   <AlertTriangle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                  <p className="text-xs text-accent">This course is live. Changing the tier will set status back to pending review.</p>
+                  <p className="text-xs text-accent">This course is live. Changing the price will set status back to pending review.</p>
                 </div>
               )}
 
-              <TierSelector
-                selected={courseTier}
-                onChange={(t) => {
-                  setCourseTier(t);
-                  const newPrice = t === 'advanced' ? platformSettings.advanced_price : platformSettings.basic_price;
-                  setPrice(String(newPrice));
-                }}
-                basicPrice={platformSettings.basic_price}
-                advancedPrice={platformSettings.advanced_price}
-                commissionConfig={getCommissionConfig(getPlatSetting ? Object.fromEntries([
-                  ['platform_fee_free', String(platformSettings.platform_fee_percent)],
-                  ['platform_fee_pro', getPlatSetting('platform_fee_pro', '10')],
-                  ['gateway_fee_percent', getPlatSetting('gateway_fee_percent', '2')],
-                  ['referral_commission_percent', getPlatSetting('referral_commission_percent', '70')],
-                  ['gst_enabled', getPlatSetting('gst_enabled', 'false')],
-                  ['gst_rate_percent', getPlatSetting('gst_rate_percent', '18')],
-                ]) : {})}
-                isPro={isPro}
+              <PriceInput
+                price={price}
+                setPrice={setPrice}
+                originalPrice={originalPrice}
+                setOriginalPrice={setOriginalPrice}
+                showOriginalPrice={showOriginalPrice}
+                setShowOriginalPrice={setShowOriginalPrice}
               />
 
-              {courseTier && (
-                <>
-                  <div className="rounded-lg border border-border bg-secondary/30 p-3">
-                    <p className="text-xs text-muted-foreground">
-                      Selected price: <span className="font-semibold text-foreground">{formatPrice(priceNum)}</span> · Platform fee: <span className="font-semibold text-foreground">{platformFeePercent}%</span>
-                    </p>
-                  </div>
+              <CreatorEarningsBreakdown price={priceNum} isPro={isPro} />
 
-                  <div className="rounded-lg border border-border p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Switch checked={showOriginalPrice} onCheckedChange={setShowOriginalPrice} />
-                      <div>
-                        <p className="text-sm font-medium">Show crossed-out price</p>
-                        <p className="text-xs text-muted-foreground">Adds urgency on the course card</p>
-                      </div>
-                    </div>
-                    {showOriginalPrice && (
-                      <Input
-                        type="number"
-                        value={originalPrice}
-                        onChange={e => setOriginalPrice(e.target.value)}
-                        placeholder={`e.g. ${priceNum * 4} (must be > ${priceNum})`}
-                        className="rounded-lg"
-                      />
-                    )}
-                  </div>
-
-                  <PriceBreakdown price={priceNum} platformFeePercent={platformFeePercent} commissionPercent={commissionPercent} />
-                </>
-              )}
-
-              <Button onClick={saveCourse} disabled={saving || !courseTier} className="rounded-md bg-primary hover:bg-primary/90">
+              <Button
+                onClick={saveCourse}
+                disabled={saving || !!validatePrice(price)}
+                className="rounded-md bg-primary hover:bg-primary/90"
+              >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Pricing'}
               </Button>
             </div>
