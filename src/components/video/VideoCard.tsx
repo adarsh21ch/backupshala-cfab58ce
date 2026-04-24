@@ -92,6 +92,18 @@ const VideoCard = ({ asset, variant = 'student', isOwner = false, onPreview, onU
               <Play className="h-3 w-3" /> Watch
             </Button>
           )}
+          {variant === 'creator' && isOwner && onDelete && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => onDelete(asset.id)}
+              title="Delete video"
+              aria-label="Delete video"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
 
         {variant === 'admin' && (
