@@ -276,6 +276,57 @@ const CreatorVideos = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Delete confirmation */}
+        <AlertDialog open={!!deleteAsset} onOpenChange={(o) => !o && !deleting && setDeleteAsset(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this video?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You're about to permanently delete <span className="font-medium text-foreground">"{deleteAsset?.title}"</span>.
+                {(deleteAsset?.usedCount ?? 0) > 0 ? (
+                  <span className="block mt-2 text-destructive">
+                    ⚠️ This video is used in {deleteAsset?.usedCount} module{deleteAsset?.usedCount === 1 ? '' : 's'}.
+                    Deleting will remove it from those modules and cannot be undone.
+                  </span>
+                ) : (
+                  <span className="block mt-2">This action cannot be undone.</span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleting}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (!deleteAsset) return;
+                  setDeleting(true);
+                  try {
+                    // Detach from any modules first (clear video_asset_id + bsv_code)
+                    await supabase
+                      .from('modules')
+                      .update({ video_asset_id: null, bsv_code: null })
+                      .eq('video_asset_id', deleteAsset.id);
+                    // Delete the asset (RLS allows owner OR admin)
+                    const { error } = await supabase.from('video_assets').delete().eq('id', deleteAsset.id);
+                    if (error) throw error;
+                    toast.success('Video deleted');
+                    setDeleteAsset(null);
+                    qc.invalidateQueries({ queryKey: ['creator-video-assets'] });
+                  } catch (err: any) {
+                    toast.error(err.message || 'Could not delete video');
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Delete forever'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </CreatorDashboardLayout>
   );
