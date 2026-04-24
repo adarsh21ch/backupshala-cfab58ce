@@ -729,10 +729,27 @@ const CourseBuilder = () => {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-border p-8 text-center">
-                  <Play className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No modules yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Add your first module to get started.</p>
+                <div className="rounded-xl border border-dashed border-border p-8 text-center space-y-4">
+                  <div className="mx-auto h-14 w-14 rounded-2xl bg-accent/10 flex items-center justify-center">
+                    <Play className="h-7 w-7 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-heading text-base font-700">Add your first module</p>
+                    <p className="text-xs text-muted-foreground mt-1">Choose a type to get started</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto pt-2">
+                    {moduleTypeCards.map(t => (
+                      <button
+                        key={t.value}
+                        onClick={() => { setMModuleType(t.value); resetModuleForm(); setMModuleType(t.value); setModuleDialogOpen(true); }}
+                        className="rounded-xl border border-border bg-card p-4 text-center hover:border-accent/50 hover:bg-accent/5 transition-all min-h-[100px] flex flex-col items-center justify-center gap-2"
+                      >
+                        <span className="text-2xl">{t.emoji}</span>
+                        <span className="text-xs font-semibold font-heading">{t.label}</span>
+                        <span className="text-[10px] text-muted-foreground leading-tight">{t.desc}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
