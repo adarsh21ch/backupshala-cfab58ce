@@ -1,0 +1,139 @@
+import AdminDashboardLayout from '@/components/dashboard/AdminDashboardLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { Trophy, Loader2 } from 'lucide-react';
+
+const CATEGORIES = ['Digital Skills', 'Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
+const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+
+const slugify = (t: string) =>
+  t.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').trim();
+
+const AdminPlatformCourseNew = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
+  const [shortDesc, setShortDesc] = useState('');
+  const [category, setCategory] = useState('Digital Skills');
+  const [level, setLevel] = useState('Beginner');
+  const [price, setPrice] = useState('249');
+  const [saving, setSaving] = useState(false);
+
+  const onTitleChange = (v: string) => {
+    setTitle(v);
+    if (!slug) setSlug(slugify(v));
+  };
+
+  const create = async () => {
+    if (!title.trim() || !shortDesc.trim() || !slug.trim()) {
+      toast.error('Fill in title, slug, and description');
+      return;
+    }
+    const priceNum = Number(price);
+    if (!Number.isFinite(priceNum) || priceNum < 1) {
+      toast.error('Enter a valid price');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.from('courses').insert({
+        creator_id: user!.id,
+        title: title.trim(),
+        slug: slug.trim(),
+        short_description: shortDesc.trim(),
+        category,
+        level,
+        language: 'English',
+        price: priceNum,
+        base_price: priceNum,
+        display_price: priceNum,
+        commission_percent: 0,
+        platform_fee_percent: 0,
+        is_platform_course: true,
+        status: 'draft',
+      }).select('id').single();
+      if (error) throw error;
+      toast.success('Platform course created — add modules next');
+      navigate(`/creator/courses/${data.id}/edit`);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to create');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <AdminDashboardLayout>
+      <div className="max-w-2xl space-y-6">
+        <div>
+          <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-accent" /> Create Platform Course
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Backupshala-owned course. 100% revenue retained — no creator commission, no referral commission.
+          </p>
+        </div>
+
+        <Card className="bg-card border-border">
+          <CardHeader><CardTitle className="text-base">Basic Info</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Title *</Label>
+              <Input value={title} onChange={e => onTitleChange(e.target.value)} placeholder="e.g. Backupshala Pro Bundle" className="mt-1" />
+            </div>
+            <div>
+              <Label>Slug *</Label>
+              <Input value={slug} onChange={e => setSlug(e.target.value)} className="mt-1 font-mono text-xs" />
+            </div>
+            <div>
+              <Label>Short Description *</Label>
+              <Textarea value={shortDesc} onChange={e => setShortDesc(e.target.value.slice(0, 150))} className="mt-1" />
+              <p className="text-xs text-muted-foreground mt-1">{shortDesc.length}/150</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Category</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Level</Label>
+                <Select value={level} onValueChange={setLevel}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>{LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>Course Price ₹ *</Label>
+              <Input type="number" value={price} onChange={e => setPrice(e.target.value)} min={1} max={49999} className="mt-1" />
+              <p className="text-xs text-muted-foreground mt-1">Admin sets any price freely. Platform keeps 100% of revenue.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/admin/courses')}>Cancel</Button>
+          <Button onClick={create} disabled={saving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Create & Continue to Modules
+          </Button>
+        </div>
+      </div>
+    </AdminDashboardLayout>
+  );
+};
+
+export default AdminPlatformCourseNew;
