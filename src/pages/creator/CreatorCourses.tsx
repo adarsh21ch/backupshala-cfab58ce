@@ -1,20 +1,33 @@
 import { useAuth } from '@/contexts/AuthContext';
 import CreatorDashboardLayout from '@/components/dashboard/CreatorDashboardLayout';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Plus, ExternalLink } from 'lucide-react';
+import { BookOpen, Plus, ExternalLink, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatPrice } from '@/lib/format';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 const statusTabs = ['all', 'draft', 'pending_review', 'published', 'suspended'] as const;
 const statusLabels: Record<string, string> = { all: 'All', draft: 'Draft', pending_review: 'Pending', published: 'Published', suspended: 'Suspended' };
 
 const CreatorCourses = () => {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<string>('all');
+  const [deleteCourse, setDeleteCourse] = useState<{ id: string; title: string } | null>(null);
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ['creator-courses', user?.id],
@@ -23,6 +36,32 @@ const CreatorCourses = () => {
       return data || [];
     },
     enabled: !!user,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      // Block delete if any paid enrollments exist
+      const { count } = await supabase
+        .from('enrollments')
+        .select('id', { count: 'exact', head: true })
+        .eq('course_id', courseId);
+      if ((count || 0) > 0) {
+        throw new Error(`This course has ${count} enrolled student${count === 1 ? '' : 's'}. You cannot delete it. Suspend it instead by editing the course.`);
+      }
+      // Cascade-clean dependents the policies allow
+      await supabase.from('modules').delete().eq('course_id', courseId);
+      const { error } = await supabase.from('courses').delete().eq('id', courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Course deleted');
+      qc.invalidateQueries({ queryKey: ['creator-courses'] });
+      setDeleteCourse(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Could not delete course');
+      setDeleteCourse(null);
+    },
   });
 
   const filtered = filter === 'all' ? courses : courses?.filter(c => c.status === filter);
@@ -50,39 +89,58 @@ const CreatorCourses = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 rounded-xl" />)}</div>
         ) : filtered && filtered.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map(course => (
-              <div key={course.id} className="rounded-xl border border-border bg-card overflow-hidden">
-                {course.thumbnail_url && <img src={course.thumbnail_url} alt="" className="h-32 w-full object-cover" />}
-                <div className="p-5 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-heading text-base font-600 line-clamp-2">{course.title}</h3>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      course.status === 'published' ? 'bg-primary/10 text-primary' :
-                      course.status === 'pending_review' ? 'bg-accent/10 text-accent' :
-                      course.status === 'suspended' ? 'bg-destructive/10 text-destructive' :
-                      'bg-secondary text-muted-foreground'
-                    }`}>{(course.status || 'draft').replace('_', ' ')}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{course.total_students || 0} students</span>
-                    <span className="font-semibold text-foreground">{formatPrice(course.price)}</span>
-                  </div>
-                  {course.rejection_reason && (
-                    <p className="text-xs text-destructive bg-destructive/5 rounded-md px-2 py-1">Rejected: {course.rejection_reason}</p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button asChild size="sm" variant="outline" className="flex-1 rounded-md">
-                      <Link to={`/creator/courses/${course.id}/edit`}>Edit</Link>
-                    </Button>
-                    {course.status === 'published' && (
-                      <Button asChild size="sm" variant="ghost" className="rounded-md">
-                        <a href={`/c/${course.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3" /></a>
+            {filtered.map(course => {
+              // Only show rejection banner when actually in a "needs-attention" state
+              const showRejection = course.rejection_reason && (course.status === 'draft' || course.status === 'pending_review' || course.status === 'suspended');
+              const canDelete = course.status === 'draft' || course.status === 'suspended' || course.status === 'pending_review';
+              return (
+                <div key={course.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                  {course.thumbnail_url && <img src={course.thumbnail_url} alt="" className="h-32 w-full object-cover" />}
+                  <div className="p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-heading text-base font-600 line-clamp-2">{course.title}</h3>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        course.status === 'published' ? 'bg-primary/10 text-primary' :
+                        course.status === 'pending_review' ? 'bg-accent/10 text-accent' :
+                        course.status === 'suspended' ? 'bg-destructive/10 text-destructive' :
+                        'bg-secondary text-muted-foreground'
+                      }`}>{(course.status || 'draft').replace('_', ' ')}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{course.total_students || 0} students</span>
+                      <span className="font-semibold text-foreground">{formatPrice(course.price)}</span>
+                    </div>
+                    {showRejection && (
+                      <p className="text-xs text-destructive bg-destructive/5 rounded-md px-2 py-1">Rejected: {course.rejection_reason}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <Button asChild size="sm" variant="outline" className="flex-1 rounded-md">
+                        <Link to={`/creator/courses/${course.id}/edit`}>Edit</Link>
                       </Button>
+                      {course.status === 'published' && (
+                        <Button asChild size="sm" variant="ghost" className="rounded-md">
+                          <a href={`/c/${course.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3" /></a>
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-md text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteCourse({ id: course.id, title: course.title })}
+                          title="Delete course"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    {course.status === 'published' && (
+                      <p className="text-[10px] text-muted-foreground">Published courses cannot be deleted. Suspend it from the editor first.</p>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="rounded-xl border border-border bg-card p-8 text-center">
@@ -91,6 +149,28 @@ const CreatorCourses = () => {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteCourse} onOpenChange={(o) => !o && setDeleteCourse(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this course?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to permanently delete <span className="font-medium text-foreground">"{deleteCourse?.title}"</span> and all its modules.
+              This cannot be undone. If any student is already enrolled, the deletion will be blocked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteCourse && deleteMutation.mutate(deleteCourse.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting…' : 'Delete forever'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </CreatorDashboardLayout>
   );
 };
