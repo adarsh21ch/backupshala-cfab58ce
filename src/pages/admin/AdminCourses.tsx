@@ -109,6 +109,8 @@ const AdminCourses = () => {
       setDeleteTarget(null);
     },
   });
+
+  const overrideMutation = useMutation({
     mutationFn: async () => {
       if (!overrideCourse || !overrideReason.trim()) throw new Error('Reason required');
 
