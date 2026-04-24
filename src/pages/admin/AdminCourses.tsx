@@ -133,6 +133,7 @@ const AdminCourses = () => {
       <TableHeader>
         <TableRow>
           <TableHead>Title</TableHead>
+          <TableHead>Type</TableHead>
           <TableHead>Creator</TableHead>
           <TableHead>Price</TableHead>
           <TableHead>Fee/Comm</TableHead>
@@ -143,13 +144,24 @@ const AdminCourses = () => {
       </TableHeader>
       <TableBody>
         {items.length === 0 ? (
-          <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No courses</TableCell></TableRow>
-        ) : items.map((c: any) => (
+          <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No courses</TableCell></TableRow>
+        ) : items.map((c: any) => {
+          const isPlatform = c.is_platform_course === true;
+          return (
           <TableRow key={c.id}>
             <TableCell className="font-medium max-w-[200px] truncate">{c.title}</TableCell>
-            <TableCell className="text-muted-foreground">{c.profiles?.creator_display_name || c.profiles?.full_name}</TableCell>
+            <TableCell>
+              {isPlatform ? (
+                <Badge variant="secondary" className="border-0 bg-accent/20 text-accent">Backupshala</Badge>
+              ) : (
+                <Badge variant="secondary" className="border-0 bg-muted text-muted-foreground">Creator</Badge>
+              )}
+            </TableCell>
+            <TableCell className="text-muted-foreground">{isPlatform ? 'Backupshala (Platform)' : (c.profiles?.creator_display_name || c.profiles?.full_name)}</TableCell>
             <TableCell>{formatINR(c.price)}</TableCell>
-            <TableCell className="text-xs text-muted-foreground">{c.platform_fee_percent}% / {c.commission_percent}%</TableCell>
+            <TableCell className="text-xs text-muted-foreground">
+              {isPlatform ? <span className="text-accent">100% retained</span> : `${c.platform_fee_percent}% / ${c.commission_percent}%`}
+            </TableCell>
             <TableCell>
               <Badge variant="secondary" className={`border-0 ${statusColors[c.status] || ''}`}>{c.status}</Badge>
             </TableCell>
@@ -160,9 +172,11 @@ const AdminCourses = () => {
             </TableCell>
             <TableCell className="text-right">
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openOverride(c)} title="Override settings">
-                  <Settings className="h-4 w-4" />
-                </Button>
+                {!isPlatform && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openOverride(c)} title="Override settings">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                )}
                 {c.status === 'pending_review' && (
                   <>
                     <Button size="sm" className="h-8 bg-primary hover:bg-primary/90" onClick={() => updateMutation.mutate({ id: c.id, status: 'published' })}>
@@ -195,7 +209,8 @@ const AdminCourses = () => {
               </div>
             </TableCell>
           </TableRow>
-        ))}
+        );
+        })}
       </TableBody>
     </Table>
   );
@@ -203,7 +218,12 @@ const AdminCourses = () => {
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-heading font-bold">Course Management</h1>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h1 className="text-2xl font-heading font-bold">Course Management</h1>
+          <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md">
+            <a href="/admin/courses/new-platform">+ Create Platform Course</a>
+          </Button>
+        </div>
         <Tabs defaultValue="pending_review">
           <TabsList>
             <TabsTrigger value="pending_review">Pending ({filterCourses('pending_review').length})</TabsTrigger>
