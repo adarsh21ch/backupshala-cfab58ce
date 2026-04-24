@@ -9,6 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import VideoCard from '@/components/video/VideoCard';
 import VideoRequestForm from '@/components/video/VideoRequestForm';
@@ -34,6 +44,8 @@ const CreatorVideos = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [langFilter, setLangFilter] = useState('all');
   const [previewAsset, setPreviewAsset] = useState<string | null>(null);
+  const [deleteAsset, setDeleteAsset] = useState<{ id: string; title: string; usedCount: number } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Use in course modal
   const [useInCourseAsset, setUseInCourseAsset] = useState<any>(null);
@@ -145,12 +157,22 @@ const CreatorVideos = () => {
                   key={a.id}
                   asset={a}
                   variant="creator"
+                  isOwner={a.uploaded_by === user?.id}
                   onPreview={id => setPreviewAsset(id)}
                   onUseInCourse={id => {
                     const asset = assets.find(x => x.id === id);
                     setUseInCourseAsset(asset);
                     setSelectedCourseId('');
                     setSelectedModuleId('');
+                  }}
+                  onDelete={id => {
+                    const asset = assets.find(x => x.id === id);
+                    if (!asset) return;
+                    setDeleteAsset({
+                      id: asset.id,
+                      title: asset.title,
+                      usedCount: asset.used_in_courses_count || 0,
+                    });
                   }}
                 />
               ))}
