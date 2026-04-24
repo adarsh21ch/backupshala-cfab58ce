@@ -10,7 +10,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { formatINR } from '@/lib/format';
-import { CheckCircle, XCircle, Star, Settings } from 'lucide-react';
+import { CheckCircle, XCircle, Star, Settings, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +45,8 @@ const AdminCourses = () => {
   const [overrideComm, setOverrideComm] = useState('');
   const [overridePrice, setOverridePrice] = useState('');
   const [overrideReason, setOverrideReason] = useState('');
+
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ['admin-courses'],
@@ -70,6 +82,31 @@ const AdminCourses = () => {
     onSuccess: () => {
       toast.success('Updated');
       qc.invalidateQueries({ queryKey: ['admin-courses'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (course: any) => {
+      // Block delete if any students enrolled
+      const { count } = await supabase
+        .from('enrollments')
+        .select('id', { count: 'exact', head: true })
+        .eq('course_id', course.id);
+      if ((count || 0) > 0) {
+        throw new Error(`Course has ${count} enrolled student${count === 1 ? '' : 's'} — cannot delete. Suspend it instead.`);
+      }
+      await supabase.from('modules').delete().eq('course_id', course.id);
+      const { error } = await supabase.from('courses').delete().eq('id', course.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Course deleted');
+      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      setDeleteTarget(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Delete failed');
+      setDeleteTarget(null);
     },
   });
 
@@ -206,6 +243,15 @@ const AdminCourses = () => {
                     Republish
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleteTarget(c)}
+                  title="Delete course"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </TableCell>
           </TableRow>
@@ -284,6 +330,28 @@ const AdminCourses = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this course permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to delete <span className="font-medium text-foreground">"{deleteTarget?.title}"</span> and all its modules.
+              This cannot be undone. If any student is already enrolled, the deletion will be blocked — suspend the course instead.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting…' : 'Delete forever'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminDashboardLayout>
   );
 };
