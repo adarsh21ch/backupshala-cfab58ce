@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDuration } from '@/lib/videoTypes';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle, RotateCcw, Gauge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 type WatermarkPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 type WatermarkSize = 'small' | 'medium' | 'large';
