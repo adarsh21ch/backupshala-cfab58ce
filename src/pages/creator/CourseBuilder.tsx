@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import PriceInput, { validatePrice, MIN_PRICE } from '@/components/course/PriceInput';
 import CreatorEarningsBreakdown from '@/components/course/CreatorEarningsBreakdown';
+import CourseBuilderProgress from '@/components/course/CourseBuilderProgress';
 import { useState, useEffect } from 'react';
 import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Lock, Info } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
@@ -36,6 +37,7 @@ const CourseBuilder = () => {
   const { data: platformSettings, getSetting: getPlatSetting } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic');
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -397,6 +399,20 @@ const CourseBuilder = () => {
     { value: 'community' as const, label: 'Community Module', desc: 'Community & Telegram access', icon: Users2, emoji: '👥' },
   ];
 
+  // Build step list for the progress bar
+  const stepBasicDone = !!title.trim() && shortDesc.trim().length >= 50 && !!thumbnailUrl.trim();
+  const stepModulesDone = modules.length >= 3 && modules.some(m => m.is_preview);
+  const stepPricingDone = !validatePrice(price);
+  const stepPublishDone = status === 'published' || status === 'pending_review';
+  const tabOrder = ['basic', 'modules', 'pricing', 'publish'];
+  const currentStepIdx = Math.max(0, tabOrder.indexOf(activeTab === 'video-settings' || activeTab === 'gate-settings' ? 'modules' : activeTab));
+  const progressSteps = [
+    { label: 'Basic Info', done: stepBasicDone },
+    { label: 'Add Modules', done: stepModulesDone },
+    { label: 'Set Price', done: stepPricingDone },
+    { label: 'Publish', done: stepPublishDone },
+  ];
+
   return (
     <CreatorDashboardLayout>
       <div className="space-y-6">
@@ -407,7 +423,9 @@ const CourseBuilder = () => {
           <h1 className="font-heading text-2xl font-700">{isNew ? 'Create Course' : 'Edit Course'}</h1>
         </div>
 
-        <Tabs defaultValue="basic" className="w-full">
+        <CourseBuilderProgress steps={progressSteps} current={currentStepIdx} />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start bg-card border border-border rounded-lg p-1 flex-wrap">
             <TabsTrigger value="basic" className="rounded-md text-xs">Basic Info</TabsTrigger>
             <TabsTrigger value="modules" className="rounded-md text-xs">Modules ({modules.length})</TabsTrigger>
@@ -711,10 +729,27 @@ const CourseBuilder = () => {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-border p-8 text-center">
-                  <Play className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No modules yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Add your first module to get started.</p>
+                <div className="rounded-xl border border-dashed border-border p-8 text-center space-y-4">
+                  <div className="mx-auto h-14 w-14 rounded-2xl bg-accent/10 flex items-center justify-center">
+                    <Play className="h-7 w-7 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-heading text-base font-700">Add your first module</p>
+                    <p className="text-xs text-muted-foreground mt-1">Choose a type to get started</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto pt-2">
+                    {moduleTypeCards.map(t => (
+                      <button
+                        key={t.value}
+                        onClick={() => { setMModuleType(t.value); resetModuleForm(); setMModuleType(t.value); setModuleDialogOpen(true); }}
+                        className="rounded-xl border border-border bg-card p-4 text-center hover:border-accent/50 hover:bg-accent/5 transition-all min-h-[100px] flex flex-col items-center justify-center gap-2"
+                      >
+                        <span className="text-2xl">{t.emoji}</span>
+                        <span className="text-xs font-semibold font-heading">{t.label}</span>
+                        <span className="text-[10px] text-muted-foreground leading-tight">{t.desc}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

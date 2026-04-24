@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, BookOpen, Trophy, Users } from 'lucide-react';
+import { Star, Clock, BookOpen, Trophy, Users, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/format';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 interface CourseCardProps {
   course: {
@@ -21,6 +22,7 @@ interface CourseCardProps {
     total_reviews: number;
     creator_id: string;
     is_featured?: boolean;
+    is_platform_course?: boolean;
     course_tier?: 'basic' | 'advanced' | null;
     original_price?: number | null;
     profiles?: {
@@ -36,10 +38,19 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
+  const { getSetting } = usePlatformSettings();
   const creator = course.profiles;
   const creatorName = creator?.creator_display_name || creator?.full_name || 'Creator';
   const creatorSlug = creator?.creator_slug || course.creator_id;
-  const commissionAmount = Math.round(course.price * (course.commission_percent / 100));
+  const isPlatform = isPlatformCourse ?? course.is_platform_course ?? false;
+
+  // Dynamic referral earnings based on platform settings + this course's price
+  const gatewayPct = Number(getSetting('gateway_fee_percent', '2')) || 2;
+  const platformPct = Number(getSetting('platform_fee_free', '10')) || 10;
+  const referralPct = Number(getSetting('referral_commission_percent', '70')) || 70;
+  const referEarn = isPlatform ? 0 : Math.floor(
+    course.price * (1 - gatewayPct / 100) * (platformPct / 100) * (referralPct / 100)
+  );
 
   // Detect module types from modules array if available
   const mods = course.modules || [];
@@ -66,7 +77,7 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
         {pinned && (
           <div className="absolute top-0 left-0 bg-primary text-primary-foreground px-3 py-1 text-[10px] font-bold rounded-br-lg">Start Here</div>
         )}
-        {isPlatformCourse && (
+        {isPlatform && (
           <div className="absolute top-2 right-2 rounded-md bg-accent/90 px-2 py-0.5 text-[10px] font-bold text-accent-foreground backdrop-blur-sm flex items-center gap-1">
             <Trophy className="h-3 w-3" /> Official
           </div>
@@ -81,7 +92,7 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
               creatorName[0]
             )}
           </div>
-          <span className="text-xs text-muted-foreground truncate">{creatorName}</span>
+          <span className="text-xs text-muted-foreground truncate">{isPlatform ? 'Backupshala' : creatorName}</span>
         </div>
         <h3 className="font-heading text-sm font-600 leading-snug line-clamp-2">{course.title}</h3>
         <p className="text-xs text-muted-foreground line-clamp-2">{course.short_description}</p>
@@ -121,6 +132,14 @@ const CourseCard = ({ course, isPlatformCourse, pinned }: CourseCardProps) => {
             </span>
           )}
         </div>
+
+        {!isPlatform && referEarn > 0 && (
+          <div className="flex items-center gap-1.5 rounded-md bg-primary/5 border border-primary/15 px-2 py-1">
+            <Gift className="h-3 w-3 text-primary shrink-0" />
+            <span className="text-[11px] text-primary font-medium">Refer & earn {formatPrice(referEarn)}</span>
+          </div>
+        )}
+
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-baseline gap-2">
             <span className="font-heading text-lg font-700 text-accent">{formatPrice(course.price)}</span>

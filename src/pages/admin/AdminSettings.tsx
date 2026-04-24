@@ -49,11 +49,8 @@ const AdminSettings = () => {
     num('platform_fee_pro', 1, 49, 'Pro creator fee');
     num('referral_commission_percent', 0, 100, 'Referral %');
     num('gateway_fee_percent', 0, 10, 'Gateway %');
-    num('basic_price', 1, 10000, 'Basic price');
-    num('advanced_price', 1, 20000, 'Advanced price');
-    if (Number(values.advanced_price) <= Number(values.basic_price)) {
-      errs.advanced_price = 'Advanced price must be > Basic price';
-    }
+    num('basic_price', 1, 49999, 'Standard course default');
+    num('advanced_price', 1, 49999, 'Premium course default');
     if (values.gst_enabled === 'true') num('gst_rate_percent', 0, 50, 'GST rate');
     num('min_payout_amount', 1, 100000, 'Min payout');
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
@@ -163,28 +160,33 @@ const AdminSettings = () => {
         </div>
 
         <div className="grid gap-6 max-w-3xl">
-          {/* ===== Tier Pricing ===== */}
+          {/* ===== Platform Course Defaults ===== */}
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <IndianRupee className="h-4 w-4" /> Course Tier Pricing
+                <IndianRupee className="h-4 w-4" /> Platform Course Defaults
               </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                These are default prices for Backupshala's <strong>own</strong> courses (Standard Bundle etc.).
+                Creator courses use creator-set pricing — these values do not affect them.
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
-                <NumberField k="basic_price" label="Basic Tier Price" prefix="₹" hint="Default ₹249" />
-                <NumberField k="advanced_price" label="Advanced Tier Price" prefix="₹" hint="Default ₹499" />
-              </div>
-              <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm">
-                <span className="text-muted-foreground">Upgrade price (auto-calculated): </span>
-                <span className="font-semibold text-accent">₹{upgradePrice}</span>
+                <NumberField k="basic_price" label="Standard course default price" prefix="₹" hint="Default ₹249" />
+                <NumberField k="advanced_price" label="Premium course default price" prefix="₹" hint="Optional second default" />
               </div>
             </CardContent>
           </Card>
 
           {/* ===== Commission ===== */}
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">Commission & Fees</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Commission & Fees</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                These fees apply to all <strong>creator courses</strong>. Platform courses retain 100% revenue (no creator commission).
+              </p>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <NumberField k="platform_fee_free" label="Platform Fee (Free Creator)" suffix="%" hint="Typical: 10%" />
