@@ -62,6 +62,7 @@ const BackupshalaVideoPlayer = ({
   watermarkSize = 'medium',
   onProgress, onComplete, onReady, onEnded, autoPlay = false,
 }: BackupshalaVideoPlayerProps) => {
+  const { user, profile } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
