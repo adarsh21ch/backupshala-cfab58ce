@@ -336,8 +336,13 @@ const CourseBuilder = () => {
     }
   };
 
-  const deleteModule = async (moduleId: string) => {
-    await supabase.from('modules').delete().eq('id', moduleId);
+  const deleteModule = async (moduleId: string, moduleTitle: string) => {
+    if (!window.confirm(`Delete module "${moduleTitle}"?\n\nThis cannot be undone. Student progress on this module will be lost.`)) return;
+    const { error } = await supabase.from('modules').delete().eq('id', moduleId);
+    if (error) {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ['creator-course-edit'] });
     toast({ title: 'Module deleted' });
   };
@@ -724,7 +729,7 @@ const CourseBuilder = () => {
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => openEditModule(m)} className="text-xs">✏️</Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id)} className="text-destructive hover:text-destructive text-xs">🗑</Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id, m.title)} className="text-destructive hover:text-destructive text-xs">🗑</Button>
                     </div>
                   ))}
                 </div>
