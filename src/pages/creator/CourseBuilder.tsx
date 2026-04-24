@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import PriceInput, { validatePrice, MIN_PRICE } from '@/components/course/PriceInput';
 import CreatorEarningsBreakdown from '@/components/course/CreatorEarningsBreakdown';
+import CourseBuilderProgress from '@/components/course/CourseBuilderProgress';
 import { useState, useEffect } from 'react';
 import { Loader2, Plus, Trash2, GripVertical, Check, Copy, ChevronLeft, AlertTriangle, Play, BookOpen, Users2, Lock, Info } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
