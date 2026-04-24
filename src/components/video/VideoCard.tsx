@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Copy, Play, Eye, BookOpen, Share2 } from 'lucide-react';
+import { Copy, Play, Eye, BookOpen, Share2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDuration, getR2ThumbnailUrl } from '@/lib/videoTypes';
 
@@ -19,15 +19,18 @@ interface VideoCardProps {
     total_views?: number;
     is_active?: boolean;
     is_featured?: boolean;
+    uploaded_by?: string | null;
   };
   variant?: 'admin' | 'creator' | 'student';
+  /** Whether the current user owns this asset (only used in creator variant). */
+  isOwner?: boolean;
   onPreview?: (assetId: string) => void;
   onUseInCourse?: (assetId: string) => void;
   onDeactivate?: (assetId: string) => void;
   onDelete?: (assetId: string) => void;
 }
 
-const VideoCard = ({ asset, variant = 'student', onPreview, onUseInCourse, onDeactivate, onDelete }: VideoCardProps) => {
+const VideoCard = ({ asset, variant = 'student', isOwner = false, onPreview, onUseInCourse, onDeactivate, onDelete }: VideoCardProps) => {
   const thumbnail = getR2ThumbnailUrl(asset.thumbnail_key) || '/placeholder.svg';
 
   const copyShareLink = () => {
