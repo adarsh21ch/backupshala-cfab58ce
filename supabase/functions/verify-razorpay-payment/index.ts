@@ -127,10 +127,16 @@ Deno.serve(async (req) => {
     const invoice_number = "INV-" + new Date().getFullYear() + "-" + Math.random().toString(36).substr(2, 6).toUpperCase();
 
     // ====== SERVER-SIDE FEE CALCULATION (CANONICAL) ======
-    // Rule: Creator ALWAYS gets creator_share% of net (after gateway).
-    // Platform keeps the rest. Referral commission comes ONLY out of platform fee,
-    // never out of the creator's share. Capped at platform fee amount.
+    // Platform courses (is_platform_course = true) keep 100% of revenue.
+    // Creator courses split: creator gets (100 - platform_fee)% of net.
     const coursePrice = Number(payment.amount_total);
+
+    const { data: courseRow } = await supabase
+      .from("courses")
+      .select("is_platform_course, creator_id")
+      .eq("id", course_id)
+      .single();
+    const isPlatformCourse = courseRow?.is_platform_course === true;
 
     const { data: creatorProfile } = await supabase
       .from("profiles")
@@ -142,9 +148,8 @@ Deno.serve(async (req) => {
     const freeFeePct = Number(await getSettingValue(supabase, "platform_fee_free", "10"));
     const proFeePct = Number(await getSettingValue(supabase, "platform_fee_pro", "10"));
     const platformFeePct = isCreatorPro ? proFeePct : freeFeePct;
-    const creatorSharePct = 100 - platformFeePct; // creator always gets this %
 
-    // GST handling (toggle-driven from settings)
+    // GST handling
     const gstEnabled = (await getSettingValue(supabase, "gst_enabled", "false")) === "true";
     const gstRate = Number(await getSettingValue(supabase, "gst_rate_percent", "18"));
     const baseAmount = gstEnabled
@@ -152,16 +157,18 @@ Deno.serve(async (req) => {
       : coursePrice;
     const gstAmount = gstEnabled ? Math.round((coursePrice - baseAmount) * 100) / 100 : 0;
 
-    // Gateway fee comes off the base (the working amount we split)
     const gatewayFeePct = Number(await getSettingValue(supabase, "gateway_fee_percent", "2"));
     const gatewayFeeAmount = Math.round((baseAmount * gatewayFeePct) / 100 * 100) / 100;
     const netAmount = Math.round((baseAmount - gatewayFeeAmount) * 100) / 100;
 
-    // Creator gets fixed share of net. Platform keeps the rest.
-    const creatorEarningAmount = Math.round(netAmount * (creatorSharePct / 100) * 100) / 100;
-    const platformFeeAmount = Math.round((netAmount - creatorEarningAmount) * 100) / 100;
+    let creatorEarningAmount = 0;
+    let platformFeeAmount = netAmount;
+    if (!isPlatformCourse) {
+      const creatorSharePct = 100 - platformFeePct;
+      creatorEarningAmount = Math.round(netAmount * (creatorSharePct / 100) * 100) / 100;
+      platformFeeAmount = Math.round((netAmount - creatorEarningAmount) * 100) / 100;
+    }
 
-    // Update payment with server-calculated fees
     await supabase
       .from("payments")
       .update({
