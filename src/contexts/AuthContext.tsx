@@ -7,6 +7,7 @@ interface Profile {
   full_name: string;
   email: string;
   phone: string | null;
+  username: string | null;
   avatar_url: string | null;
   bio: string | null;
   is_creator: boolean;

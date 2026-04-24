@@ -125,11 +125,20 @@ const CreatorSettings = () => {
               />
             </div>
 
-            {/* Watermark — platform-controlled, not editable by creator */}
-            <div className="rounded-lg border border-border bg-secondary/30 p-3">
-              <p className="text-sm font-medium">Video Watermark</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                The "Backupshala" watermark is always shown on your course videos to protect your content. This is a platform-wide policy and cannot be disabled.
+            {/* Content protection — always-on platform info panel */}
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <p className="text-sm font-semibold flex items-center gap-2">🛡️ Content Protection — Always Active</p>
+              <ul className="text-xs text-muted-foreground space-y-1 mt-2">
+                <li>✓ Personal watermark with student name on every video</li>
+                <li>✓ Backupshala brand watermark on every video</li>
+                <li>✓ Right-click disabled on all videos</li>
+                <li>✓ Download disabled on all videos</li>
+                <li>✓ Picture-in-picture disabled</li>
+                <li>✓ Video pauses when user switches tab</li>
+                <li>✓ Keyboard screenshot shortcuts blocked</li>
+              </ul>
+              <p className="text-[11px] text-muted-foreground mt-3 pt-2 border-t border-border/50">
+                These protections cannot be disabled. They protect your content and ensure only enrolled students can access your courses.
               </p>
             </div>
 

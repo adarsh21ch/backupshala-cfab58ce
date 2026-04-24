@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, UserCheck } from 'lucide-react';
+import { getStoredRef, lookupReferrer } from '@/lib/referralTracking';
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
@@ -14,11 +15,29 @@ const Signup = () => {
   const creatorParam = searchParams.get('creator') || '';
 
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '', referrerEmail: refParam });
+  const [referrerInfo, setReferrerInfo] = useState<{ name: string; username: string } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Resolve ?ref=username (URL or localStorage) to a referrer profile, then prefill referrer_email
+  useEffect(() => {
+    (async () => {
+      const refUsername = refParam || getStoredRef();
+      if (!refUsername) return;
+      const r = await lookupReferrer(refUsername);
+      if (r) {
+        setReferrerInfo({ name: r.full_name, username: r.username });
+        // Look up the referrer's email so the legacy referrer_email field stays in sync
+        const { data: refProfile } = await supabase
+          .from('profiles').select('email').eq('id', r.id).maybeSingle();
+        if (refProfile?.email) setForm(f => ({ ...f, referrerEmail: refProfile.email }));
+      }
+    })();
+  }, [refParam]);
+
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -129,20 +148,30 @@ const Signup = () => {
             <Input id="confirmPassword" type="password" placeholder="Re-enter password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} className="mt-1 rounded-lg" />
             {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
           </div>
-          <div>
-            <Label htmlFor="referrerEmail">Referral code or referrer email (optional)</Label>
-            <Input
-              id="referrerEmail" type="email" placeholder="friend@example.com"
-              value={form.referrerEmail}
-              onChange={e => setForm(f => ({ ...f, referrerEmail: e.target.value }))}
-              readOnly={!!refParam}
-              className={`mt-1 rounded-lg ${refParam ? 'opacity-60' : ''}`}
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              If someone referred you, enter their email here. Otherwise leave blank.
-            </p>
-            {errors.referrerEmail && <p className="mt-1 text-xs text-destructive">{errors.referrerEmail}</p>}
-          </div>
+          {referrerInfo ? (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs">
+                Referred by <span className="font-semibold text-primary">@{referrerInfo.username}</span>
+                {referrerInfo.name ? ` · ${referrerInfo.name}` : ''}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <Label htmlFor="referrerEmail">Referral code or referrer email (optional)</Label>
+              <Input
+                id="referrerEmail" type="email" placeholder="friend@example.com"
+                value={form.referrerEmail}
+                onChange={e => setForm(f => ({ ...f, referrerEmail: e.target.value }))}
+                readOnly={!!refParam}
+                className={`mt-1 rounded-lg ${refParam ? 'opacity-60' : ''}`}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                If someone referred you, enter their email here. Otherwise leave blank.
+              </p>
+              {errors.referrerEmail && <p className="mt-1 text-xs text-destructive">{errors.referrerEmail}</p>}
+            </div>
+          )}
           <p className="text-[10px] text-muted-foreground text-center mt-3">
             By creating an account, you agree to our{' '}
             <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>,{' '}

@@ -225,53 +225,81 @@ Deno.serve(async (req) => {
       await getSettingValue(supabase, "referral_commission_percent", "70")
     );
 
-    // Handle referral commission — comes ONLY from platform fee, never from creator
-    if (student?.referrer_email && student.referrer_email !== "none@backupshala.com") {
-      const { data: referrer } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .eq("email", student.referrer_email)
-        .neq("id", user.id)
-        .maybeSingle();
-
-      if (referrer) {
-        // Take referral % of platform fee, capped at platform fee
-        let commissionAmount = Math.round(platformFeeAmount * (referralOfPlatformPct / 100) * 100) / 100;
-        if (commissionAmount > platformFeeAmount) commissionAmount = platformFeeAmount;
-        if (commissionAmount < 0) commissionAmount = 0;
-
-        if (commissionAmount > 0) {
-          await supabase.from("commissions").insert({
-            referrer_email: student.referrer_email,
-            referrer_user_id: referrer.id,
-            student_id: user.id,
-            course_id,
-            payment_id: payment.id,
-            amount: commissionAmount,
-            status: "credited",
-            commission_type: "referral",
-          });
-
-          const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
-          await creditWallet(
-            supabase,
-            referrer.id,
-            commissionAmount,
-            "referral_commission",
-            `Commission for referring ${course?.title} to ${(student.full_name || "Someone").split(" ")[0]}`,
-            payment.id,
-            referralHoldDays
-          );
-
-          await supabase.from("notifications").insert({
-            user_id: referrer.id,
-            title: `You earned ₹${commissionAmount} commission! 💰`,
-            message: `${(student.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available to withdraw on ${holdDate.toLocaleDateString("en-IN")}.`,
-            type: "commission",
-            action_url: "/refer",
-          });
-        }
+    // ───────────────────────────────────────────────────────────
+    // REFERRAL COMMISSION — eligibility-gated (admin / creator / enrolled)
+    // Resolves referrer from Razorpay order notes (set in create-order)
+    // ───────────────────────────────────────────────────────────
+    let resolvedReferrerId: string | null = null;
+    try {
+      const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
+      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
+        headers: { Authorization: "Basic " + btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`) },
+      });
+      if (orderRes.ok) {
+        const orderData = await orderRes.json();
+        const refId = orderData?.notes?.referrer_id;
+        if (refId && typeof refId === "string" && refId.length > 10) resolvedReferrerId = refId;
       }
+    } catch (e) { console.warn("Failed to fetch order notes", e); }
+
+    // Eligibility check: admin OR own course OR enrolled
+    let referralEligible = false;
+    if (resolvedReferrerId && resolvedReferrerId !== user.id) {
+      const { data: adminRole } = await supabase.from("user_roles")
+        .select("role").eq("user_id", resolvedReferrerId).eq("role", "admin").maybeSingle();
+      if (adminRole) referralEligible = true;
+      else if (course?.creator_id === resolvedReferrerId) referralEligible = true;
+      else {
+        const { data: refEnroll } = await supabase.from("enrollments")
+          .select("id").eq("student_id", resolvedReferrerId).eq("course_id", course_id).maybeSingle();
+        if (refEnroll) referralEligible = true;
+      }
+    }
+
+    if (resolvedReferrerId && referralEligible) {
+      const { data: courseRowFull } = await supabase
+        .from("courses").select("is_platform_course").eq("id", course_id).maybeSingle();
+      const isPlat = courseRowFull?.is_platform_course === true;
+      const platformReferralPct = Number(await getSettingValue(supabase, "platform_course_referral_percent", "15"));
+
+      let commissionAmount = isPlat
+        ? Math.round(netAmount * (platformReferralPct / 100) * 100) / 100
+        : Math.round(platformFeeAmount * (referralOfPlatformPct / 100) * 100) / 100;
+      if (!isPlat && commissionAmount > platformFeeAmount) commissionAmount = platformFeeAmount;
+      if (commissionAmount < 0) commissionAmount = 0;
+
+      if (commissionAmount > 0) {
+        const { data: refProfile } = await supabase
+          .from("profiles").select("email, full_name").eq("id", resolvedReferrerId).maybeSingle();
+        const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
+
+        await supabase.from("commissions").insert({
+          referrer_email: refProfile?.email || "unknown@backupshala.com",
+          referrer_user_id: resolvedReferrerId,
+          student_id: user.id,
+          course_id,
+          payment_id: payment.id,
+          amount: commissionAmount,
+          status: "credited",
+          commission_type: isPlat ? "platform_course_referral" : "creator_course_referral",
+          available_after: holdDate.toISOString(),
+        });
+
+        await creditWallet(
+          supabase, resolvedReferrerId, commissionAmount, "referral_commission",
+          `Commission for referring ${course?.title}`, payment.id, referralHoldDays
+        );
+
+        await supabase.from("notifications").insert({
+          user_id: resolvedReferrerId,
+          title: `You earned ₹${commissionAmount} commission! 💰`,
+          message: `${(student?.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available on ${holdDate.toLocaleDateString("en-IN")}.`,
+          type: "commission",
+          action_url: "/refer",
+        });
+      }
+    } else if (resolvedReferrerId) {
+      console.log(`Referral commission skipped: referrer ${resolvedReferrerId} not eligible for course ${course_id}`);
     }
 
     // Credit creator's wallet — ALWAYS the full creator share, never reduced by referral
