@@ -115,6 +115,11 @@ Deno.serve(async (req) => {
         amount: Math.round(amount_total * 100), // paise
         currency: "INR",
         receipt: "order_" + Date.now(),
+        notes: {
+          course_id,
+          student_id: user.id,
+          referrer_id: resolvedReferrerId || "",
+        },
       }),
     });
 
