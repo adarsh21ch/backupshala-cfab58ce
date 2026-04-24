@@ -110,6 +110,7 @@ export type Database = {
       commissions: {
         Row: {
           amount: number
+          available_after: string | null
           commission_type: string
           course_id: string
           created_at: string
@@ -122,6 +123,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          available_after?: string | null
           commission_type?: string
           course_id: string
           created_at?: string
@@ -134,6 +136,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          available_after?: string | null
           commission_type?: string
           course_id?: string
           created_at?: string
