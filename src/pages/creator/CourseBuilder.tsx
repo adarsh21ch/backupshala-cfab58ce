@@ -37,6 +37,7 @@ const CourseBuilder = () => {
   const { data: platformSettings, getSetting: getPlatSetting } = usePlatformSettings();
   const [saving, setSaving] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic');
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
