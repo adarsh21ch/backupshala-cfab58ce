@@ -35,7 +35,7 @@ const VerifyEmail = () => {
       <div className="w-full max-w-md text-center">
         <Link to="/" className="inline-flex items-center mb-6">
           <span className="font-heading text-2xl font-800">
-            <span className="text-primary">Backup</span>
+            <span className="text-foreground">Backup</span>
             <span className="text-accent">shala</span>
           </span>
         </Link>

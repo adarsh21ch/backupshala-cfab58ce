@@ -222,7 +222,7 @@ const CreatorOnboarding = () => {
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-1">
-            <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
+            <span className="font-heading text-2xl font-800"><span className="text-foreground">Backup</span><span className="text-accent">shala</span></span>
           </Link>
           <h1 className="mt-4 font-heading text-2xl font-700">Become a Creator</h1>
           <p className="mt-1 text-sm text-muted-foreground">Share your expertise through courses on our platform</p>
