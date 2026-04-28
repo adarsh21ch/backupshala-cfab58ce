@@ -233,7 +233,7 @@ const ReferEarn = () => {
               {referableCourses.map((c: any) => {
                 const cs = c.profiles?.creator_slug || 'creator';
                 const link = buildCourseRefLink(cs, c.slug, username);
-                const earn = computeEarn(Number(c.price) || 0);
+                const earn = computeEarn(Number(c.price) || 0, !!(c as any).is_platform_course);
                 return (
                   <div key={c.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
                     <div className="flex items-start gap-3">
