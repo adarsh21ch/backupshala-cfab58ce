@@ -96,10 +96,19 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <KPICard icon={BookOpen} label="Enrolled" value={enrollments?.length || 0} color="primary" />
-            <KPICard icon={CheckCircle} label="Modules Done" value={totalModulesCompleted} color="primary" />
-            <KPICard icon={Award} label="Certificates" value={certificates || 0} color="accent" />
-            <Link to="/dashboard/wallet"><KPICard icon={IndianRupee} label="Wallet" value={formatPrice(wallet?.balance || 0)} color="accent" /></Link>
+            <KPICard icon={BookOpen} label="Enrolled" value={enrollments?.length || 0} color="success" vibrantValue />
+            <KPICard icon={CheckCircle} label="Modules Done" value={totalModulesCompleted} color="info" />
+            <KPICard icon={Award} label="Certificates" value={certificates || 0} color="warning" vibrantValue />
+            <Link to="/dashboard/wallet">
+              <KPICard
+                icon={IndianRupee}
+                label="Wallet"
+                value={formatPrice(wallet?.balance || 0)}
+                color="accent"
+                vibrantValue
+                subtitle={<span className="text-accent hover:underline">View →</span>}
+              />
+            </Link>
           </div>
         )}
 
@@ -188,12 +197,20 @@ const Dashboard = () => {
             </div>
           ) : (
             <EmptyState
+              compact
               icon={BookOpen}
               title="No courses yet"
-              description="You haven't enrolled in any courses yet. Explore and start learning!"
+              description="You haven't enrolled in any courses yet."
               actionLabel="Explore Courses"
               actionTo="/explore"
-            />
+            >
+              <p className="mt-3 text-xs text-muted-foreground">
+                Or try the{' '}
+                <Link to="/standard-bundle" className="text-accent font-semibold hover:underline">
+                  Standard Bundle — ₹249
+                </Link>
+              </p>
+            </EmptyState>
           )}
         </div>
 

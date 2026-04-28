@@ -4,25 +4,34 @@ interface KPICardProps {
   icon: LucideIcon;
   label: string;
   value: string | number;
-  color?: 'primary' | 'accent' | 'info' | 'warning';
+  /** Visual color tone for the icon + accent. */
+  color?: 'primary' | 'accent' | 'info' | 'warning' | 'success' | 'destructive' | 'purple';
+  /** Optional small caption below the value (e.g. "View"). */
+  subtitle?: React.ReactNode;
+  /** Color the value text the same as the icon. Defaults to false. */
+  vibrantValue?: boolean;
 }
 
 const colorMap = {
-  primary: { icon: 'bg-primary/10 text-primary', value: 'text-foreground' },
-  accent: { icon: 'bg-accent/10 text-accent', value: 'text-foreground' },
-  info: { icon: 'bg-info/10 text-info', value: 'text-foreground' },
-  warning: { icon: 'bg-warning/10 text-warning', value: 'text-foreground' },
-};
+  primary: { tint: 'bg-primary/10 text-primary', value: 'text-primary' },
+  accent:  { tint: 'bg-accent/10 text-accent',   value: 'text-accent' },
+  info:    { tint: 'bg-info/10 text-info',       value: 'text-info' },
+  warning: { tint: 'bg-warning/10 text-warning', value: 'text-warning' },
+  success: { tint: 'bg-primary/10 text-primary', value: 'text-primary' },
+  destructive: { tint: 'bg-destructive/10 text-destructive', value: 'text-destructive' },
+  purple:  { tint: 'bg-[hsl(265_85%_55%/0.12)] text-[hsl(265_85%_60%)]', value: 'text-[hsl(265_85%_60%)]' },
+} as const;
 
-const KPICard = ({ icon: Icon, label, value, color = 'primary' }: KPICardProps) => {
+const KPICard = ({ icon: Icon, label, value, color = 'primary', subtitle, vibrantValue = false }: KPICardProps) => {
   const c = colorMap[color];
   return (
-    <div className="group rounded-xl border border-border/60 bg-card p-4 shadow-warm transition-all hover:shadow-warm-lg hover:-translate-y-0.5">
-      <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${c.icon}`}>
-        <Icon className="h-4 w-4" />
+    <div className="group rounded-[14px] border border-border/70 bg-card p-5 shadow-soft transition-all hover:shadow-soft-hover hover:-translate-y-0.5">
+      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full ${c.tint}`}>
+        <Icon className="h-[18px] w-[18px]" />
       </div>
-      <p className={`font-heading text-xl font-800 ${c.value}`}>{value}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+      <p className={`font-heading text-[28px] leading-none font-bold tracking-tight ${vibrantValue ? c.value : 'text-foreground'}`}>{value}</p>
+      <p className="mt-2 text-[13px] text-muted-foreground">{label}</p>
+      {subtitle && <div className="mt-1.5 text-[11px]">{subtitle}</div>}
     </div>
   );
 };
