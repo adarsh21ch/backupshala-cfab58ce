@@ -22,6 +22,7 @@ import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import CoursePreviewModal from '@/components/course/CoursePreviewModal';
 import ShareEarnModal from '@/components/course/ShareEarnModal';
 import { useCourseReferralEligibility } from '@/hooks/useReferralEligibility';
+import { computeCommission, inputsFromSettings } from '@/lib/commissionModel';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
