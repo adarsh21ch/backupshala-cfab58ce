@@ -8,17 +8,97 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useState, useEffect, useMemo } from 'react';
-import { Save, AlertTriangle, IndianRupee, Settings as SettingsIcon, Layers, Percent, Gift, Star, Cog, Film } from 'lucide-react';
-// (commission calc lives inside CommissionStructureCard)
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Save, AlertTriangle, IndianRupee, Settings as SettingsIcon, Percent, Gift, Star, Cog, Film, X, Info } from 'lucide-react';
 import VideoSettingsSection from '@/components/admin/VideoSettingsSection';
 import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+
+// ============================================================
+// IMPORTANT: Field components are defined OUTSIDE the parent.
+// Defining them inside caused React to remount the <input> on
+// every keystroke (parent re-render → new component identity),
+// which is why typing "1499" only registered the first character
+// and dropped focus. Keep them out here.
+// ============================================================
+
+interface FieldProps {
+  k: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  hint?: string;
+}
+
+interface NumberFieldProps extends FieldProps {
+  prefix?: string;
+  suffix?: string;
+}
+
+const NumberField = memo(({ k, label, value, onChange, error, hint, prefix, suffix }: NumberFieldProps) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={k} className="text-sm">{label}</Label>
+    <div className="relative">
+      {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">{prefix}</span>}
+      <Input
+        id={k}
+        type="number"
+        inputMode="decimal"
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value)}
+        // Strip native spinner arrows — they overlap suffix labels and clutter the field.
+        className={`bg-secondary border-border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${prefix ? 'pl-7' : ''} ${suffix ? 'pr-12' : ''} ${error ? 'border-destructive' : ''}`}
+      />
+      {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{suffix}</span>}
+    </div>
+    {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+    {error && <p className="text-xs text-destructive">{error}</p>}
+  </div>
+));
+NumberField.displayName = 'NumberField';
+
+const TextField = memo(({ k, label, value, onChange, error, hint }: FieldProps) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={k} className="text-sm">{label}</Label>
+    <Input
+      id={k}
+      value={value ?? ''}
+      onChange={e => onChange(e.target.value)}
+      className={`bg-secondary border-border ${error ? 'border-destructive' : ''}`}
+    />
+    {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+    {error && <p className="text-xs text-destructive">{error}</p>}
+  </div>
+));
+TextField.displayName = 'TextField';
+
+interface ToggleFieldProps {
+  k: string;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  hint?: string;
+}
+
+const ToggleField = memo(({ k, label, checked, onChange, hint }: ToggleFieldProps) => (
+  <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-3">
+    <div className="min-w-0">
+      <Label htmlFor={k} className="text-sm font-medium">{label}</Label>
+      {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
+    </div>
+    <Switch id={k} checked={checked} onCheckedChange={onChange} />
+  </div>
+));
+ToggleField.displayName = 'ToggleField';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showProtectedBanner, setShowProtectedBanner] = useState(() => {
+    return localStorage.getItem('admin_settings_protected_banner_dismissed') !== 'true';
+  });
 
   const { data: settings } = useQuery({
     queryKey: ['admin-settings'],
@@ -36,9 +116,17 @@ const AdminSettings = () => {
     }
   }, [settings]);
 
-  const setVal = (key: string, value: string) => {
+  const setVal = useCallback((key: string, value: string) => {
     setValues(prev => ({ ...prev, [key]: value }));
-    setErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
+    setErrors(prev => {
+      if (!prev[key]) return prev;
+      const n = { ...prev }; delete n[key]; return n;
+    });
+  }, []);
+
+  const dismissBanner = () => {
+    localStorage.setItem('admin_settings_protected_banner_dismissed', 'true');
+    setShowProtectedBanner(false);
   };
 
   const validate = (): boolean => {
@@ -59,7 +147,6 @@ const AdminSettings = () => {
     num('min_payout_amount', 1, 100000, 'Min payout');
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
 
-    // Sums must equal 100
     const platSum = Number(values.platform_course_platform_fee_percent) + Number(values.platform_course_affiliate_percent);
     if (platSum !== 100) errs.platform_course_platform_fee_percent = 'Platform + affiliate must = 100%';
     const creSum = Number(values.creator_course_platform_fee_percent) + Number(values.creator_course_creator_fee_percent) + Number(values.creator_course_affiliate_percent);
@@ -87,65 +174,6 @@ const AdminSettings = () => {
     },
     onError: () => toast.error('Failed to save'),
   });
-
-  // Course default prices (used in Platform Course Defaults section)
-  const basicPrice = Number(values.basic_price) || 249;
-  const advancedPrice = Number(values.advanced_price) || 499;
-
-  // ---- Field helpers ----
-  const NumberField = ({ k, label, prefix, suffix, hint }: { k: string; label: string; prefix?: string; suffix?: string; hint?: string }) => (
-    <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
-      <div className="relative">
-        {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{prefix}</span>}
-        <Input
-          type="number"
-          inputMode="decimal"
-          value={values[k] ?? ''}
-          onChange={e => setVal(k, e.target.value)}
-          className={`bg-secondary border-border ${prefix ? 'pl-7' : ''} ${suffix ? 'pr-9' : ''} ${errors[k] ? 'border-destructive' : ''}`}
-        />
-        {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{suffix}</span>}
-      </div>
-      {hint && !errors[k] && <p className="text-xs text-muted-foreground">{hint}</p>}
-      {errors[k] && <p className="text-xs text-destructive">{errors[k]}</p>}
-    </div>
-  );
-
-  const TextField = ({ k, label, hint }: { k: string; label: string; hint?: string }) => (
-    <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
-      <Input
-        value={values[k] ?? ''}
-        onChange={e => setVal(k, e.target.value)}
-        className={`bg-secondary border-border ${errors[k] ? 'border-destructive' : ''}`}
-      />
-      {hint && !errors[k] && <p className="text-xs text-muted-foreground">{hint}</p>}
-      {errors[k] && <p className="text-xs text-destructive">{errors[k]}</p>}
-    </div>
-  );
-
-  const ToggleField = ({ k, label, hint }: { k: string; label: string; hint?: string }) => (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-3">
-      <div className="min-w-0">
-        <Label className="text-sm font-medium">{label}</Label>
-        {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
-      </div>
-      <Switch
-        checked={values[k] === 'true'}
-        onCheckedChange={v => setVal(k, v ? 'true' : 'false')}
-      />
-    </div>
-  );
-
-  const Row = ({ label, value, sub, accent }: { label: string; value: string; sub?: boolean; accent?: 'primary' | 'accent' | 'muted' }) => (
-    <div className={`flex justify-between ${sub ? 'text-xs ml-4' : 'text-sm'}`}>
-      <span className={accent === 'primary' ? 'text-primary' : accent === 'accent' ? 'text-accent' : 'text-muted-foreground'}>{label}</span>
-      <span className={`font-medium ${accent === 'primary' ? 'text-primary' : accent === 'accent' ? 'text-accent' : ''}`}>{value}</span>
-    </div>
-  );
-
-  const fmt = (n: number) => `₹${n.toFixed(2)}`;
 
   const handleSave = () => {
     if (validate()) saveMutation.mutate();
@@ -185,17 +213,27 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-3 max-w-4xl">
-          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-warning">Creator share is protected</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Creators <strong>always</strong> receive their {values.creator_course_creator_fee_percent || 15}% of net.
-              The {values.creator_course_affiliate_percent || 75}% affiliate share goes to the referrer if referred,
-              or back to the creator if not referred.
-            </p>
+        {showProtectedBanner && (
+          <div className="relative flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-3 pr-10 max-w-4xl">
+            <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-warning">Creator share is protected</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Creators <strong>always</strong> receive their {values.creator_course_creator_fee_percent || 15}% of net.
+                The {values.creator_course_affiliate_percent || 75}% affiliate share goes to the referrer if referred,
+                or back to the creator if not referred.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={dismissBanner}
+              aria-label="Dismiss"
+              className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-        </div>
+        )}
 
         <Tabs defaultValue="defaults" className="max-w-4xl">
           <div className="sticky top-[68px] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-background/85 backdrop-blur-md border-b border-border overflow-x-auto">
@@ -229,8 +267,8 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <NumberField k="basic_price" label="Standard course default price" prefix="₹" hint="Default ₹249" />
-                  <NumberField k="advanced_price" label="Premium course default price" prefix="₹" hint="Optional second default" />
+                  <NumberField k="basic_price" label="Standard course default price" value={values.basic_price} onChange={v => setVal('basic_price', v)} error={errors.basic_price} prefix="₹" hint="Default ₹249" />
+                  <NumberField k="advanced_price" label="Premium course default price" value={values.advanced_price} onChange={v => setVal('advanced_price', v)} error={errors.advanced_price} prefix="₹" hint="Optional second default" />
                 </div>
               </CardContent>
             </Card>
@@ -242,27 +280,83 @@ const AdminSettings = () => {
 
           <TabsContent value="referral" className="mt-5">
             <Card className="bg-card border-border">
-              <CardHeader><CardTitle className="text-base">Referral Program</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-primary" /> Referral Program
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Controls how long earnings stay on hold before becoming withdrawable, and the minimum amount affiliates can cash out.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-5">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <NumberField k="referral_hold_days" label="Referral Hold Period" suffix="days" />
-                  <NumberField k="creator_hold_days" label="Creator Hold Period" suffix="days" />
-                  <NumberField k="min_affiliate_payout" label="Min Affiliate Payout" prefix="₹" />
+                  <NumberField
+                    k="referral_hold_days"
+                    label="Referral Hold Period"
+                    value={values.referral_hold_days}
+                    onChange={v => setVal('referral_hold_days', v)}
+                    error={errors.referral_hold_days}
+                    suffix="days"
+                    hint="How many days a referral commission stays pending before the affiliate can withdraw it. Buffer for refunds & fraud checks. Recommended: 7 days."
+                  />
+                  <NumberField
+                    k="creator_hold_days"
+                    label="Creator Hold Period"
+                    value={values.creator_hold_days}
+                    onChange={v => setVal('creator_hold_days', v)}
+                    error={errors.creator_hold_days}
+                    suffix="days"
+                    hint="How many days a creator's earnings stay pending before they can withdraw. Same purpose — protects against refunds. Recommended: 3 days."
+                  />
+                  <NumberField
+                    k="min_affiliate_payout"
+                    label="Min Affiliate Payout"
+                    value={values.min_affiliate_payout}
+                    onChange={v => setVal('min_affiliate_payout', v)}
+                    error={errors.min_affiliate_payout}
+                    prefix="₹"
+                    hint="Minimum wallet balance an affiliate must reach before they can request a payout. Reduces transfer-fee waste on tiny amounts."
+                  />
                 </div>
-                <ToggleField k="allow_non_student_affiliates" label="Allow Non-Student Affiliates" hint="If off, only enrolled students can earn referral commission." />
+                <ToggleField
+                  k="allow_non_student_affiliates"
+                  label="Allow Non-Student Affiliates"
+                  checked={values.allow_non_student_affiliates === 'true'}
+                  onChange={v => setVal('allow_non_student_affiliates', v ? 'true' : 'false')}
+                  hint="If off, only enrolled students can earn referral commission."
+                />
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="pro" className="mt-5">
             <Card className="bg-card border-border">
-              <CardHeader><CardTitle className="text-base">Creator Pro</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Star className="h-4 w-4 text-accent" /> Creator Pro
+                </CardTitle>
+                <div className="mt-2 rounded-lg border border-info/20 bg-info/5 p-3 text-xs text-muted-foreground space-y-2">
+                  <p className="flex items-start gap-2">
+                    <Info className="h-3.5 w-3.5 text-info shrink-0 mt-0.5" />
+                    <span>
+                      <strong className="text-foreground">What is Creator Pro?</strong> A paid upgrade for creators on your platform. Pro creators unlock advanced tools (custom coupons, priority support, advanced analytics, higher upload limits, featured placement). It's an extra revenue stream for Backupshala on top of commission — creators pay you monthly/annually for the upgrade.
+                    </span>
+                  </p>
+                  <p className="pl-5"><strong className="text-foreground">Who uses it?</strong> Creators who want more visibility and better tools. If you don't plan to offer this yet, just turn off "Creator Pro Enabled" below — the section will stay hidden from creators.</p>
+                </div>
+              </CardHeader>
               <CardContent className="space-y-4">
-                <ToggleField k="creator_pro_enabled" label="Creator Pro Enabled" />
+                <ToggleField
+                  k="creator_pro_enabled"
+                  label="Creator Pro Enabled"
+                  checked={values.creator_pro_enabled === 'true'}
+                  onChange={v => setVal('creator_pro_enabled', v ? 'true' : 'false')}
+                  hint="When off, creators won't see the Pro upgrade option anywhere in the app."
+                />
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <NumberField k="creator_pro_monthly_price" label="Monthly Price" prefix="₹" />
-                  <NumberField k="creator_pro_annual_price" label="Annual Price" prefix="₹" />
-                  <NumberField k="creator_pro_trial_days" label="Trial Days" suffix="days" />
+                  <NumberField k="creator_pro_monthly_price" label="Monthly Price" value={values.creator_pro_monthly_price} onChange={v => setVal('creator_pro_monthly_price', v)} error={errors.creator_pro_monthly_price} prefix="₹" hint="Charged monthly to creators who upgrade." />
+                  <NumberField k="creator_pro_annual_price" label="Annual Price" value={values.creator_pro_annual_price} onChange={v => setVal('creator_pro_annual_price', v)} error={errors.creator_pro_annual_price} prefix="₹" hint="Discounted yearly plan." />
+                  <NumberField k="creator_pro_trial_days" label="Trial Days" value={values.creator_pro_trial_days} onChange={v => setVal('creator_pro_trial_days', v)} error={errors.creator_pro_trial_days} suffix="days" hint="Free trial length. Set to 0 to disable trials." />
                 </div>
               </CardContent>
             </Card>
@@ -272,9 +366,9 @@ const AdminSettings = () => {
             <Card className="bg-card border-border">
               <CardHeader><CardTitle className="text-base">General</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <TextField k="platform_name" label="Platform Name" />
-                <TextField k="support_email" label="Support Email" />
-                <NumberField k="min_payout_amount" label="Minimum Payout" prefix="₹" />
+                <TextField k="platform_name" label="Platform Name" value={values.platform_name} onChange={v => setVal('platform_name', v)} error={errors.platform_name} />
+                <TextField k="support_email" label="Support Email" value={values.support_email} onChange={v => setVal('support_email', v)} error={errors.support_email} />
+                <NumberField k="min_payout_amount" label="Minimum Payout" value={values.min_payout_amount} onChange={v => setVal('min_payout_amount', v)} error={errors.min_payout_amount} prefix="₹" hint="Smallest payout request the system will accept (creator side)." />
                 <div className="space-y-1.5">
                   <Label className="text-sm">Payout Cycle</Label>
                   <Select value={values.payout_cycle || 'manual'} onValueChange={v => setVal('payout_cycle', v)}>
@@ -286,8 +380,19 @@ const AdminSettings = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <ToggleField k="razorpay_enabled" label="Razorpay Enabled" />
-                <ToggleField k="maintenance_mode" label="Maintenance Mode" hint="Blocks new signups & purchases when on." />
+                <ToggleField
+                  k="razorpay_enabled"
+                  label="Razorpay Enabled"
+                  checked={values.razorpay_enabled === 'true'}
+                  onChange={v => setVal('razorpay_enabled', v ? 'true' : 'false')}
+                />
+                <ToggleField
+                  k="maintenance_mode"
+                  label="Maintenance Mode"
+                  checked={values.maintenance_mode === 'true'}
+                  onChange={v => setVal('maintenance_mode', v ? 'true' : 'false')}
+                  hint="Blocks new signups & purchases when on."
+                />
               </CardContent>
             </Card>
           </TabsContent>

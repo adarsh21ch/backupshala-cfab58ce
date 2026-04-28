@@ -161,7 +161,7 @@ const VideoSettingsSection = ({ values, setVal }: VideoSettingsSectionProps) => 
                 onChange={e => setVal('min_watch_percentage_to_complete', e.target.value)}
                 min={1}
                 max={100}
-                className="bg-secondary border-border"
+                className="bg-secondary border-border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <p className="text-xs text-muted-foreground">Students must watch this % to mark a module complete</p>
             </div>
@@ -173,7 +173,7 @@ const VideoSettingsSection = ({ values, setVal }: VideoSettingsSectionProps) => 
                 onChange={e => setVal('max_preview_modules_per_course', e.target.value)}
                 min={1}
                 max={10}
-                className="bg-secondary border-border"
+                className="bg-secondary border-border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <p className="text-xs text-muted-foreground">Creators can mark up to this many modules as free preview</p>
             </div>

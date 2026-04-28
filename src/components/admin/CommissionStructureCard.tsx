@@ -26,7 +26,7 @@ const PctInput = ({
         max={100}
         value={values[k] ?? ''}
         onChange={e => setVal(k, e.target.value)}
-        className={`bg-secondary border-border pr-9 ${errors[k] ? 'border-destructive' : ''}`}
+        className={`bg-secondary border-border pr-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${errors[k] ? 'border-destructive' : ''}`}
       />
       <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
     </div>
