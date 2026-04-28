@@ -9,10 +9,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect, useMemo } from 'react';
-import { Save, AlertTriangle, IndianRupee } from 'lucide-react';
+import { Save, AlertTriangle, IndianRupee, Settings as SettingsIcon, Layers, Percent, Gift, Star, Cog, Film } from 'lucide-react';
 // (commission calc lives inside CommissionStructureCard)
 import VideoSettingsSection from '@/components/admin/VideoSettingsSection';
 import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
