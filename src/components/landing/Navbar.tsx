@@ -26,17 +26,20 @@ const LandingNavbar = () => {
   const closeAnd = (cb?: () => void) => () => { setOpen(false); cb?.(); };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link to="/" className="flex items-center">
-          <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
+        <Link to="/" className="flex items-center" aria-label="Backupshala home">
+          <span className="font-heading text-2xl font-bold tracking-tight">
+            <span className="text-foreground">Backup</span>
+            <span className="text-accent">shala</span>
+          </span>
         </Link>
 
-        <div className="hidden items-center gap-6 md:flex">
-          <Link to="/explore" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Explore Courses</Link>
-          <a href="/#standard-bundle" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Standard Bundle</a>
-          <a href="/#for-creators" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">For Creators</a>
-          <a href="/#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+        <div className="hidden items-center gap-7 md:flex">
+          <Link to="/explore" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Explore Courses</Link>
+          <a href="/#standard-bundle" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Standard Bundle</a>
+          <a href="/#for-creators" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">For Creators</a>
+          <a href="/#how-it-works" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">How It Works</a>
 
           <ThemeToggle />
 
@@ -73,8 +76,10 @@ const LandingNavbar = () => {
             </DropdownMenu>
           ) : (
             <>
-              <Link to="/login" className="text-sm font-medium text-foreground">Login</Link>
-              <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md px-6">
+              <Button asChild variant="outline" size="sm" className="rounded-lg border-[1.5px] px-5 hover:bg-secondary">
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button asChild className="btn-lift rounded-lg bg-accent px-6 font-semibold text-accent-foreground shadow-accent-glow hover:bg-accent hover:shadow-accent-glow-hover">
                 <Link to="/signup">Get Started Free</Link>
               </Button>
             </>
