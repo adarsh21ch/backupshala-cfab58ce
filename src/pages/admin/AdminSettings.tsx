@@ -159,8 +159,9 @@ const AdminSettings = () => {
           <div>
             <p className="text-sm font-medium text-warning">Creator share is protected</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Creators <strong>always</strong> receive {100 - (Number(values.platform_fee_free) || 10)}% of the net amount. Referral commission is taken
-              <strong> from the platform fee only</strong>, never from the creator's share.
+              Creators <strong>always</strong> receive their {values.creator_course_creator_fee_percent || 15}% of net.
+              The {values.creator_course_affiliate_percent || 75}% affiliate share goes to the referrer if referred,
+              or back to the creator if not referred.
             </p>
           </div>
         </div>
