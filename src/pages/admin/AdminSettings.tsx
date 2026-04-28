@@ -147,15 +147,45 @@ const AdminSettings = () => {
 
   const fmt = (n: number) => `₹${n.toFixed(2)}`;
 
+  const handleSave = () => {
+    if (validate()) saveMutation.mutate();
+    else toast.error('Fix the highlighted errors');
+  };
+
+  const TABS = [
+    { value: 'defaults', label: 'Course Defaults', icon: IndianRupee },
+    { value: 'commission', label: 'Commission', icon: Percent },
+    { value: 'referral', label: 'Referral', icon: Gift },
+    { value: 'pro', label: 'Creator Pro', icon: Star },
+    { value: 'general', label: 'General', icon: Cog },
+    { value: 'video', label: 'Video & Player', icon: Film },
+  ];
+
   return (
     <AdminDashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-heading font-bold">Platform Settings</h1>
-          <p className="text-sm text-muted-foreground mt-1">All pricing & commission values are read live from this page. No hardcoded numbers anywhere.</p>
+      <div className="space-y-5">
+        {/* Sticky header with title + Save button top-right */}
+        <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-background/85 backdrop-blur-md border-b border-border">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-heading font-bold flex items-center gap-2">
+                <SettingsIcon className="h-5 w-5 text-primary" /> Platform Settings
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">All pricing & commission values are read live from this page.</p>
+            </div>
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              size="sm"
+              className="bg-primary hover:bg-primary/90 shadow-md shrink-0"
+            >
+              <Save className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">{saveMutation.isPending ? 'Saving…' : 'Save All Settings'}</span>
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4 max-w-3xl">
+        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-3 max-w-4xl">
           <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-warning">Creator share is protected</p>
@@ -167,89 +197,105 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 max-w-3xl">
-          {/* ===== Platform Course Defaults ===== */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <IndianRupee className="h-4 w-4" /> Platform Course Defaults
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                These are default prices for Backupshala's <strong>own</strong> courses (Standard Bundle etc.).
-                Creator courses use creator-set pricing — these values do not affect them.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <NumberField k="basic_price" label="Standard course default price" prefix="₹" hint="Default ₹249" />
-                <NumberField k="advanced_price" label="Premium course default price" prefix="₹" hint="Optional second default" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ===== Commission Structure (NEW MODEL) ===== */}
-          <CommissionStructureCard values={values} setVal={setVal} errors={errors} />
-
-          {/* ===== GST ===== */}
-          <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">Referral Program</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <NumberField k="referral_hold_days" label="Referral Hold Period" suffix="days" />
-                <NumberField k="creator_hold_days" label="Creator Hold Period" suffix="days" />
-                <NumberField k="min_affiliate_payout" label="Min Affiliate Payout" prefix="₹" />
-              </div>
-              <ToggleField k="allow_non_student_affiliates" label="Allow Non-Student Affiliates" hint="If off, only enrolled students can earn referral commission." />
-            </CardContent>
-          </Card>
-
-          {/* ===== Creator Pro ===== */}
-          <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">Creator Pro</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <ToggleField k="creator_pro_enabled" label="Creator Pro Enabled" />
-              <div className="grid sm:grid-cols-2 gap-4">
-                <NumberField k="creator_pro_monthly_price" label="Monthly Price" prefix="₹" />
-                <NumberField k="creator_pro_annual_price" label="Annual Price" prefix="₹" />
-                <NumberField k="creator_pro_trial_days" label="Trial Days" suffix="days" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ===== General ===== */}
-          <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">General</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <TextField k="platform_name" label="Platform Name" />
-              <TextField k="support_email" label="Support Email" />
-              <NumberField k="min_payout_amount" label="Minimum Payout" prefix="₹" />
-              <div className="space-y-1.5">
-                <Label className="text-sm">Payout Cycle</Label>
-                <Select value={values.payout_cycle || 'manual'} onValueChange={v => setVal('payout_cycle', v)}>
-                  <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="every_15_days">Every 15 Days</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <ToggleField k="razorpay_enabled" label="Razorpay Enabled" />
-              <ToggleField k="maintenance_mode" label="Maintenance Mode" hint="Blocks new signups & purchases when on." />
-            </CardContent>
-          </Card>
-
-          {/* ===== Video & Player Settings ===== */}
-          <VideoSettingsSection values={values} setVal={setVal} />
-
-          <div className="sticky bottom-4 z-10">
-            <Button onClick={() => { if (validate()) saveMutation.mutate(); else toast.error('Fix the highlighted errors'); }}
-              disabled={saveMutation.isPending}
-              className="bg-primary hover:bg-primary/90 w-full sm:w-auto shadow-lg">
-              <Save className="h-4 w-4 mr-2" /> {saveMutation.isPending ? 'Saving…' : 'Save All Settings'}
-            </Button>
+        <Tabs defaultValue="defaults" className="max-w-4xl">
+          <div className="sticky top-[68px] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-background/85 backdrop-blur-md border-b border-border overflow-x-auto">
+            <TabsList className="inline-flex h-auto bg-secondary/60 p-1 gap-1 w-max">
+              {TABS.map(t => {
+                const Icon = t.icon;
+                return (
+                  <TabsTrigger
+                    key={t.value}
+                    value={t.value}
+                    className="gap-1.5 px-3 py-2 text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {t.label}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
           </div>
-        </div>
+
+          <TabsContent value="defaults" className="mt-5">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <IndianRupee className="h-4 w-4" /> Platform Course Defaults
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  These are default prices for Backupshala's <strong>own</strong> courses (Standard Bundle etc.).
+                  Creator courses use creator-set pricing — these values do not affect them.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <NumberField k="basic_price" label="Standard course default price" prefix="₹" hint="Default ₹249" />
+                  <NumberField k="advanced_price" label="Premium course default price" prefix="₹" hint="Optional second default" />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="commission" className="mt-5">
+            <CommissionStructureCard values={values} setVal={setVal} errors={errors} />
+          </TabsContent>
+
+          <TabsContent value="referral" className="mt-5">
+            <Card className="bg-card border-border">
+              <CardHeader><CardTitle className="text-base">Referral Program</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <NumberField k="referral_hold_days" label="Referral Hold Period" suffix="days" />
+                  <NumberField k="creator_hold_days" label="Creator Hold Period" suffix="days" />
+                  <NumberField k="min_affiliate_payout" label="Min Affiliate Payout" prefix="₹" />
+                </div>
+                <ToggleField k="allow_non_student_affiliates" label="Allow Non-Student Affiliates" hint="If off, only enrolled students can earn referral commission." />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pro" className="mt-5">
+            <Card className="bg-card border-border">
+              <CardHeader><CardTitle className="text-base">Creator Pro</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <ToggleField k="creator_pro_enabled" label="Creator Pro Enabled" />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <NumberField k="creator_pro_monthly_price" label="Monthly Price" prefix="₹" />
+                  <NumberField k="creator_pro_annual_price" label="Annual Price" prefix="₹" />
+                  <NumberField k="creator_pro_trial_days" label="Trial Days" suffix="days" />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="general" className="mt-5">
+            <Card className="bg-card border-border">
+              <CardHeader><CardTitle className="text-base">General</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <TextField k="platform_name" label="Platform Name" />
+                <TextField k="support_email" label="Support Email" />
+                <NumberField k="min_payout_amount" label="Minimum Payout" prefix="₹" />
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Payout Cycle</Label>
+                  <Select value={values.payout_cycle || 'manual'} onValueChange={v => setVal('payout_cycle', v)}>
+                    <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="every_15_days">Every 15 Days</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <ToggleField k="razorpay_enabled" label="Razorpay Enabled" />
+                <ToggleField k="maintenance_mode" label="Maintenance Mode" hint="Blocks new signups & purchases when on." />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="video" className="mt-5">
+            <VideoSettingsSection values={values} setVal={setVal} />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminDashboardLayout>
   );
