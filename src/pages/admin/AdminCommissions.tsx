@@ -86,10 +86,10 @@ const AdminCommissions = () => {
 
         {/* KPIs */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <KPICard title="Total Paid Out" value={formatINR(stats.total)} icon={IndianRupee} />
-          <KPICard title="Available Now" value={formatINR(stats.available)} icon={CheckCircle2} />
-          <KPICard title="Pending (Hold)" value={formatINR(stats.pending)} icon={Clock} />
-          <KPICard title="Unique Referrers" value={String(stats.uniqueReferrers)} icon={Users} />
+          <KPICard label="Total Paid Out" value={formatINR(stats.total)} icon={IndianRupee} color="primary" />
+          <KPICard label="Available Now" value={formatINR(stats.available)} icon={CheckCircle2} color="accent" />
+          <KPICard label="Pending (Hold)" value={formatINR(stats.pending)} icon={Clock} color="warning" />
+          <KPICard label="Unique Referrers" value={String(stats.uniqueReferrers)} icon={Users} color="info" />
         </div>
 
         {/* Filters */}
