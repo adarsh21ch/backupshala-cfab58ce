@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { useReferableCourses } from '@/hooks/useReferralEligibility';
 import { buildGenericRefLink, buildCourseRefLink } from '@/lib/referralTracking';
+import { computeCommission, inputsFromSettings } from '@/lib/commissionModel';
 
 const ReferEarn = () => {
   const { user, profile, refreshProfile } = useAuth();
