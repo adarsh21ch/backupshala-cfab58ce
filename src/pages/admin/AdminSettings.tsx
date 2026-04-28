@@ -46,15 +46,24 @@ const AdminSettings = () => {
       const n = Number(values[k]);
       if (isNaN(n) || n < min || n > max) errs[k] = `${label} must be ${min}–${max}`;
     };
-    num('platform_fee_free', 1, 49, 'Free creator fee');
-    num('platform_fee_pro', 1, 49, 'Pro creator fee');
-    num('referral_commission_percent', 0, 100, 'Referral %');
+    num('platform_course_platform_fee_percent', 0, 100, 'Platform-course platform fee');
+    num('platform_course_affiliate_percent', 0, 100, 'Platform-course affiliate %');
+    num('creator_course_platform_fee_percent', 0, 100, 'Creator-course platform fee');
+    num('creator_course_creator_fee_percent', 0, 100, 'Creator-course creator fee');
+    num('creator_course_affiliate_percent', 0, 100, 'Creator-course affiliate %');
     num('gateway_fee_percent', 0, 10, 'Gateway %');
+    num('gst_rate_percent', 0, 50, 'GST rate');
     num('basic_price', 1, 49999, 'Standard course default');
     num('advanced_price', 1, 49999, 'Premium course default');
-    if (values.gst_enabled === 'true') num('gst_rate_percent', 0, 50, 'GST rate');
     num('min_payout_amount', 1, 100000, 'Min payout');
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
+
+    // Sums must equal 100
+    const platSum = Number(values.platform_course_platform_fee_percent) + Number(values.platform_course_affiliate_percent);
+    if (platSum !== 100) errs.platform_course_platform_fee_percent = 'Platform + affiliate must = 100%';
+    const creSum = Number(values.creator_course_platform_fee_percent) + Number(values.creator_course_creator_fee_percent) + Number(values.creator_course_affiliate_percent);
+    if (creSum !== 100) errs.creator_course_platform_fee_percent = 'Platform + creator + affiliate must = 100%';
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
