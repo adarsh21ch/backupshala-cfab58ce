@@ -17,10 +17,7 @@ const benefits = [
 
 const ForCreators = () => {
   const { user, profile } = useAuth();
-  const { getSetting } = usePlatformSettings();
-
-  const platformFeePct = Number(getSetting('platform_fee_free', '10')) || 10;
-  const gatewayFeePct = Number(getSetting('gateway_fee_percent', '2')) || 2;
+  const { raw } = usePlatformSettings();
 
   const ctaHref = user && profile?.is_creator && profile?.creator_approved
     ? '/creator/dashboard'
@@ -30,15 +27,17 @@ const ForCreators = () => {
   const [examplePrice, setExamplePrice] = useState(499);
   const [salesPerMonth, setSalesPerMonth] = useState(50);
 
-  const perSale = useMemo(() => calcEarning(examplePrice, gatewayFeePct, platformFeePct), [examplePrice, gatewayFeePct, platformFeePct]);
-  const monthly = perSale * salesPerMonth;
-  const yearly = monthly * 12;
+  const breakdown = useMemo(
+    () => computeCommission(inputsFromSettings(examplePrice, false, raw)),
+    [examplePrice, raw],
+  );
+  const perSaleNoRef = breakdown.creatorEarningWithoutReferral; // 90% of net
+  const perSaleWithRef = breakdown.creatorEarningWithReferral;  // 15% of net guaranteed
+  const affiliateShare = breakdown.affiliateEarning;            // 75% to referrer
+  const creatorKeepPct = Math.round((perSaleNoRef / Math.max(1, examplePrice)) * 100);
 
-  // Breakdown (uses current example price)
-  const bGateway = Math.round(examplePrice * (gatewayFeePct / 100));
-  const bAfterGateway = Math.max(0, examplePrice - bGateway);
-  const bPlatform = Math.round(bAfterGateway * (platformFeePct / 100));
-  const bEarn = Math.max(0, bAfterGateway - bPlatform);
+  const monthly = perSaleNoRef * salesPerMonth;
+  const yearly = monthly * 12;
 
   return (
     <section id="for-creators" className="bg-secondary/30 py-16 md:py-24">
