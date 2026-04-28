@@ -41,7 +41,7 @@ const VideoCard = ({ asset, variant = 'student', isOwner = false, onPreview, onU
 
   const copyBsvCode = () => {
     navigator.clipboard.writeText(asset.bsv_code);
-    toast.success('BSV code copied!');
+    toast.success('Video ID copied!');
   };
 
   return (
