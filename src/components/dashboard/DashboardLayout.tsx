@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import Logo from '@/components/Logo';
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 type NavSection = { label: string; items: NavItem[] };
@@ -154,7 +155,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[220px] border-r border-border bg-sidebar lg:flex lg:flex-col">
         <div className="flex h-[60px] items-center px-5">
           <Link to="/" className="flex items-center">
-            <span className="font-heading text-xl font-bold"><span className="text-foreground">Backup</span><span className="text-accent">shala</span></span>
+            <Logo iconSize={28} textClassName="text-lg" />
           </Link>
         </div>
         <div className="border-t border-border" />
@@ -197,7 +198,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-[260px] border-r border-border bg-sidebar flex flex-col">
             <div className="flex h-[60px] items-center justify-between px-5">
-              <span className="font-heading text-xl font-bold"><span className="text-foreground">Backup</span><span className="text-accent">shala</span></span>
+              <Logo iconSize={26} textClassName="text-lg" />
               <button onClick={() => setMobileOpen(false)} aria-label="Close menu" className="p-1.5 rounded-lg hover:bg-secondary/60">
                 <X className="h-5 w-5" />
               </button>

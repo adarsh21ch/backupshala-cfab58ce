@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
+import Logo from '@/components/Logo';
 
 const Footer = () => (
   <footer className="border-t border-border bg-card py-12">
     <div className="container mx-auto px-4">
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
         <div>
-          <span className="font-heading text-xl font-800"><span className="text-foreground">Backup</span><span className="text-accent">shala</span></span>
+          <Logo iconSize={28} textClassName="text-xl" />
           <p className="mt-2 text-sm text-muted-foreground">A digital skills learning platform.</p>
         </div>
         <div>

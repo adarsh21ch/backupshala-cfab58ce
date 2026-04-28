@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
+import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
@@ -29,10 +30,7 @@ const LandingNavbar = () => {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center" aria-label="Backupshala home">
-          <span className="font-heading text-2xl font-bold tracking-tight">
-            <span className="text-foreground">Backup</span>
-            <span className="text-accent">shala</span>
-          </span>
+          <Logo iconSize={32} textClassName="text-2xl" />
         </Link>
 
         <div className="hidden items-center gap-7 md:flex">
@@ -95,8 +93,8 @@ const LandingNavbar = () => {
           </SheetTrigger>
           <SheetContent side="right" className="w-[80vw] max-w-sm p-0 flex flex-col">
             <SheetHeader className="border-b border-border p-4 text-left">
-              <SheetTitle className="font-heading text-lg">
-                <span className="text-foreground">Backup</span><span className="text-accent">shala</span>
+              <SheetTitle asChild>
+                <Logo iconSize={26} textClassName="text-lg" />
               </SheetTitle>
               {user && (
                 <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
