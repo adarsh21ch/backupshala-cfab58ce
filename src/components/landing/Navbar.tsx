@@ -96,7 +96,7 @@ const LandingNavbar = () => {
           <SheetContent side="right" className="w-[80vw] max-w-sm p-0 flex flex-col">
             <SheetHeader className="border-b border-border p-4 text-left">
               <SheetTitle className="font-heading text-lg">
-                <span className="text-primary">Backup</span><span className="text-accent">shala</span>
+                <span className="text-foreground">Backup</span><span className="text-accent">shala</span>
               </SheetTitle>
               {user && (
                 <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">

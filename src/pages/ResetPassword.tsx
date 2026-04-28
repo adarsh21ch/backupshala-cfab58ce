@@ -55,7 +55,7 @@ const ResetPassword = () => {
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center">
             <span className="font-heading text-2xl font-800">
-              <span className="text-primary">Backup</span>
+              <span className="text-foreground">Backup</span>
               <span className="text-accent">shala</span>
             </span>
           </Link>

@@ -32,7 +32,7 @@ const VerifyCertificate = () => {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md text-center">
         <Link to="/" className="inline-flex items-center mb-8">
-          <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
+          <span className="font-heading text-2xl font-800"><span className="text-foreground">Backup</span><span className="text-accent">shala</span></span>
         </Link>
 
         <h1 className="font-heading text-xl font-700 mb-2">Certificate Verification</h1>
