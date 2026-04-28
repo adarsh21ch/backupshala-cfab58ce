@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, UserCheck } from 'lucide-react';
 import { getStoredRef, lookupReferrer } from '@/lib/referralTracking';
-import iconSrc from '@/assets/backupshala-icon.png';
+import Logo from '@/components/Logo';
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
@@ -109,7 +109,7 @@ const Signup = () => {
         <div className="rounded-[20px] border border-border bg-card p-8 shadow-[0_8px_40px_rgba(0,0,0,0.10)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
           <div className="text-center mb-6">
             <Link to="/" className="inline-flex flex-col items-center gap-3">
-              <img src={iconSrc} alt="Backupshala" width={56} height={56} className="select-none" draggable={false} />
+              <Logo iconSize={56} iconOnly />
               <span className="font-heading text-[28px] font-bold tracking-tight leading-none">
                 <span className="text-foreground">Backup</span><span className="text-accent">shala</span>
               </span>
