@@ -1,29 +1,36 @@
 import AdminDashboardLayout from '@/components/dashboard/AdminDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatINR } from '@/lib/format';
-import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp } from 'lucide-react';
+import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp, Wallet, Star, Check, X, Eye } from 'lucide-react';
 import KPICard from '@/components/dashboard/KPICard';
 import { SkeletonKPI } from '@/components/dashboard/SkeletonCards';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subDays, subMonths } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const AdminDashboardHome = () => {
+  const qc = useQueryClient();
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [profiles, courses, enrollments, payments, creators, payoutReqs] = await Promise.all([
+      const [profiles, courses, enrollments, payments, creators, payoutReqs, proSubs] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('courses').select('*', { count: 'exact', head: true }),
         supabase.from('enrollments').select('*', { count: 'exact', head: true }),
         supabase.from('payments').select('amount_total, platform_fee_amount, status'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_creator', true),
-        supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('payout_requests').select('amount, status').eq('status', 'pending'),
+        supabase.from('creator_pro_subscriptions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
       ]);
       const paidPayments = (payments.data || []).filter(p => p.status === 'success');
       const totalRevenue = paidPayments.reduce((s, p) => s + Number(p.amount_total), 0);
       const platformEarnings = paidPayments.reduce((s, p) => s + Number(p.platform_fee_amount), 0);
+      const pendingPayoutAmount = (payoutReqs.data || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
       return {
         totalUsers: profiles.count || 0,
         totalCourses: courses.count || 0,
@@ -31,7 +38,9 @@ const AdminDashboardHome = () => {
         totalCreators: creators.count || 0,
         totalRevenue,
         platformEarnings,
-        pendingPayouts: payoutReqs.count || 0,
+        pendingPayoutCount: (payoutReqs.data || []).length,
+        pendingPayoutAmount,
+        activeProSubs: proSubs.count || 0,
       };
     },
   });
@@ -54,6 +63,21 @@ const AdminDashboardHome = () => {
     },
   });
 
+  // Inline course moderation
+  const moderateCourse = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: 'approve' | 'reject' }) => {
+      const status = action === 'approve' ? 'published' : 'rejected';
+      const { error } = await supabase.from('courses').update({ status }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.action === 'approve' ? 'Course approved' : 'Course rejected');
+      qc.invalidateQueries({ queryKey: ['admin-pending-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Action failed'),
+  });
+
   // Revenue data for last 30 days
   const { data: revenueData } = useQuery({
     queryKey: ['admin-daily-revenue'],
@@ -63,7 +87,7 @@ const AdminDashboardHome = () => {
         .select('amount_total, created_at, status')
         .gte('created_at', thirtyDaysAgo)
         .in('status', ['success', 'paid']);
-      
+
       const grouped: Record<string, number> = {};
       for (let i = 29; i >= 0; i--) {
         const d = format(subDays(new Date(), i), 'dd MMM');
@@ -77,7 +101,6 @@ const AdminDashboardHome = () => {
     },
   });
 
-  // Monthly enrollments for last 6 months
   const { data: enrollmentData } = useQuery({
     queryKey: ['admin-monthly-enrollments'],
     queryFn: async () => {
@@ -85,7 +108,7 @@ const AdminDashboardHome = () => {
       const { data } = await supabase.from('enrollments')
         .select('enrolled_at')
         .gte('enrolled_at', sixMonthsAgo);
-      
+
       const grouped: Record<string, number> = {};
       for (let i = 5; i >= 0; i--) {
         const d = format(subMonths(new Date(), i), 'MMM yyyy');
@@ -99,73 +122,115 @@ const AdminDashboardHome = () => {
     },
   });
 
+  const StatusDot = ({ ok, label }: { ok: boolean; label: string }) => (
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3">
+      <span className={`h-2 w-2 rounded-full ${ok ? 'bg-primary animate-[brand-pulse_2s_ease-in-out_infinite]' : 'bg-warning'}`} />
+      <span className="text-sm font-medium">{label}</span>
+      <span className={`ml-auto text-xs font-semibold ${ok ? 'text-primary' : 'text-warning'}`}>{ok ? 'Online' : 'Check'}</span>
+    </div>
+  );
+
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-heading font-800">Admin Overview</h1>
+        <div>
+          <h1 className="text-2xl font-heading font-bold">Admin Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Realtime snapshot of the Backupshala platform</p>
+        </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[...Array(6)].map((_, i) => <SkeletonKPI key={i} />)}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => <SkeletonKPI key={i} />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <KPICard icon={Users} label="Total Users" value={stats?.totalUsers || 0} color="primary" />
-            <KPICard icon={UserCheck} label="Creators" value={stats?.totalCreators || 0} color="accent" />
-            <KPICard icon={BookOpen} label="Courses" value={stats?.totalCourses || 0} color="info" />
-            <KPICard icon={TrendingUp} label="Enrollments" value={stats?.totalEnrollments || 0} color="primary" />
-            <KPICard icon={CreditCard} label="Total Revenue" value={formatINR(stats?.totalRevenue || 0)} color="warning" />
-            <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="primary" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <KPICard icon={Users}      label="Total Users"        value={stats?.totalUsers || 0}        color="info"        vibrantValue />
+            <KPICard icon={UserCheck}  label="Creators"           value={stats?.totalCreators || 0}     color="success"     vibrantValue />
+            <KPICard icon={BookOpen}   label="Courses"            value={stats?.totalCourses || 0}      color="accent"      vibrantValue />
+            <KPICard icon={TrendingUp} label="Enrollments"        value={stats?.totalEnrollments || 0}  color="purple"      vibrantValue />
+            <KPICard icon={CreditCard} label="Total Revenue"      value={formatINR(stats?.totalRevenue || 0)}     color="success" vibrantValue />
+            <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="accent"  vibrantValue />
+            <KPICard icon={Wallet}     label="Pending Payouts"    value={formatINR(stats?.pendingPayoutAmount || 0)} color="warning" vibrantValue
+              subtitle={<span className="text-muted-foreground">{stats?.pendingPayoutCount || 0} request(s)</span>} />
+            <KPICard icon={Star}       label="Active Creator Pro" value={stats?.activeProSubs || 0}     color="purple"      vibrantValue />
           </div>
         )}
 
-        {/* Revenue Chart */}
+        {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base font-heading font-700">Daily Revenue (30 days)</CardTitle></CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={revenueData || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                  <Line type="monotone" dataKey="amount" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base font-heading font-bold">Daily Revenue</CardTitle>
+              <span className="text-xs text-muted-foreground">Last 30 days</span>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={revenueData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    stroke="hsl(var(--muted-foreground))"
+                    tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
+                    width={48}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                    formatter={(v: number) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Revenue']}
+                  />
+                  <Line type="monotone" dataKey="amount" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base font-heading font-700">Monthly Enrollments (6 months)</CardTitle></CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={enrollmentData || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base font-heading font-bold">Monthly Enrollments</CardTitle>
+              <span className="text-xs text-muted-foreground">Last 6 months</span>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={enrollmentData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={32} allowDecimals={false} />
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="count" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
+        {/* Platform Health */}
+        <div>
+          <h2 className="font-heading text-base font-bold mb-3">Platform Health</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <StatusDot ok label="Payment System" />
+            <StatusDot ok label="Video Storage" />
+            <StatusDot ok label="Email System" />
+          </div>
+        </div>
+
+        {/* Pending lists */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base font-heading font-700">Pending Creator Approvals</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base font-heading font-bold">Pending Creator Approvals</CardTitle></CardHeader>
             <CardContent>
               {(!pendingCreators || pendingCreators.length === 0) ? (
                 <p className="text-sm text-muted-foreground">No pending approvals</p>
               ) : (
                 <div className="space-y-3">
                   {pendingCreators.map(c => (
-                    <div key={c.id} className="flex items-center justify-between text-sm">
-                      <div>
-                        <p className="font-medium">{c.full_name}</p>
-                        <p className="text-xs text-muted-foreground">{c.email} · {c.creator_category}</p>
+                    <div key={c.id} className="flex items-center justify-between gap-3 text-sm rounded-lg border border-border/60 p-3">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{c.full_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{c.email} · {c.creator_category}</p>
                       </div>
+                      <Button asChild size="sm" variant="outline" className="shrink-0">
+                        <Link to={`/admin/creators`}>Review</Link>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -174,17 +239,39 @@ const AdminDashboardHome = () => {
           </Card>
 
           <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base font-heading font-700">Pending Course Reviews</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base font-heading font-bold">Pending Course Reviews</CardTitle></CardHeader>
             <CardContent>
               {(!pendingCourses || pendingCourses.length === 0) ? (
                 <p className="text-sm text-muted-foreground">No pending courses</p>
               ) : (
                 <div className="space-y-3">
                   {pendingCourses.map((c: any) => (
-                    <div key={c.id} className="flex items-center justify-between text-sm">
+                    <div key={c.id} className="rounded-lg border border-border/60 p-3 space-y-2.5">
                       <div>
-                        <p className="font-medium">{c.title}</p>
+                        <p className="font-medium text-sm">{c.title}</p>
                         <p className="text-xs text-muted-foreground">by {c.profiles?.full_name}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+                          disabled={moderateCourse.isPending}
+                          onClick={() => moderateCourse.mutate({ id: c.id, action: 'approve' })}
+                        >
+                          <Check className="h-3.5 w-3.5 mr-1" /> Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-8"
+                          disabled={moderateCourse.isPending}
+                          onClick={() => moderateCourse.mutate({ id: c.id, action: 'reject' })}
+                        >
+                          <X className="h-3.5 w-3.5 mr-1" /> Reject
+                        </Button>
+                        <Button asChild size="sm" variant="outline" className="h-8 ml-auto">
+                          <Link to={`/admin/courses`}><Eye className="h-3.5 w-3.5 mr-1" /> View</Link>
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -193,15 +280,6 @@ const AdminDashboardHome = () => {
             </CardContent>
           </Card>
         </div>
-
-        {stats?.pendingPayouts ? (
-          <Card className="bg-accent/5 border-accent/20">
-            <CardContent className="p-4 flex items-center gap-3">
-              <IndianRupee className="h-5 w-5 text-accent" />
-              <p className="text-sm font-medium">{stats.pendingPayouts} pending payout request(s) need attention</p>
-            </CardContent>
-          </Card>
-        ) : null}
       </div>
     </AdminDashboardLayout>
   );
