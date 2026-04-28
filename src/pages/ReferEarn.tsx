@@ -21,7 +21,7 @@ const ReferEarn = () => {
   const qc = useQueryClient();
   const [copied, setCopied] = useState<string | null>(null);
   const [usernameInput, setUsernameInput] = useState('');
-  const { data: settings } = usePlatformSettings();
+  const { data: settings, raw: settingsRaw } = usePlatformSettings();
 
   const { data: wallet } = useQuery({
     queryKey: ['my-wallet', user?.id],
