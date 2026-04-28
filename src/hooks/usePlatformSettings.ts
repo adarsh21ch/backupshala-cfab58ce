@@ -62,6 +62,7 @@ export const usePlatformSettings = () => {
   return {
     ...query,
     data: query.data?.parsed ?? defaults,
+    raw: query.data?.raw ?? {},
     getSetting,
   };
 };

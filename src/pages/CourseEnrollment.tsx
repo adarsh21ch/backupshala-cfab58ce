@@ -22,6 +22,7 @@ import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import CoursePreviewModal from '@/components/course/CoursePreviewModal';
 import ShareEarnModal from '@/components/course/ShareEarnModal';
 import { useCourseReferralEligibility } from '@/hooks/useReferralEligibility';
+import { computeCommission, inputsFromSettings } from '@/lib/commissionModel';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -79,7 +80,7 @@ const CourseEnrollment = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [previewModule, setPreviewModule] = useState<any | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const { data: platformSettings } = usePlatformSettings();
+  const { data: platformSettings, raw: settingsRaw } = usePlatformSettings();
   const { data: eligibility } = useCourseReferralEligibility(course?.id);
   const canRefer = !!eligibility?.eligible;
   const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
@@ -510,9 +511,9 @@ const CourseEnrollment = () => {
           profiles: { creator_slug: creator?.creator_slug || creatorSlug },
         }}
         estimatedEarning={
-          course.is_platform_course
-            ? Math.round(displayPrice * ((platformSettings as any)?.platform_course_referral_percent ?? 15) / 100)
-            : Math.round(displayPrice * (course.platform_fee_percent ?? 10) / 100 * ((platformSettings as any)?.referral_commission_percent ?? 70) / 100)
+          computeCommission(
+            inputsFromSettings(displayPrice, !!course.is_platform_course, settingsRaw)
+          ).affiliateEarning
         }
       />
     </div>

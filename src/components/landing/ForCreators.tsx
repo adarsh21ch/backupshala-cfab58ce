@@ -7,6 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { formatPrice } from '@/lib/format';
+import { computeCommission, inputsFromSettings } from '@/lib/commissionModel';
 
 const benefits = [
   { icon: Upload, title: 'Video or Resource Courses', desc: 'Upload video lessons OR curate links, podcasts, and articles. Both formats supported.' },
@@ -14,17 +15,9 @@ const benefits = [
   { icon: SlidersHorizontal, title: 'Set Your Own Price', desc: 'You decide what your course is worth. Free or premium — it’s your call.' },
 ];
 
-const calcEarning = (price: number, gatewayPct: number, platformPct: number) => {
-  const afterGateway = Math.max(0, price - Math.round(price * (gatewayPct / 100)));
-  return Math.max(0, afterGateway - Math.round(afterGateway * (platformPct / 100)));
-};
-
 const ForCreators = () => {
   const { user, profile } = useAuth();
-  const { getSetting } = usePlatformSettings();
-
-  const platformFeePct = Number(getSetting('platform_fee_free', '10')) || 10;
-  const gatewayFeePct = Number(getSetting('gateway_fee_percent', '2')) || 2;
+  const { raw } = usePlatformSettings();
 
   const ctaHref = user && profile?.is_creator && profile?.creator_approved
     ? '/creator/dashboard'
@@ -34,15 +27,17 @@ const ForCreators = () => {
   const [examplePrice, setExamplePrice] = useState(499);
   const [salesPerMonth, setSalesPerMonth] = useState(50);
 
-  const perSale = useMemo(() => calcEarning(examplePrice, gatewayFeePct, platformFeePct), [examplePrice, gatewayFeePct, platformFeePct]);
-  const monthly = perSale * salesPerMonth;
-  const yearly = monthly * 12;
+  const breakdown = useMemo(
+    () => computeCommission(inputsFromSettings(examplePrice, false, raw)),
+    [examplePrice, raw],
+  );
+  const perSaleNoRef = breakdown.creatorEarningWithoutReferral; // 90% of net
+  const perSaleWithRef = breakdown.creatorEarningWithReferral;  // 15% of net guaranteed
+  const affiliateShare = breakdown.affiliateEarning;            // 75% to referrer
+  const creatorKeepPct = Math.round((perSaleNoRef / Math.max(1, examplePrice)) * 100);
 
-  // Breakdown (uses current example price)
-  const bGateway = Math.round(examplePrice * (gatewayFeePct / 100));
-  const bAfterGateway = Math.max(0, examplePrice - bGateway);
-  const bPlatform = Math.round(bAfterGateway * (platformFeePct / 100));
-  const bEarn = Math.max(0, bAfterGateway - bPlatform);
+  const monthly = perSaleNoRef * salesPerMonth;
+  const yearly = monthly * 12;
 
   return (
     <section id="for-creators" className="bg-secondary/30 py-16 md:py-24">
@@ -50,7 +45,7 @@ const ForCreators = () => {
         {/* Hero */}
         <div className="text-center mb-10">
           <p className="text-sm font-semibold text-accent mb-1">FOR CREATORS</p>
-          <h2 className="font-heading text-3xl font-700">Teach on Backupshala. Set your price. Keep {100 - platformFeePct}% of every sale.</h2>
+          <h2 className="font-heading text-3xl font-700">Teach on Backupshala. Set your price. Keep up to {creatorKeepPct}% of every sale.</h2>
           <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
             You decide your course price. We show you exactly what you earn. No monthly fee. No hidden charges.
           </p>
@@ -111,12 +106,16 @@ const ForCreators = () => {
 
           {/* Live breakdown */}
           <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-2 text-sm font-mono">
-            <div className="flex justify-between"><span className="text-muted-foreground">Student pays</span><span>{formatPrice(examplePrice)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Razorpay gateway ({gatewayFeePct}%)</span><span className="text-destructive">−{formatPrice(bGateway)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Platform fee ({platformFeePct}%)</span><span className="text-destructive">−{formatPrice(bPlatform)}</span></div>
-            <div className="border-t border-border pt-2 flex justify-between font-bold">
-              <span className="text-primary">YOU EARN PER SALE</span>
-              <span className="text-primary">{formatPrice(bEarn)} ✓</span>
+            <div className="flex justify-between"><span className="text-muted-foreground">Student pays (incl. GST)</span><span>{formatPrice(breakdown.gross)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">GST</span><span className="text-destructive">−{formatPrice(breakdown.gst)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Razorpay gateway</span><span className="text-destructive">−{formatPrice(breakdown.gatewayFee)}</span></div>
+            <div className="flex justify-between border-t border-border pt-2 font-bold">
+              <span className="text-primary">YOU EARN (no referral)</span>
+              <span className="text-primary">{formatPrice(perSaleNoRef)} ✓</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">With a referral · you keep</span>
+              <span className="tabular-nums">{formatPrice(perSaleWithRef)} <span className="text-muted-foreground">+ referrer earns {formatPrice(affiliateShare)}</span></span>
             </div>
           </div>
 
@@ -159,7 +158,7 @@ const ForCreators = () => {
           <ul className="space-y-2 text-sm">
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Free to create an account</li>
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Free to upload and publish courses</li>
-            <li className="flex items-start gap-2"><span className="text-primary">✓</span> Only {platformFeePct}% platform fee when you make a sale</li>
+            <li className="flex items-start gap-2"><span className="text-primary">✓</span> Keep 15% guaranteed + 75% when you sell directly</li>
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Withdraw your earnings anytime (min ₹500)</li>
           </ul>
           <p className="mt-4 text-xs text-muted-foreground">

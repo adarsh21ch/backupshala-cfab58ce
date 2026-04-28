@@ -73,7 +73,7 @@ export function useReferableCourses() {
 
       const { data: courses } = await supabase
         .from('courses')
-        .select('id, title, slug, price, thumbnail_url, short_description, profiles!courses_creator_id_fkey(creator_slug, creator_display_name, full_name)')
+        .select('id, title, slug, price, thumbnail_url, short_description, is_platform_course, profiles!courses_creator_id_fkey(creator_slug, creator_display_name, full_name)')
         .in('id', allIds)
         .eq('status', 'published');
       return courses || [];

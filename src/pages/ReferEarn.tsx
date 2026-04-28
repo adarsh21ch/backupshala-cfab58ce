@@ -14,13 +14,14 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { useReferableCourses } from '@/hooks/useReferralEligibility';
 import { buildGenericRefLink, buildCourseRefLink } from '@/lib/referralTracking';
+import { computeCommission, inputsFromSettings } from '@/lib/commissionModel';
 
 const ReferEarn = () => {
   const { user, profile, refreshProfile } = useAuth();
   const qc = useQueryClient();
   const [copied, setCopied] = useState<string | null>(null);
   const [usernameInput, setUsernameInput] = useState('');
-  const { data: settings } = usePlatformSettings();
+  const { data: settings, raw: settingsRaw } = usePlatformSettings();
 
   const { data: wallet } = useQuery({
     queryKey: ['my-wallet', user?.id],
@@ -88,18 +89,8 @@ const ReferEarn = () => {
   }, 0) || 0;
   const successfulSales = commissions?.length || 0;
 
-  // Referral commission % calculator
-  const platformFeePct = Number(settings?.platform_fee_percent ?? 10);
-  const referralCreatorPct = Number((settings as any)?.referral_commission_percent ?? 70);
-  const referralPlatformPct = Number((settings as any)?.platform_course_referral_percent ?? 15);
-
-  const computeEarn = (price: number, isPlatformCourse?: boolean) => {
-    const gateway = price * 0.02;
-    const net = price - gateway;
-    if (isPlatformCourse) return Math.round(net * (referralPlatformPct / 100));
-    const platformFee = net * (platformFeePct / 100);
-    return Math.round(platformFee * (referralCreatorPct / 100));
-  };
+  const computeEarn = (price: number, isPlatformCourse?: boolean) =>
+    computeCommission(inputsFromSettings(price, !!isPlatformCourse, settingsRaw)).affiliateEarning;
 
   const username = profile?.username;
   const baseLink = username ? buildGenericRefLink(username) : '';
@@ -242,7 +233,7 @@ const ReferEarn = () => {
               {referableCourses.map((c: any) => {
                 const cs = c.profiles?.creator_slug || 'creator';
                 const link = buildCourseRefLink(cs, c.slug, username);
-                const earn = computeEarn(Number(c.price) || 0);
+                const earn = computeEarn(Number(c.price) || 0, !!(c as any).is_platform_course);
                 return (
                   <div key={c.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
                     <div className="flex items-start gap-3">

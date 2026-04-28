@@ -1,6 +1,7 @@
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { formatPrice } from '@/lib/format';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, TrendingUp } from 'lucide-react';
+import { computeCommission, inputsFromSettings } from '@/lib/commissionModel';
 
 interface Props {
   price: number;
@@ -10,29 +11,31 @@ interface Props {
 }
 
 /**
- * Live earnings breakdown for creator courses.
- * Mirrors the server-side calculation in verify-razorpay-payment.
+ * Live earnings breakdown for creator courses (new commission model).
+ * - Creator gets 15% guaranteed of net.
+ * - Without referral, creator keeps 15% + 75% = 90% of net.
+ * - With a referral by someone else, creator keeps 15%; affiliate earns 75%.
+ * - Self-referral by the creator: creator gets the full 90% (15% + 75%).
  */
-const CreatorEarningsBreakdown = ({ price, isPro, showVolumePreview = true, compact = false }: Props) => {
-  const { getSetting } = usePlatformSettings();
-
-  const gatewayPct = Number(getSetting('gateway_fee_percent', '2')) || 2;
-  const platformFreePct = Number(getSetting('platform_fee_free', '10')) || 10;
-  const platformProPct = Number(getSetting('platform_fee_pro', '10')) || 10;
-  const platformPct = isPro ? platformProPct : platformFreePct;
-
+const CreatorEarningsBreakdown = ({ price, showVolumePreview = true, compact = false }: Props) => {
+  const { raw } = usePlatformSettings();
   const safePrice = Math.max(0, Math.floor(price || 0));
-  const gatewayFee = Math.round(safePrice * (gatewayPct / 100));
-  const netAfterGateway = safePrice - gatewayFee;
-  const platformFee = Math.round(netAfterGateway * (platformPct / 100));
-  const earn = Math.max(0, netAfterGateway - platformFee);
+  const c = computeCommission(inputsFromSettings(safePrice, false, raw));
+
+  const without = c.creatorEarningWithoutReferral; // 90% of net
+  const withRef = c.creatorEarningWithReferral;    // 15% of net (guaranteed)
+  const affiliate = c.affiliateEarning;            // 75% of net to referrer
 
   if (compact) {
     return (
-      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">You earn per sale</span>
-          <span className="font-bold text-primary">{formatPrice(earn)}</span>
+          <span className="text-muted-foreground">You earn (no referral)</span>
+          <span className="font-bold text-primary">{formatPrice(without)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">You earn (with referral)</span>
+          <span className="font-semibold">{formatPrice(withRef)}</span>
         </div>
       </div>
     );
@@ -47,20 +50,33 @@ const CreatorEarningsBreakdown = ({ price, isPro, showVolumePreview = true, comp
 
       <div className="space-y-2 text-sm font-mono">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Student pays</span>
-          <span className="tabular-nums">{formatPrice(safePrice)}</span>
+          <span className="text-muted-foreground">Student pays (incl. GST)</span>
+          <span className="tabular-nums">{formatPrice(c.gross)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Razorpay gateway fee ({gatewayPct}%)</span>
-          <span className="text-destructive tabular-nums">−{formatPrice(gatewayFee)}</span>
+          <span className="text-muted-foreground">GST ({Math.round((c.gst / Math.max(1, c.base)) * 100)}%)</span>
+          <span className="text-destructive tabular-nums">−{formatPrice(c.gst)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Platform fee ({platformPct}%)</span>
-          <span className="text-destructive tabular-nums">−{formatPrice(platformFee)}</span>
+          <span className="text-muted-foreground">Razorpay gateway fee</span>
+          <span className="text-destructive tabular-nums">−{formatPrice(c.gatewayFee)}</span>
         </div>
-        <div className="border-t border-border pt-2 flex justify-between">
-          <span className="font-bold text-primary">YOU RECEIVE PER SALE</span>
-          <span className="font-bold text-primary tabular-nums">{formatPrice(earn)} ✓</span>
+        <div className="flex justify-between border-t border-border pt-2">
+          <span className="text-muted-foreground">Net amount</span>
+          <span className="tabular-nums">{formatPrice(c.net)}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center">
+          <p className="text-[11px] text-muted-foreground">No referral</p>
+          <p className="font-heading text-lg font-800 text-primary tabular-nums">{formatPrice(without)}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">15% + 75%</p>
+        </div>
+        <div className="rounded-lg border border-border bg-secondary/30 p-3 text-center">
+          <p className="text-[11px] text-muted-foreground">With referral</p>
+          <p className="font-heading text-lg font-800 tabular-nums">{formatPrice(withRef)}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">15% guaranteed · referrer gets {formatPrice(affiliate)}</p>
         </div>
       </div>
 
@@ -68,15 +84,16 @@ const CreatorEarningsBreakdown = ({ price, isPro, showVolumePreview = true, comp
         <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border">
           {[10, 50, 100].map(n => (
             <div key={n} className="rounded-lg bg-secondary/40 p-2 text-center">
-              <p className="text-[10px] text-muted-foreground">{n} sales</p>
-              <p className="font-heading text-sm font-700 text-accent tabular-nums">{formatPrice(earn * n)}</p>
+              <p className="text-[10px] text-muted-foreground">{n} sales (no ref)</p>
+              <p className="font-heading text-sm font-700 text-accent tabular-nums">{formatPrice(without * n)}</p>
             </div>
           ))}
         </div>
       )}
 
-      <p className="text-[11px] text-muted-foreground leading-relaxed">
-        💰 Earnings credit to your Backupshala wallet within 3 days. Minimum withdrawal: ₹500.
+      <p className="text-[11px] text-muted-foreground leading-relaxed flex items-start gap-1.5">
+        <TrendingUp className="h-3 w-3 mt-0.5 shrink-0 text-primary" />
+        Referrals never reduce your guaranteed 15%. Earnings credit to your wallet within 3 days.
       </p>
     </div>
   );
