@@ -45,7 +45,7 @@ const ForCreators = () => {
         {/* Hero */}
         <div className="text-center mb-10">
           <p className="text-sm font-semibold text-accent mb-1">FOR CREATORS</p>
-          <h2 className="font-heading text-3xl font-700">Teach on Backupshala. Set your price. Keep {100 - platformFeePct}% of every sale.</h2>
+          <h2 className="font-heading text-3xl font-700">Teach on Backupshala. Set your price. Keep up to {creatorKeepPct}% of every sale.</h2>
           <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
             You decide your course price. We show you exactly what you earn. No monthly fee. No hidden charges.
           </p>
