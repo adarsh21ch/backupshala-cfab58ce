@@ -45,20 +45,24 @@ const LearningStreak = () => {
   const streak = streakData?.current || 0;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center gap-3">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-full ${streak > 0 ? 'bg-warning/10' : 'bg-secondary'}`}>
-          <Flame className={`h-6 w-6 ${streak > 0 ? 'text-warning' : 'text-muted-foreground'}`} />
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 pl-5 before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-accent">
+      <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.06] via-transparent to-transparent pointer-events-none" />
+      <div className="relative flex items-center gap-3">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-full ${streak > 0 ? 'bg-accent/15' : 'bg-secondary'}`}>
+          <Flame className={`h-6 w-6 ${streak > 0 ? 'text-accent animate-[brand-pulse_2s_ease-in-out_infinite]' : 'text-muted-foreground'}`} />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           {streak > 0 ? (
             <>
-              <p className="font-heading text-lg font-700">🔥 {streak} day streak!</p>
-              <p className="text-xs text-muted-foreground">Keep going — complete a module today!</p>
+              <p className="font-heading text-lg font-bold flex items-baseline gap-1.5">
+                <span className="text-accent text-2xl">{streak}</span>
+                <span>day streak!</span>
+              </p>
+              <p className="text-xs text-muted-foreground">Keep going — complete a module today to extend it.</p>
             </>
           ) : (
             <>
-              <p className="font-heading text-sm font-600">Start your streak today</p>
+              <p className="font-heading text-base font-bold">Start your streak today</p>
               <p className="text-xs text-muted-foreground">Complete 1 module to begin 🔥</p>
             </>
           )}
