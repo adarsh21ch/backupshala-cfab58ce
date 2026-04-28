@@ -96,10 +96,19 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <KPICard icon={BookOpen} label="Enrolled" value={enrollments?.length || 0} color="primary" />
-            <KPICard icon={CheckCircle} label="Modules Done" value={totalModulesCompleted} color="primary" />
-            <KPICard icon={Award} label="Certificates" value={certificates || 0} color="accent" />
-            <Link to="/dashboard/wallet"><KPICard icon={IndianRupee} label="Wallet" value={formatPrice(wallet?.balance || 0)} color="accent" /></Link>
+            <KPICard icon={BookOpen} label="Enrolled" value={enrollments?.length || 0} color="success" vibrantValue />
+            <KPICard icon={CheckCircle} label="Modules Done" value={totalModulesCompleted} color="info" />
+            <KPICard icon={Award} label="Certificates" value={certificates || 0} color="warning" vibrantValue />
+            <Link to="/dashboard/wallet">
+              <KPICard
+                icon={IndianRupee}
+                label="Wallet"
+                value={formatPrice(wallet?.balance || 0)}
+                color="accent"
+                vibrantValue
+                subtitle={<span className="text-accent hover:underline">View →</span>}
+              />
+            </Link>
           </div>
         )}
 
