@@ -99,94 +99,102 @@ const Signup = () => {
   const strength = getPasswordStrength();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <Link to="/" className="inline-flex items-center">
-            <span className="font-heading text-2xl font-800"><span className="text-primary">Backup</span><span className="text-accent">shala</span></span>
-          </Link>
-          <h1 className="mt-4 font-heading text-2xl font-700">Create your account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Join Backupshala — a digital skills learning platform</p>
-        </div>
+    <div
+      className="relative flex min-h-screen items-center justify-center px-4 py-10
+                 bg-hero-gradient
+                 dark:bg-[radial-gradient(ellipse_at_50%_40%,#1A1208_0%,#0D0F12_60%)]"
+    >
+      <div className="w-full max-w-[440px]">
+        <div className="rounded-[20px] border border-border bg-card p-8 shadow-[0_8px_40px_rgba(0,0,0,0.10)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
+          <div className="text-center mb-6">
+            <Link to="/" className="inline-flex items-center">
+              <span className="font-heading text-[28px] font-bold tracking-tight">
+                <span className="text-foreground">Backup</span><span className="text-accent">shala</span>
+              </span>
+            </Link>
+            <p className="mt-1.5 text-[13px] text-muted-foreground">The school for your backup plan</p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div>
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input id="fullName" placeholder="Your full name" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} className="mt-1 rounded-lg" />
-            {errors.fullName && <p className="mt-1 text-xs text-destructive">{errors.fullName}</p>}
+          <div className="text-center mb-6">
+            <h1 className="font-heading text-[26px] font-bold">Create your account</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Join Backupshala — start learning today</p>
           </div>
-          <div>
-            <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1 rounded-lg" />
-            {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
-          </div>
-          <div>
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" placeholder="9876543210" maxLength={10} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))} className="mt-1 rounded-lg" />
-            {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone}</p>}
-          </div>
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <div className="relative mt-1">
-              <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Min 8 characters" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="rounded-lg pr-10" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="fullName">Full name</Label>
+              <Input id="fullName" placeholder="Your full name" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} className="mt-1.5 h-11 rounded-[10px]" />
+              {errors.fullName && <p className="mt-1 text-xs text-destructive">{errors.fullName}</p>}
             </div>
-            {form.password && (
-              <div className="mt-2">
-                <div className="h-1.5 w-full rounded-full bg-muted">
-                  <div className={`h-full rounded-full transition-all ${strength.color}`} style={{ width: strength.width }} />
+            <div>
+              <Label htmlFor="email">Email address</Label>
+              <Input id="email" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1.5 h-11 rounded-[10px]" />
+              {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone number</Label>
+              <Input id="phone" placeholder="9876543210" maxLength={10} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))} className="mt-1.5 h-11 rounded-[10px]" />
+              {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone}</p>}
+            </div>
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <div className="relative mt-1.5">
+                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Min 8 characters" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="h-11 rounded-[10px] pr-10" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {form.password && (
+                <div className="mt-2">
+                  <div className="h-1.5 w-full rounded-full bg-muted">
+                    <div className={`h-full rounded-full transition-all ${strength.color}`} style={{ width: strength.width }} />
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{strength.label}</p>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{strength.label}</p>
+              )}
+              {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Input id="confirmPassword" type="password" placeholder="Re-enter password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} className="mt-1.5 h-11 rounded-[10px]" />
+              {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
+            </div>
+            {referrerInfo ? (
+              <div className="rounded-[10px] border border-primary/30 bg-primary/5 p-3 flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs">
+                  Referred by <span className="font-semibold text-primary">@{referrerInfo.username}</span>
+                  {referrerInfo.name ? ` · ${referrerInfo.name}` : ''}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="referrerEmail">Referred by (optional)</Label>
+                <Input
+                  id="referrerEmail" type="email" placeholder="friend@example.com"
+                  value={form.referrerEmail}
+                  onChange={e => setForm(f => ({ ...f, referrerEmail: e.target.value }))}
+                  readOnly={!!refParam}
+                  className={`mt-1.5 h-11 rounded-[10px] ${refParam ? 'opacity-60' : ''}`}
+                />
+                {errors.referrerEmail && <p className="mt-1 text-xs text-destructive">{errors.referrerEmail}</p>}
               </div>
             )}
-            {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
-          </div>
-          <div>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input id="confirmPassword" type="password" placeholder="Re-enter password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} className="mt-1 rounded-lg" />
-            {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
-          </div>
-          {referrerInfo ? (
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center gap-2">
-              <UserCheck className="h-4 w-4 text-primary shrink-0" />
-              <p className="text-xs">
-                Referred by <span className="font-semibold text-primary">@{referrerInfo.username}</span>
-                {referrerInfo.name ? ` · ${referrerInfo.name}` : ''}
-              </p>
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="referrerEmail">Referral code or referrer email (optional)</Label>
-              <Input
-                id="referrerEmail" type="email" placeholder="friend@example.com"
-                value={form.referrerEmail}
-                onChange={e => setForm(f => ({ ...f, referrerEmail: e.target.value }))}
-                readOnly={!!refParam}
-                className={`mt-1 rounded-lg ${refParam ? 'opacity-60' : ''}`}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                If someone referred you, enter their email here. Otherwise leave blank.
-              </p>
-              {errors.referrerEmail && <p className="mt-1 text-xs text-destructive">{errors.referrerEmail}</p>}
-            </div>
-          )}
-          <p className="text-[10px] text-muted-foreground text-center mt-3">
-            By creating an account, you agree to our{' '}
-            <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>,{' '}
-            <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>, and{' '}
-            <Link to="/community-guidelines" className="text-primary hover:underline">Community Guidelines</Link>.
-          </p>
-          <Button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-md font-semibold">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Account'}
-          </Button>
-        </form>
+            <Button type="submit" disabled={loading} className="w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground rounded-[10px] font-semibold shadow-accent-glow hover:shadow-accent-glow-hover transition-shadow">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create account'}
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center pt-1">
+              By signing up you agree to our{' '}
+              <Link to="/terms" className="text-accent hover:underline">Terms</Link> and{' '}
+              <Link to="/privacy-policy" className="text-accent hover:underline">Privacy Policy</Link>.
+            </p>
+          </form>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-primary hover:underline">Login</Link>
-        </p>
+          <p className="mt-5 text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-accent hover:underline">Log in</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
