@@ -106,12 +106,16 @@ const ForCreators = () => {
 
           {/* Live breakdown */}
           <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-2 text-sm font-mono">
-            <div className="flex justify-between"><span className="text-muted-foreground">Student pays</span><span>{formatPrice(examplePrice)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Razorpay gateway ({gatewayFeePct}%)</span><span className="text-destructive">−{formatPrice(bGateway)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Platform fee ({platformFeePct}%)</span><span className="text-destructive">−{formatPrice(bPlatform)}</span></div>
-            <div className="border-t border-border pt-2 flex justify-between font-bold">
-              <span className="text-primary">YOU EARN PER SALE</span>
-              <span className="text-primary">{formatPrice(bEarn)} ✓</span>
+            <div className="flex justify-between"><span className="text-muted-foreground">Student pays (incl. GST)</span><span>{formatPrice(breakdown.gross)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">GST</span><span className="text-destructive">−{formatPrice(breakdown.gst)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Razorpay gateway</span><span className="text-destructive">−{formatPrice(breakdown.gatewayFee)}</span></div>
+            <div className="flex justify-between border-t border-border pt-2 font-bold">
+              <span className="text-primary">YOU EARN (no referral)</span>
+              <span className="text-primary">{formatPrice(perSaleNoRef)} ✓</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">With a referral · you keep</span>
+              <span className="tabular-nums">{formatPrice(perSaleWithRef)} <span className="text-muted-foreground">+ referrer earns {formatPrice(affiliateShare)}</span></span>
             </div>
           </div>
 
