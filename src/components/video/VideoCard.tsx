@@ -41,13 +41,13 @@ const VideoCard = ({ asset, variant = 'student', isOwner = false, onPreview, onU
 
   const copyBsvCode = () => {
     navigator.clipboard.writeText(asset.bsv_code);
-    toast.success('BSV code copied!');
+    toast.success('Video ID copied!');
   };
 
   return (
-    <Card className="bg-card border-border overflow-hidden group hover:border-primary/30 transition-colors">
-      <div className="relative aspect-video bg-secondary cursor-pointer" onClick={() => onPreview?.(asset.id)}>
-        <img src={thumbnail} alt={asset.title} className="w-full h-full object-cover" />
+    <Card className="relative bg-card border-border overflow-hidden group hover:border-primary/30 transition-colors isolate">
+      <div className="relative aspect-video bg-secondary cursor-pointer overflow-hidden z-0" onClick={() => onPreview?.(asset.id)} style={{ contain: 'paint' }}>
+        <img src={thumbnail} alt={asset.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-primary/90 flex items-center justify-center">
             <Play className="h-5 w-5 text-white ml-0.5" />
