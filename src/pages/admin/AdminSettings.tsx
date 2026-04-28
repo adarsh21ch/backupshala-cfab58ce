@@ -10,8 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect, useMemo } from 'react';
 import { Save, AlertTriangle, IndianRupee } from 'lucide-react';
-import { calculateSaleSplit, getCommissionConfig } from '@/lib/tierPricing';
+// (commission calc lives inside CommissionStructureCard)
 import VideoSettingsSection from '@/components/admin/VideoSettingsSection';
+import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
@@ -45,15 +46,24 @@ const AdminSettings = () => {
       const n = Number(values[k]);
       if (isNaN(n) || n < min || n > max) errs[k] = `${label} must be ${min}–${max}`;
     };
-    num('platform_fee_free', 1, 49, 'Free creator fee');
-    num('platform_fee_pro', 1, 49, 'Pro creator fee');
-    num('referral_commission_percent', 0, 100, 'Referral %');
+    num('platform_course_platform_fee_percent', 0, 100, 'Platform-course platform fee');
+    num('platform_course_affiliate_percent', 0, 100, 'Platform-course affiliate %');
+    num('creator_course_platform_fee_percent', 0, 100, 'Creator-course platform fee');
+    num('creator_course_creator_fee_percent', 0, 100, 'Creator-course creator fee');
+    num('creator_course_affiliate_percent', 0, 100, 'Creator-course affiliate %');
     num('gateway_fee_percent', 0, 10, 'Gateway %');
+    num('gst_rate_percent', 0, 50, 'GST rate');
     num('basic_price', 1, 49999, 'Standard course default');
     num('advanced_price', 1, 49999, 'Premium course default');
-    if (values.gst_enabled === 'true') num('gst_rate_percent', 0, 50, 'GST rate');
     num('min_payout_amount', 1, 100000, 'Min payout');
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
+
+    // Sums must equal 100
+    const platSum = Number(values.platform_course_platform_fee_percent) + Number(values.platform_course_affiliate_percent);
+    if (platSum !== 100) errs.platform_course_platform_fee_percent = 'Platform + affiliate must = 100%';
+    const creSum = Number(values.creator_course_platform_fee_percent) + Number(values.creator_course_creator_fee_percent) + Number(values.creator_course_affiliate_percent);
+    if (creSum !== 100) errs.creator_course_platform_fee_percent = 'Platform + creator + affiliate must = 100%';
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -77,13 +87,9 @@ const AdminSettings = () => {
     onError: () => toast.error('Failed to save'),
   });
 
-  // ---- Live preview using shared calculator ----
-  const cfg = useMemo(() => getCommissionConfig(values), [values]);
+  // Course default prices (used in Platform Course Defaults section)
   const basicPrice = Number(values.basic_price) || 249;
   const advancedPrice = Number(values.advanced_price) || 499;
-  const upgradePrice = Math.max(0, advancedPrice - basicPrice);
-  const splitBasic = useMemo(() => calculateSaleSplit(basicPrice, cfg, false), [basicPrice, cfg]);
-  const splitAdvanced = useMemo(() => calculateSaleSplit(advancedPrice, cfg, false), [advancedPrice, cfg]);
 
   // ---- Field helpers ----
   const NumberField = ({ k, label, prefix, suffix, hint }: { k: string; label: string; prefix?: string; suffix?: string; hint?: string }) => (
@@ -153,8 +159,9 @@ const AdminSettings = () => {
           <div>
             <p className="text-sm font-medium text-warning">Creator share is protected</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Creators <strong>always</strong> receive {100 - (Number(values.platform_fee_free) || 10)}% of the net amount. Referral commission is taken
-              <strong> from the platform fee only</strong>, never from the creator's share.
+              Creators <strong>always</strong> receive their {values.creator_course_creator_fee_percent || 15}% of net.
+              The {values.creator_course_affiliate_percent || 75}% affiliate share goes to the referrer if referred,
+              or back to the creator if not referred.
             </p>
           </div>
         </div>
@@ -179,73 +186,10 @@ const AdminSettings = () => {
             </CardContent>
           </Card>
 
-          {/* ===== Commission ===== */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-base">Commission & Fees</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                These fees apply to all <strong>creator courses</strong>. Platform courses retain 100% revenue (no creator commission).
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <NumberField k="platform_fee_free" label="Platform Fee (Free Creator)" suffix="%" hint="Typical: 10%" />
-                <NumberField k="platform_fee_pro" label="Platform Fee (Pro Creator)" suffix="%" hint="Typical: 10%" />
-                <NumberField k="gateway_fee_percent" label="Razorpay Gateway Fee" suffix="%" hint="Typical: 2%" />
-                <NumberField k="referral_commission_percent" label="Referral % (of platform fee)" suffix="%" hint="Default 70% → ₹17 of ₹25 platform fee" />
-              </div>
-              {Number(values.platform_fee_free) === Number(values.platform_fee_pro) && Number(values.platform_fee_free) > 0 && (
-                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
-                  <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
-                  <p className="text-xs text-muted-foreground">
-                    Creator Pro fee equals Free creator fee (both {values.platform_fee_free}%). Consider setting Free creator fee higher (e.g. 20%) to make Creator Pro's lower fee a meaningful incentive for creators.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* ===== Commission Structure (NEW MODEL) ===== */}
+          <CommissionStructureCard values={values} setVal={setVal} errors={errors} />
 
           {/* ===== GST ===== */}
-          <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-base">GST</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <ToggleField k="gst_enabled" label="GST Enabled" hint="Turn on after crossing ₹20 lakh annual revenue. Prices become GST-inclusive and receipts show tax breakdown." />
-              {values.gst_enabled === 'true' && (
-                <NumberField k="gst_rate_percent" label="GST Rate" suffix="%" hint="Standard: 18%" />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* ===== Live Preview ===== */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-base">Live Earnings Preview</CardTitle>
-            </CardHeader>
-            <CardContent className="grid sm:grid-cols-2 gap-4">
-              {[{ label: 'Basic', s: splitBasic, price: basicPrice }, { label: 'Advanced', s: splitAdvanced, price: advancedPrice }].map(({ label, s, price }) => (
-                <div key={label} className="space-y-1.5 rounded-lg border border-border p-4">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{label} sale (₹{price})</p>
-                  <Row label="Customer pays" value={fmt(s.customerPays)} />
-                  {cfg.gstEnabled && (
-                    <>
-                      <Row label={`– GST (${cfg.gstRatePct}%)`} value={`−${fmt(s.gstAmount)}`} sub />
-                      <Row label="Base amount" value={fmt(s.baseAmount)} sub />
-                    </>
-                  )}
-                  <Row label={`– Gateway (${cfg.gatewayFeePct}%)`} value={`−${fmt(s.gatewayFee)}`} sub />
-                  <div className="border-t border-border pt-1.5">
-                    <Row label="Net" value={fmt(s.netAmount)} sub />
-                    <Row label="Creator earns" value={fmt(s.creatorShare)} accent="primary" />
-                    <Row label="Platform fee" value={fmt(s.platformFee)} />
-                    <Row label="↳ Referral (max)" value={fmt(s.referralCommission)} sub accent="accent" />
-                    <Row label="↳ Platform keeps" value={fmt(s.platformKeeps)} sub />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* ===== Affiliate ===== */}
           <Card className="bg-card border-border">
             <CardHeader><CardTitle className="text-base">Referral Program</CardTitle></CardHeader>
             <CardContent className="space-y-4">

@@ -113,6 +113,7 @@ export type Database = {
           available_after: string | null
           commission_type: string
           course_id: string
+          course_type: string | null
           created_at: string
           id: string
           payment_id: string
@@ -126,6 +127,7 @@ export type Database = {
           available_after?: string | null
           commission_type?: string
           course_id: string
+          course_type?: string | null
           created_at?: string
           id?: string
           payment_id: string
@@ -139,6 +141,7 @@ export type Database = {
           available_after?: string | null
           commission_type?: string
           course_id?: string
+          course_type?: string | null
           created_at?: string
           id?: string
           payment_id?: string
@@ -1423,18 +1426,24 @@ export type Database = {
       }
       payments: {
         Row: {
+          affiliate_commission_amount: number | null
+          affiliate_user_id: string | null
           amount_total: number
           base_amount: number
           commission_amount: number
           coupon_id: string | null
           course_id: string
           created_at: string
+          creator_fee_amount: number | null
           creator_id: string
           creator_payout_amount: number
           currency: string | null
+          gateway_fee_amount: number | null
           gst_amount: number
           id: string
           invoice_number: string | null
+          is_platform_course: boolean | null
+          net_amount: number | null
           paid_at: string | null
           platform_fee_amount: number
           razorpay_order_id: string | null
@@ -1443,18 +1452,24 @@ export type Database = {
           student_id: string
         }
         Insert: {
+          affiliate_commission_amount?: number | null
+          affiliate_user_id?: string | null
           amount_total: number
           base_amount?: number
           commission_amount: number
           coupon_id?: string | null
           course_id: string
           created_at?: string
+          creator_fee_amount?: number | null
           creator_id: string
           creator_payout_amount: number
           currency?: string | null
+          gateway_fee_amount?: number | null
           gst_amount?: number
           id?: string
           invoice_number?: string | null
+          is_platform_course?: boolean | null
+          net_amount?: number | null
           paid_at?: string | null
           platform_fee_amount: number
           razorpay_order_id?: string | null
@@ -1463,18 +1478,24 @@ export type Database = {
           student_id: string
         }
         Update: {
+          affiliate_commission_amount?: number | null
+          affiliate_user_id?: string | null
           amount_total?: number
           base_amount?: number
           commission_amount?: number
           coupon_id?: string | null
           course_id?: string
           created_at?: string
+          creator_fee_amount?: number | null
           creator_id?: string
           creator_payout_amount?: number
           currency?: string | null
+          gateway_fee_amount?: number | null
           gst_amount?: number
           id?: string
           invoice_number?: string | null
+          is_platform_course?: boolean | null
+          net_amount?: number | null
           paid_at?: string | null
           platform_fee_amount?: number
           razorpay_order_id?: string | null
