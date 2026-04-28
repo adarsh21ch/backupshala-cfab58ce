@@ -80,7 +80,7 @@ const CourseEnrollment = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [previewModule, setPreviewModule] = useState<any | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const { data: platformSettings } = usePlatformSettings();
+  const { data: platformSettings, raw: settingsRaw } = usePlatformSettings();
   const { data: eligibility } = useCourseReferralEligibility(course?.id);
   const canRefer = !!eligibility?.eligible;
   const { startUpgrade, paying: upgradePaying } = useUpgradeFlow(course?.id, () => {
