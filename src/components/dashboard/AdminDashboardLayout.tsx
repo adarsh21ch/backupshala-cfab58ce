@@ -4,6 +4,7 @@ import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet,
 import { Button } from '@/components/ui/button';
 import { useState, useMemo } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
+import Logo from '@/components/Logo';
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 type Group = { label: string; items: NavItem[]; collapsible?: boolean };
@@ -161,9 +162,12 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[220px] border-r border-border bg-sidebar lg:flex lg:flex-col">
         <div className="flex h-[60px] items-center px-5">
           <Link to="/" className="flex items-center">
-            <span className="font-heading text-xl font-bold"><span className="text-foreground">Backup</span><span className="text-accent">shala</span></span>
+            <Logo
+              iconSize={28}
+              textClassName="text-lg"
+              badge={<span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>}
+            />
           </Link>
-          <span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>
         </div>
         <div className="border-t border-border" />
         <nav className="flex-1 overflow-y-auto pb-4">
@@ -197,10 +201,11 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 w-[260px] border-r border-border bg-sidebar flex flex-col">
             <div className="flex h-[60px] items-center justify-between px-5">
-              <div className="flex items-center">
-                <span className="font-heading text-xl font-bold"><span className="text-foreground">Backup</span><span className="text-accent">shala</span></span>
-                <span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>
-              </div>
+              <Logo
+                iconSize={26}
+                textClassName="text-lg"
+                badge={<span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>}
+              />
               <button onClick={() => setMobileOpen(false)} aria-label="Close menu" className="p-1.5 rounded-lg hover:bg-secondary/60">
                 <X className="h-5 w-5" />
               </button>
