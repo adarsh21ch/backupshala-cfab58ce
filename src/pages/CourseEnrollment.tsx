@@ -511,9 +511,9 @@ const CourseEnrollment = () => {
           profiles: { creator_slug: creator?.creator_slug || creatorSlug },
         }}
         estimatedEarning={
-          course.is_platform_course
-            ? Math.round(displayPrice * ((platformSettings as any)?.platform_course_referral_percent ?? 15) / 100)
-            : Math.round(displayPrice * (course.platform_fee_percent ?? 10) / 100 * ((platformSettings as any)?.referral_commission_percent ?? 70) / 100)
+          computeCommission(
+            inputsFromSettings(displayPrice, !!course.is_platform_course, settingsRaw)
+          ).affiliateEarning
         }
       />
     </div>
