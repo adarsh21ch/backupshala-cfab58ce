@@ -12,6 +12,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Save, AlertTriangle, IndianRupee } from 'lucide-react';
 import { calculateSaleSplit, getCommissionConfig } from '@/lib/tierPricing';
 import VideoSettingsSection from '@/components/admin/VideoSettingsSection';
+import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 
 const AdminSettings = () => {
   const qc = useQueryClient();
