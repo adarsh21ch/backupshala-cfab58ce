@@ -197,12 +197,20 @@ const Dashboard = () => {
             </div>
           ) : (
             <EmptyState
+              compact
               icon={BookOpen}
               title="No courses yet"
-              description="You haven't enrolled in any courses yet. Explore and start learning!"
+              description="You haven't enrolled in any courses yet."
               actionLabel="Explore Courses"
               actionTo="/explore"
-            />
+            >
+              <p className="mt-3 text-xs text-muted-foreground">
+                Or try the{' '}
+                <Link to="/standard-bundle" className="text-accent font-semibold hover:underline">
+                  Standard Bundle — ₹249
+                </Link>
+              </p>
+            </EmptyState>
           )}
         </div>
 
