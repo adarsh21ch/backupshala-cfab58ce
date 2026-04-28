@@ -89,18 +89,8 @@ const ReferEarn = () => {
   }, 0) || 0;
   const successfulSales = commissions?.length || 0;
 
-  // Referral commission % calculator
-  const platformFeePct = Number(settings?.platform_fee_percent ?? 10);
-  const referralCreatorPct = Number((settings as any)?.referral_commission_percent ?? 70);
-  const referralPlatformPct = Number((settings as any)?.platform_course_referral_percent ?? 15);
-
-  const computeEarn = (price: number, isPlatformCourse?: boolean) => {
-    const gateway = price * 0.02;
-    const net = price - gateway;
-    if (isPlatformCourse) return Math.round(net * (referralPlatformPct / 100));
-    const platformFee = net * (platformFeePct / 100);
-    return Math.round(platformFee * (referralCreatorPct / 100));
-  };
+  const computeEarn = (price: number, isPlatformCourse?: boolean) =>
+    computeCommission(inputsFromSettings(price, !!isPlatformCourse, settingsRaw)).affiliateEarning;
 
   const username = profile?.username;
   const baseLink = username ? buildGenericRefLink(username) : '';
