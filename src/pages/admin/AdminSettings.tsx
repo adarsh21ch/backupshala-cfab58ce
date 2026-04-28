@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect, useMemo } from 'react';
 import { Save, AlertTriangle, IndianRupee } from 'lucide-react';
-import { calculateSaleSplit, getCommissionConfig } from '@/lib/tierPricing';
+// (commission calc lives inside CommissionStructureCard)
 import VideoSettingsSection from '@/components/admin/VideoSettingsSection';
 import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 
@@ -87,13 +87,9 @@ const AdminSettings = () => {
     onError: () => toast.error('Failed to save'),
   });
 
-  // ---- Live preview using shared calculator ----
-  const cfg = useMemo(() => getCommissionConfig(values), [values]);
+  // Course default prices (used in Platform Course Defaults section)
   const basicPrice = Number(values.basic_price) || 249;
   const advancedPrice = Number(values.advanced_price) || 499;
-  const upgradePrice = Math.max(0, advancedPrice - basicPrice);
-  const splitBasic = useMemo(() => calculateSaleSplit(basicPrice, cfg, false), [basicPrice, cfg]);
-  const splitAdvanced = useMemo(() => calculateSaleSplit(advancedPrice, cfg, false), [advancedPrice, cfg]);
 
   // ---- Field helpers ----
   const NumberField = ({ k, label, prefix, suffix, hint }: { k: string; label: string; prefix?: string; suffix?: string; hint?: string }) => (
