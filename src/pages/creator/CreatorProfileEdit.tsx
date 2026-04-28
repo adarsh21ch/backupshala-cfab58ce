@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2, ExternalLink } from 'lucide-react';
+import { cleanSlug } from '@/lib/slug';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 
@@ -29,10 +30,15 @@ const CreatorProfileEdit = () => {
       toast({ title: 'Display name and slug are required', variant: 'destructive' });
       return;
     }
+    const finalSlug = cleanSlug(creatorSlug);
+    if (!finalSlug || finalSlug.length < 3) {
+      toast({ title: 'Slug must be at least 3 characters (a–z, 0–9, hyphens)', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from('profiles').update({
       creator_display_name: displayName.trim(),
-      creator_slug: creatorSlug.trim(),
+      creator_slug: finalSlug,
       bio: bio.trim(),
       creator_category: category || null,
       creator_website: website.trim() || null,
@@ -42,13 +48,17 @@ const CreatorProfileEdit = () => {
     if (error) {
       toast({ title: 'Failed', description: error.message.includes('unique') ? 'Slug already taken' : error.message, variant: 'destructive' });
     } else {
+      setCreatorSlug(finalSlug);
       toast({ title: 'Profile updated ✓' });
       await refreshProfile();
     }
     setSaving(false);
   };
 
-  const profileUrl = `${window.location.origin}/c/${creatorSlug}`;
+  // Live preview always reflects the canonical, cleaned slug.
+  const previewSlug = cleanSlug(creatorSlug) || creatorSlug;
+  const profileUrl = `${window.location.origin}/c/${previewSlug}`;
+  const hasTrailingHyphen = creatorSlug.length > 0 && creatorSlug !== cleanSlug(creatorSlug);
 
   return (
     <CreatorDashboardLayout>
@@ -63,7 +73,10 @@ const CreatorProfileEdit = () => {
           <div>
             <Label>Creator Slug *</Label>
             <Input value={creatorSlug} onChange={e => setCreatorSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} className="mt-1 rounded-lg font-mono text-xs" />
-            <p className="mt-1 text-xs text-muted-foreground">{profileUrl}</p>
+            <p className="mt-1 text-xs text-muted-foreground break-all">{profileUrl}</p>
+            {hasTrailingHyphen && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Trailing/leading hyphens will be removed on save.</p>
+            )}
           </div>
           <div>
             <Label>Bio</Label>
