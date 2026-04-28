@@ -181,12 +181,100 @@ Deno.serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    // Get course info
-    const { data: course } = await supabase
-      .from("courses")
-      .select("title, slug, creator_id")
-      .eq("id", course_id)
-      .single();
+    // Get course info (title used in messages)
+    const course = courseRow;
+
+    // Hold periods
+    const referralHoldDays = setting("referral_hold_days", 7);
+    const creatorHoldDays = setting("creator_hold_days", 3);
+    const referralHoldDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
+    const creatorHoldDate = new Date(Date.now() + creatorHoldDays * 24 * 60 * 60 * 1000);
+
+    // ───────────────────────────────────────────────────────────
+    // RESOLVE REFERRER from Razorpay order notes (set in create-order)
+    // ───────────────────────────────────────────────────────────
+    let resolvedReferrerId: string | null = null;
+    try {
+      const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
+      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
+        headers: { Authorization: "Basic " + btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`) },
+      });
+      if (orderRes.ok) {
+        const orderData = await orderRes.json();
+        const refId = orderData?.notes?.referrer_id;
+        if (refId && typeof refId === "string" && refId.length > 10) resolvedReferrerId = refId;
+      }
+    } catch (e) { console.warn("Failed to fetch order notes", e); }
+
+    // Self-referral guard
+    if (resolvedReferrerId === user.id) resolvedReferrerId = null;
+
+    // Eligibility check: admin OR own course OR enrolled
+    let referralEligible = false;
+    if (resolvedReferrerId) {
+      const { data: adminRole } = await supabase.from("user_roles")
+        .select("role").eq("user_id", resolvedReferrerId).eq("role", "admin").maybeSingle();
+      if (adminRole) referralEligible = true;
+      else if (courseCreatorId === resolvedReferrerId) referralEligible = true;
+      else {
+        const { data: refEnroll } = await supabase.from("enrollments")
+          .select("id").eq("student_id", resolvedReferrerId).eq("course_id", course_id).maybeSingle();
+        if (refEnroll) referralEligible = true;
+      }
+    }
+
+    const isOwnCourseReferral =
+      !!resolvedReferrerId && referralEligible && resolvedReferrerId === courseCreatorId && !isPlatformCourse;
+
+    // ───────────────────────────────────────────────────────────
+    // FINAL AMOUNTS
+    // ───────────────────────────────────────────────────────────
+    let finalPlatformAmount = platformBase;
+    let finalCreatorAmount = 0;
+    let finalAffiliateAmount = 0;
+    let affiliateUserId: string | null = null;
+
+    if (isPlatformCourse) {
+      if (resolvedReferrerId && referralEligible) {
+        finalPlatformAmount = platformBase;
+        finalAffiliateAmount = affiliateBase;
+        affiliateUserId = resolvedReferrerId;
+      } else {
+        finalPlatformAmount = netAmount;
+        finalAffiliateAmount = 0;
+      }
+    } else {
+      finalPlatformAmount = platformBase;
+      finalCreatorAmount = creatorBase;
+      if (resolvedReferrerId && referralEligible) {
+        finalAffiliateAmount = affiliateBase;
+        affiliateUserId = resolvedReferrerId;
+      } else {
+        finalCreatorAmount = creatorBase + affiliateBase;
+        finalAffiliateAmount = 0;
+      }
+    }
+
+    // Persist payment breakdown
+    await supabase
+      .from("payments")
+      .update({
+        status: "success",
+        razorpay_payment_id,
+        invoice_number,
+        paid_at: new Date().toISOString(),
+        base_amount: baseAmount,
+        gst_amount: gstAmount,
+        gateway_fee_amount: gatewayFeeAmount,
+        net_amount: netAmount,
+        platform_fee_amount: finalPlatformAmount,
+        creator_fee_amount: finalCreatorAmount,
+        affiliate_commission_amount: finalAffiliateAmount,
+        affiliate_user_id: affiliateUserId,
+        is_platform_course: isPlatformCourse,
+        creator_payout_amount: finalCreatorAmount,
+      })
+      .eq("id", payment.id);
 
     // Create enrollment
     await supabase.from("enrollments").insert({
@@ -208,117 +296,82 @@ Deno.serve(async (req) => {
       .update({ total_students: (courseData?.total_students || 0) + 1 })
       .eq("id", course_id);
 
-    // Get hold periods from settings
-    const referralHoldDays = Number(await getSettingValue(supabase, "referral_hold_days", "7"));
-    const creatorHoldDays = Number(await getSettingValue(supabase, "creator_hold_days", "3"));
-    // referral_commission_percent is now: % OF PLATFORM FEE (not % of sale)
-    const referralOfPlatformPct = Number(
-      await getSettingValue(supabase, "referral_commission_percent", "70")
-    );
-
     // ───────────────────────────────────────────────────────────
-    // REFERRAL COMMISSION — eligibility-gated (admin / creator / enrolled)
-    // Resolves referrer from Razorpay order notes (set in create-order)
+    // CREDIT WALLETS
     // ───────────────────────────────────────────────────────────
-    let resolvedReferrerId: string | null = null;
-    try {
-      const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
-      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
-        headers: { Authorization: "Basic " + btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`) },
-      });
-      if (orderRes.ok) {
-        const orderData = await orderRes.json();
-        const refId = orderData?.notes?.referrer_id;
-        if (refId && typeof refId === "string" && refId.length > 10) resolvedReferrerId = refId;
-      }
-    } catch (e) { console.warn("Failed to fetch order notes", e); }
+    const courseType = isPlatformCourse ? "platform" : "creator";
 
-    // Eligibility check: admin OR own course OR enrolled
-    let referralEligible = false;
-    if (resolvedReferrerId && resolvedReferrerId !== user.id) {
-      const { data: adminRole } = await supabase.from("user_roles")
-        .select("role").eq("user_id", resolvedReferrerId).eq("role", "admin").maybeSingle();
-      if (adminRole) referralEligible = true;
-      else if (course?.creator_id === resolvedReferrerId) referralEligible = true;
-      else {
-        const { data: refEnroll } = await supabase.from("enrollments")
-          .select("id").eq("student_id", resolvedReferrerId).eq("course_id", course_id).maybeSingle();
-        if (refEnroll) referralEligible = true;
-      }
-    }
-
-    if (resolvedReferrerId && referralEligible) {
-      const { data: courseRowFull } = await supabase
-        .from("courses").select("is_platform_course").eq("id", course_id).maybeSingle();
-      const isPlat = courseRowFull?.is_platform_course === true;
-      const platformReferralPct = Number(await getSettingValue(supabase, "platform_course_referral_percent", "15"));
-
-      let commissionAmount = isPlat
-        ? Math.round(netAmount * (platformReferralPct / 100) * 100) / 100
-        : Math.round(platformFeeAmount * (referralOfPlatformPct / 100) * 100) / 100;
-      if (!isPlat && commissionAmount > platformFeeAmount) commissionAmount = platformFeeAmount;
-      if (commissionAmount < 0) commissionAmount = 0;
-
-      if (commissionAmount > 0) {
-        const { data: refProfile } = await supabase
-          .from("profiles").select("email, full_name").eq("id", resolvedReferrerId).maybeSingle();
-        const holdDate = new Date(Date.now() + referralHoldDays * 24 * 60 * 60 * 1000);
-
-        await supabase.from("commissions").insert({
-          referrer_email: refProfile?.email || "unknown@backupshala.com",
-          referrer_user_id: resolvedReferrerId,
-          student_id: user.id,
-          course_id,
-          payment_id: payment.id,
-          amount: commissionAmount,
-          status: "credited",
-          commission_type: isPlat ? "platform_course_referral" : "creator_course_referral",
-          available_after: holdDate.toISOString(),
-        });
-
+    if (!isPlatformCourse && finalCreatorAmount > 0 && courseCreatorId) {
+      if (isOwnCourseReferral) {
         await creditWallet(
-          supabase, resolvedReferrerId, commissionAmount, "referral_commission",
-          `Commission for referring ${course?.title}`, payment.id, referralHoldDays
+          supabase, courseCreatorId, creatorBase,
+          "creator_earning",
+          `Creator fee from sale of ${course?.title}`,
+          payment.id, creatorHoldDays,
         );
-
-        await supabase.from("notifications").insert({
-          user_id: resolvedReferrerId,
-          title: `You earned ₹${commissionAmount} commission! 💰`,
-          message: `${(student?.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available on ${holdDate.toLocaleDateString("en-IN")}.`,
-          type: "commission",
-          action_url: "/refer",
-        });
+      } else {
+        await creditWallet(
+          supabase, courseCreatorId, finalCreatorAmount,
+          "creator_earning",
+          `Earnings from sale of ${course?.title}`,
+          payment.id, creatorHoldDays,
+        );
       }
-    } else if (resolvedReferrerId) {
-      console.log(`Referral commission skipped: referrer ${resolvedReferrerId} not eligible for course ${course_id}`);
+
+      await supabase.from("creator_payouts").insert({
+        creator_id: courseCreatorId,
+        payment_id: payment.id,
+        amount: finalCreatorAmount,
+        status: "pending",
+      });
+
+      await supabase.from("notifications").insert({
+        user_id: courseCreatorId,
+        title: "New Sale! 🎉",
+        message: `${(student?.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. ₹${finalCreatorAmount.toFixed(0)} earned — available on ${creatorHoldDate.toLocaleDateString("en-IN")}.`,
+        type: "enrollment",
+        action_url: "/creator/earnings",
+      });
     }
 
-    // Credit creator's wallet — ALWAYS the full creator share, never reduced by referral
-    await creditWallet(
-      supabase,
-      payment.creator_id,
-      creatorEarningAmount,
-      "creator_earning",
-      `Earning from sale of ${course?.title}`,
-      payment.id,
-      creatorHoldDays
-    );
+    if (finalAffiliateAmount > 0 && affiliateUserId) {
+      const { data: refProfile } = await supabase
+        .from("profiles").select("email, full_name").eq("id", affiliateUserId).maybeSingle();
 
-    const creatorHoldDate = new Date(Date.now() + creatorHoldDays * 24 * 60 * 60 * 1000);
-    await supabase.from("creator_payouts").insert({
-      creator_id: payment.creator_id,
-      payment_id: payment.id,
-      amount: creatorEarningAmount,
-      status: "pending",
-    });
+      await supabase.from("commissions").insert({
+        referrer_email: refProfile?.email || "unknown@backupshala.com",
+        referrer_user_id: affiliateUserId,
+        student_id: user.id,
+        course_id,
+        payment_id: payment.id,
+        amount: finalAffiliateAmount,
+        status: "credited",
+        commission_type: isOwnCourseReferral
+          ? "self_referral"
+          : (isPlatformCourse ? "platform_course_referral" : "creator_course_referral"),
+        course_type: courseType,
+        available_after: referralHoldDate.toISOString(),
+      });
 
-    await supabase.from("notifications").insert({
-      user_id: payment.creator_id,
-      title: "New Sale! 🎉",
-      message: `${(student?.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. ₹${creatorEarningAmount} earned — available on ${creatorHoldDate.toLocaleDateString("en-IN")}.`,
-      type: "enrollment",
-      action_url: "/creator/earnings",
-    });
+      await creditWallet(
+        supabase, affiliateUserId, finalAffiliateAmount,
+        isOwnCourseReferral ? "affiliate_commission" : "referral_commission",
+        isOwnCourseReferral
+          ? `Affiliate commission (own course) for ${course?.title}`
+          : `Commission for referring ${course?.title}`,
+        payment.id, referralHoldDays,
+      );
+
+      await supabase.from("notifications").insert({
+        user_id: affiliateUserId,
+        title: `You earned ₹${finalAffiliateAmount.toFixed(0)} commission! 💰`,
+        message: `${(student?.full_name || "Someone").split(" ")[0]} enrolled in ${course?.title}. Available on ${referralHoldDate.toLocaleDateString("en-IN")}.`,
+        type: "commission",
+        action_url: "/refer",
+      });
+    } else if (resolvedReferrerId && !referralEligible) {
+      console.log(`Referral skipped: referrer ${resolvedReferrerId} not eligible for course ${course_id}`);
+    }
 
     // Notification for student
     await supabase.from("notifications").insert({
