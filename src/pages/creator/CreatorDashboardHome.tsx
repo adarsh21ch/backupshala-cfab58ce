@@ -97,10 +97,10 @@ const CreatorDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <KPICard icon={Users} label="Total Students" value={totalStudents} color="primary" />
-            <KPICard icon={IndianRupee} label="Gross Revenue" value={formatPrice(grossRevenue)} color="accent" />
-            <KPICard icon={Wallet} label="Net Earnings" value={formatPrice(netEarnings)} color="primary" />
-            <KPICard icon={BookOpen} label="Courses" value={courses?.length || 0} color="accent" />
+            <KPICard icon={Users}       label="Total Students" value={totalStudents}              color="success" vibrantValue />
+            <KPICard icon={IndianRupee} label="Gross Revenue"  value={formatPrice(grossRevenue)}  color="accent"  vibrantValue />
+            <KPICard icon={Wallet}      label="Net Earnings"   value={formatPrice(netEarnings)}   color="success" vibrantValue />
+            <KPICard icon={BookOpen}    label="Courses"        value={courses?.length || 0}       color="info"    vibrantValue />
           </div>
         )}
 
