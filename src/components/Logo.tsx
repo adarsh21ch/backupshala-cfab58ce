@@ -14,10 +14,10 @@ interface LogoProps {
 }
 
 /**
- * Backupshala logo — icon + wordmark in Space Grotesk.
- * Icon is two stacked layers: the navy "B" uses `currentColor` (text-foreground)
+ * Backupshala logo — icon (graduation cap + open book) + wordmark in Space Grotesk.
+ * Icon is two stacked layers: the navy half uses `currentColor` (text-foreground)
  * so it appears dark navy in light mode and cream-white in dark mode.
- * The orange cap & book stay saffron in both modes.
+ * The orange cap, figure & left page stay saffron in both modes.
  */
 const Logo = ({
   iconSize = 28,
