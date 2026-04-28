@@ -1,4 +1,5 @@
-import iconSrc from '@/assets/backupshala-icon.png';
+import navyMask from '@/assets/backupshala-icon-navy.png';
+import orangeSrc from '@/assets/backupshala-icon-orange.png';
 
 interface LogoProps {
   /** Pixel size of the icon. Text scales with `textClassName`. */
@@ -13,9 +14,10 @@ interface LogoProps {
 }
 
 /**
- * Backupshala logo — icon (PNG) + wordmark rendered in Space Grotesk.
- * The "Backup" half adapts to the current theme via `text-foreground`.
- * "shala" stays saffron (accent) in both modes.
+ * Backupshala logo — icon + wordmark in Space Grotesk.
+ * Icon is two stacked layers: the navy "B" uses `currentColor` (text-foreground)
+ * so it appears dark navy in light mode and cream-white in dark mode.
+ * The orange cap & book stay saffron in both modes.
  */
 const Logo = ({
   iconSize = 28,
@@ -25,15 +27,37 @@ const Logo = ({
   className = '',
 }: LogoProps) => (
   <span className={`inline-flex items-center gap-2 ${className}`}>
-    <img
-      src={iconSrc}
-      alt="Backupshala"
-      width={iconSize}
-      height={iconSize}
+    <span
+      role="img"
+      aria-label="Backupshala"
+      className="relative shrink-0 select-none text-foreground"
       style={{ width: iconSize, height: iconSize }}
-      className="shrink-0 select-none"
-      draggable={false}
-    />
+    >
+      {/* Navy layer — recolored via CSS mask so it follows the theme */}
+      <span
+        aria-hidden
+        className="absolute inset-0 bg-current"
+        style={{
+          WebkitMaskImage: `url(${navyMask})`,
+          maskImage: `url(${navyMask})`,
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskSize: 'contain',
+          maskSize: 'contain',
+          WebkitMaskPosition: 'center',
+          maskPosition: 'center',
+        }}
+      />
+      {/* Orange cap + book — fixed brand color in both modes */}
+      <img
+        src={orangeSrc}
+        alt=""
+        width={iconSize}
+        height={iconSize}
+        draggable={false}
+        className="absolute inset-0 h-full w-full"
+      />
+    </span>
     {!iconOnly && (
       <span className={`font-heading font-bold tracking-tight leading-none ${textClassName}`}>
         <span className="text-foreground">Backup</span>
