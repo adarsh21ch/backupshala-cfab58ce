@@ -33,7 +33,7 @@ const LandingNavbar = () => {
           <Logo iconSize={32} textClassName="text-2xl" />
         </Link>
 
-        <div className="hidden items-center gap-7 md:flex">
+        <div className="hidden items-center gap-5 xl:gap-7 lg:flex whitespace-nowrap">
           <Link to="/explore" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Explore Courses</Link>
           <a href="/#standard-bundle" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Standard Bundle</a>
           <a href="/#for-creators" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">For Creators</a>
@@ -87,7 +87,7 @@ const LandingNavbar = () => {
         {/* Mobile slide-in drawer */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button className="md:hidden p-2 -mr-2" aria-label="Open menu">
+            <button className="lg:hidden p-2 -mr-2" aria-label="Open menu">
               <Menu className="h-6 w-6" />
             </button>
           </SheetTrigger>
