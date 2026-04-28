@@ -7,17 +7,13 @@ import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { formatPrice } from '@/lib/format';
+import { computeCommission, inputsFromSettings } from '@/lib/commissionModel';
 
 const benefits = [
   { icon: Upload, title: 'Video or Resource Courses', desc: 'Upload video lessons OR curate links, podcasts, and articles. Both formats supported.' },
   { icon: Scale, title: 'GST-Compliant Payments', desc: 'Razorpay handles every enrollment. GST invoices auto-generated. Fully compliant.' },
   { icon: SlidersHorizontal, title: 'Set Your Own Price', desc: 'You decide what your course is worth. Free or premium — it’s your call.' },
 ];
-
-const calcEarning = (price: number, gatewayPct: number, platformPct: number) => {
-  const afterGateway = Math.max(0, price - Math.round(price * (gatewayPct / 100)));
-  return Math.max(0, afterGateway - Math.round(afterGateway * (platformPct / 100)));
-};
 
 const ForCreators = () => {
   const { user, profile } = useAuth();
