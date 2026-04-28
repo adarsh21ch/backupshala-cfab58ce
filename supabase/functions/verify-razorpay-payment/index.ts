@@ -126,62 +126,53 @@ Deno.serve(async (req) => {
     // Generate invoice number
     const invoice_number = "INV-" + new Date().getFullYear() + "-" + Math.random().toString(36).substr(2, 6).toUpperCase();
 
-    // ====== SERVER-SIDE FEE CALCULATION (CANONICAL) ======
-    // Platform courses (is_platform_course = true) keep 100% of revenue.
-    // Creator courses split: creator gets (100 - platform_fee)% of net.
-    const coursePrice = Number(payment.amount_total);
+    // ====== SERVER-SIDE COMMISSION CALCULATION (CANONICAL) ======
+    // Platform course: platform 25% / affiliate 75% (or platform 100% if no referral)
+    // Creator course: platform 10% / creator 15% / affiliate 75%
+    //                 If no referral, the 75% affiliate share goes back to creator (=> creator 90%)
+    const grossAmount = Number(payment.amount_total);
 
     const { data: courseRow } = await supabase
       .from("courses")
-      .select("is_platform_course, creator_id")
+      .select("is_platform_course, creator_id, title")
       .eq("id", course_id)
       .single();
     const isPlatformCourse = courseRow?.is_platform_course === true;
+    const courseCreatorId = courseRow?.creator_id ?? payment.creator_id;
 
-    const { data: creatorProfile } = await supabase
-      .from("profiles")
-      .select("is_creator_pro")
-      .eq("id", payment.creator_id)
-      .single();
+    // Settings — pull all in one read for efficiency
+    const { data: settingRows } = await supabase
+      .from("platform_settings")
+      .select("key, value");
+    const settingsMap: Record<string, string> = {};
+    (settingRows || []).forEach((r: any) => { settingsMap[r.key] = r.value; });
+    const setting = (k: string, d: number) =>
+      settingsMap[k] !== undefined ? Number(settingsMap[k]) : d;
 
-    const isCreatorPro = creatorProfile?.is_creator_pro === true;
-    const freeFeePct = Number(await getSettingValue(supabase, "platform_fee_free", "10"));
-    const proFeePct = Number(await getSettingValue(supabase, "platform_fee_pro", "10"));
-    const platformFeePct = isCreatorPro ? proFeePct : freeFeePct;
+    const gstRate = setting("gst_rate_percent", 18) / 100;
+    const gatewayRate = setting("gateway_fee_percent", 2) / 100;
 
-    // GST handling
-    const gstEnabled = (await getSettingValue(supabase, "gst_enabled", "false")) === "true";
-    const gstRate = Number(await getSettingValue(supabase, "gst_rate_percent", "18"));
-    const baseAmount = gstEnabled
-      ? Math.round((coursePrice / (1 + gstRate / 100)) * 100) / 100
-      : coursePrice;
-    const gstAmount = gstEnabled ? Math.round((coursePrice - baseAmount) * 100) / 100 : 0;
-
-    const gatewayFeePct = Number(await getSettingValue(supabase, "gateway_fee_percent", "2"));
-    const gatewayFeeAmount = Math.round((baseAmount * gatewayFeePct) / 100 * 100) / 100;
+    // GST is always extracted (per new spec). Net = price − GST − gateway.
+    const baseAmount = Math.round((grossAmount / (1 + gstRate)) * 100) / 100;
+    const gstAmount = Math.round((grossAmount - baseAmount) * 100) / 100;
+    const gatewayFeeAmount = Math.round(baseAmount * gatewayRate * 100) / 100;
     const netAmount = Math.round((baseAmount - gatewayFeeAmount) * 100) / 100;
 
-    let creatorEarningAmount = 0;
-    let platformFeeAmount = netAmount;
-    if (!isPlatformCourse) {
-      const creatorSharePct = 100 - platformFeePct;
-      creatorEarningAmount = Math.round(netAmount * (creatorSharePct / 100) * 100) / 100;
-      platformFeeAmount = Math.round((netAmount - creatorEarningAmount) * 100) / 100;
-    }
+    // Split percentages
+    const platformPct = isPlatformCourse
+      ? setting("platform_course_platform_fee_percent", 25) / 100
+      : setting("creator_course_platform_fee_percent", 10) / 100;
+    const creatorPct = isPlatformCourse
+      ? 0
+      : setting("creator_course_creator_fee_percent", 15) / 100;
+    const affiliatePct = isPlatformCourse
+      ? setting("platform_course_affiliate_percent", 75) / 100
+      : setting("creator_course_affiliate_percent", 75) / 100;
 
-    await supabase
-      .from("payments")
-      .update({
-        status: "success",
-        razorpay_payment_id,
-        invoice_number,
-        paid_at: new Date().toISOString(),
-        base_amount: baseAmount,
-        gst_amount: gstAmount,
-        platform_fee_amount: platformFeeAmount,
-        creator_payout_amount: creatorEarningAmount,
-      })
-      .eq("id", payment.id);
+    const baseSplit = (pct: number) => Math.round(netAmount * pct * 100) / 100;
+    const platformBase = baseSplit(platformPct);
+    const creatorBase = baseSplit(creatorPct);
+    const affiliateBase = baseSplit(affiliatePct);
 
     // Get student profile
     const { data: student } = await supabase
