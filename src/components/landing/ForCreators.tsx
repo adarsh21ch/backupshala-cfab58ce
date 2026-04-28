@@ -158,7 +158,7 @@ const ForCreators = () => {
           <ul className="space-y-2 text-sm">
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Free to create an account</li>
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Free to upload and publish courses</li>
-            <li className="flex items-start gap-2"><span className="text-primary">✓</span> Only {platformFeePct}% platform fee when you make a sale</li>
+            <li className="flex items-start gap-2"><span className="text-primary">✓</span> Keep 15% guaranteed + 75% when you sell directly</li>
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Withdraw your earnings anytime (min ₹500)</li>
           </ul>
           <p className="mt-4 text-xs text-muted-foreground">
