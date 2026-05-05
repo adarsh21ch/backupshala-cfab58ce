@@ -249,7 +249,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
       </nav>
 
       <main className="pt-[60px] pb-20 lg:pb-6 lg:pl-[220px]">
-        <div className="container mx-auto p-4 md:p-6">{children}</div>
+        <div className="container mx-auto p-4 md:p-6">{children}<DashboardFooter /></div>
       </main>
     </div>
   );
