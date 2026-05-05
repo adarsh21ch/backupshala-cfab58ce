@@ -60,6 +60,7 @@ const RefundPolicy = () => (
             <li>Courses where more than 20% of content has been accessed</li>
             <li>Courses where the refund window (7 days) has expired</li>
             <li>Certificates already issued (certificate remains valid even after refund)</li>
+            <li><strong>GST component</strong> (e.g. ₹38 on a ₹249 course) is non-refundable as it has already been remitted to the government.</li>
           </ul>
         </section>
 
