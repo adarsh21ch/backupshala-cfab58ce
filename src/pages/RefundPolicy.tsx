@@ -15,6 +15,10 @@ const RefundPolicy = () => (
 
       <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
         <section>
+          <h2 className="font-heading text-lg font-700">Operator</h2>
+          <p className="text-muted-foreground">Refund requests are processed by <strong>Nevorai Technologies</strong> (GSTIN: 23CBCPC3986J1ZN), the legal entity operating Backupshala. To request a refund, contact <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a> within 7 days of purchase with your payment ID and reason for refund.</p>
+        </section>
+        <section>
           <h2 className="font-heading text-lg font-700">1. Refund Window</h2>
           <p className="text-muted-foreground">We offer a <strong>7-day refund policy</strong> on all course enrollments from the date of purchase.</p>
         </section>
