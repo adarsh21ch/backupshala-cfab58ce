@@ -1,100 +1,52 @@
+## Redesign the Backupshala logo (v2)
 
+Build a cleaner, more scalable mark that fixes the v1 issues (too many elements, three competing colors, weak at favicon size) while keeping the brand DNA: education + growth + security, in saffron + green.
 
-# Backupshala — Audit-Driven Polish Plan
+### The new mark — concept
 
-This plan executes the 10 parts from your prompt in dependency order. Nothing marked BUILT in the audit is touched.
+A single integrated symbol instead of three stacked objects:
 
-## Step 1 — Verify wallet trigger (Part 6)
-- Run a SELECT on `information_schema.triggers` for `on_auth_user_created_wallet`.
-- If missing, migration: `CREATE TRIGGER on_auth_user_created_wallet AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_wallet();`
-- Edge function fallback `ensureWallet()` already exists in `verify-razorpay-payment` — leave it.
+- **Outer form:** a soft-rounded shield (security / "backup")
+- **Inside:** a graduation cap whose tassel doubles as an upward arrow / growth tick
+- **Two colors only:** saffron `#F97316` (cap + tassel-arrow) and forest green `#16A34A` (shield) — black/white auto-adapts via theme
+- **Negative space:** the cap's underside cuts cleanly into the shield so the whole thing reads as one shape, not three
+- **Geometry:** built on a 24-unit grid, 2px stroke, rounded joins — survives down to 16px favicon
 
-## Step 2 — Schema: per-module video settings (Part 2)
-Migration on `public.modules`:
-- `allow_seek BOOLEAN DEFAULT NULL`
-- `allow_speed_change BOOLEAN DEFAULT NULL`
-- `min_watch_percent INTEGER DEFAULT NULL`
-- `show_watermark BOOLEAN DEFAULT NULL`
-- `video_source TEXT DEFAULT 'url'` with CHECK constraint
-- New platform_settings rows: `video_watermark_position=bottom-right`, `video_watermark_opacity=60`, `video_watermark_size=medium`, `max_preview_modules_per_course=2`
+This drops v1's bar-chart (redundant with the tassel-arrow) and the black outline (replaced by clean color blocks), giving a 2-color, single-silhouette mark that ages better.
 
-## Step 3 — Wire `BackupshalaVideoPlayer.tsx` to settings (Part 1A–1D, Part 10)
-Add props: `allowSeek`, `allowSpeedChange`, `minWatchPercent`, `showWatermark`, `watermarkText`, `watermarkPosition`, `watermarkOpacity`, `watermarkSize`, `isPreview`.
+### Wordmark
 
-Changes inside the player:
-1. **Watermark** — replace hardcoded div with conditional render driven by props; position computed from `watermarkPosition` (corner classes) and `watermarkOpacity`/`watermarkSize`.
-2. **Seek prevention** — add `keydown` handler blocking `ArrowRight`/`L` when `!allowSeek`; allow `ArrowLeft`/`J` always; in `handleTimeUpdate`, snap back to `maxWatchedSeconds` if user jumps past it.
-3. **Speed control** — new state `speed`, popover with `[0.5, 0.75, 1, 1.25, 1.5, 2]`, persisted to `localStorage` key `bs_video_speed`, button placed between volume and fullscreen, rendered only when `allowSpeedChange`.
-4. **Mobile touch** — add `onTouchStart={resetControlsTimer}` to container; ensure control buttons hit 44×44 px minimum.
-5. **Preview mode** — when `isPreview`, skip progress fetch + tracking interval + `update-watch-progress` calls.
+Keep current Space Grotesk Bold, "Backup" in foreground + "shala" in saffron — already working, no change.
 
-In `ModulePlayer.tsx`:
-- Fetch course row (settings columns) + `usePlatformSettings` defaults.
-- Add `resolveSetting(moduleVal, courseVal, platformVal)` helper.
-- Pass resolved props into `BackupshalaVideoPlayer`.
+### How it'll be generated
 
-In `CourseBuilder.tsx` module editor: collapsible "Advanced Module Settings" with the four override toggles + min-watch input. Empty/null = inherit.
+Use Nano Banana Pro (`google/gemini-3-pro-image-preview`) with a precise prompt for a flat vector-style icon on transparent background, 1024×1024, then derive every size we need.
 
-## Step 4 — Remove legacy `VideoPlayer.tsx` (Part 1E)
-- Search imports of `@/components/video/VideoPlayer`.
-- Replace each with `BackupshalaVideoPlayer` using equivalent props.
-- Delete the file.
+### Files that will be regenerated
 
-## Step 5 — Free preview modal (Part 3)
-New component `CoursePreviewModal.tsx` used in `CourseEnrollment.tsx`:
-- Responsive: `Drawer` (mobile) / `Dialog` (desktop, max-w 800).
-- Renders `BackupshalaVideoPlayer` with `isPreview`, watermark forced on, no progress save.
-- On `ended` or 10-min timer: overlay CTA "Enroll Now — ₹{tier price}" → `/enroll/:slug`. Logged-out users routed via `/signup?redirect=...`.
-- Click handler on `is_preview` modules in CourseEnrollment list opens this modal.
-- Add green "▶ Free Preview" badge on `CourseCard.tsx` when course has any preview module (lightweight join in Explore query).
+All from the single new master PNG:
 
-## Step 6 — Fix `ForCreators.tsx` (Part 4)
-- Replace component to read `usePlatformSettings`.
-- Compute earnings: `floor(price * (1 - gateway%/100) * (1 - platform_fee_free/100))`.
-- Replace hero copy + add "No monthly fee. No hidden charges." trust line.
-- Replace static example block with **dynamic Basic / Advanced earnings cards**.
-- Add **interactive calculator**: tier toggle, sales slider (5–500), monthly + annual projection.
-- Add **fee breakdown accordion** with itemised math.
-- Add **"Zero upfront cost"** section + Creator Pro optional disclaimer.
-- AdminSettings amber note suggesting raising `platform_fee_free` to differentiate Pro.
+- `src/assets/backupshala-icon.png` — full color master
+- `src/assets/backupshala-icon-orange.png` — saffron layer only (cap + arrow)
+- `src/assets/backupshala-icon-navy.png` — shield layer as alpha mask (so it follows `text-foreground` → dark in light mode, cream in dark mode, exactly like today)
+- `public/icons/icon-192.png`, `icon-512.png` (PWA, "any" purpose)
+- `public/icons/icon-192-maskable.png`, `icon-512-maskable.png` (with safe-zone padding for Android adaptive icons)
+- `public/apple-touch-icon.png` (180×180, white background, rounded by iOS)
+- `public/favicon.png`, `favicon-32.png`, `favicon-16.png`, `favicon.ico` (multi-size)
 
-## Step 7 — Withdrawal modal mobile drawer (Part 5)
-In `Wallet.tsx`:
-- Use `useIsMobile()` (already in `src/hooks/use-mobile.tsx`).
-- Extract withdrawal form into `WithdrawalForm` component.
-- Render inside `Drawer` on mobile (handle bar, sticky submit), `Dialog` on desktop.
+### No code changes needed
 
-## Step 8 — Receipt deep link (Part 7)
-- `verify-razorpay-payment/index.ts`: change success notification `action_url` from `/courses` to `/receipt/${paymentId}`.
-- `CourseEnrollment.tsx` post-payment success block: add **"Download Receipt"** button → `/receipt/:paymentId` alongside "Start Learning".
+`src/components/Logo.tsx`, `index.html`, and `public/manifest.json` already point at the right paths — swapping the asset files is enough. The two-layer mask trick keeps theme-aware recoloring working automatically.
 
-## Step 9 — Admin Video Settings panel (Part 8)
-New section in `AdminSettings.tsx`:
-- **Watermark**: enabled toggle, text input, position select (4 corners), opacity slider (10–80), size select (S/M/L), live 16:9 preview box mirroring exact overlay.
-- **Defaults**: forward seek toggle, speed control toggle, min-watch % input, max preview modules input.
-- Single save button → upserts all keys + writes `admin_audit_log` entry.
-- Update CourseBuilder preview-module limit to read `max_preview_modules_per_course` from settings (no hardcoded 2).
+### QA before delivery
 
-## Step 10 — Legacy commission key cleanup (Part 9)
-- Grep code for `default_commission_percent` and the legacy `platform_fee_percent` (excluding `platform_fee_free`/`_pro`).
-- Replace each usage with the correct fee key based on creator tier (`is_creator_pro ? platform_fee_pro : platform_fee_free`).
-- Add amber legacy-keys notice in AdminSettings near the fees block.
+1. Render the master at 512px, 192px, 32px, 16px and visually inspect — must stay legible at favicon size.
+2. Inspect the in-app `<Logo />` in both light and dark mode previews.
+3. Confirm the maskable variants have ≥10% safe-zone padding (Android crops aggressively).
+4. Re-run if the mark loses detail at 16px or the two colors muddy together.
 
-## Step 11 — QA checklist
-- New signup → `wallets` row exists.
-- Disable seek on a course → keyboard right-arrow blocked + toast.
-- Toggle speed control off → button vanishes.
-- Logged-out preview → plays with watermark, CTA on end.
-- ForCreators numbers update after admin edits `platform_fee_free`.
-- Withdrawal opens as bottom sheet on 375px viewport.
-- Successful payment notification deep-links to `/receipt/:id`.
-- Admin watermark position change reflects in next video play.
+### What stays the same
 
-## Files touched (summary)
-**Create**: `src/components/course/CoursePreviewModal.tsx`, `src/components/wallet/WithdrawalForm.tsx`, `src/components/admin/VideoSettingsSection.tsx`
-**Edit**: `src/components/video/BackupshalaVideoPlayer.tsx`, `src/pages/ModulePlayer.tsx`, `src/pages/creator/CourseBuilder.tsx`, `src/pages/CourseEnrollment.tsx`, `src/components/CourseCard.tsx`, `src/components/landing/ForCreators.tsx`, `src/pages/Wallet.tsx`, `src/pages/admin/AdminSettings.tsx`, `supabase/functions/verify-razorpay-payment/index.ts`, plus any files still importing legacy `VideoPlayer` or legacy fee keys
-**Delete**: `src/components/video/VideoPlayer.tsx`
-**Migrations**: modules columns + platform_settings seeds + wallet trigger (if missing)
-
-**Not touched**: auth, tier system, payment flow, certificates, R2 upload, progress tracking, resume prompt, admin panel structure, dashboard nav, sticky CTA, receipt page, gate system.
-
+- Wordmark, font, color tokens
+- Logo component API and all imports
+- Manifest, theme-color, all routes
