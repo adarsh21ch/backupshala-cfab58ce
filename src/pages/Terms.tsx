@@ -16,7 +16,7 @@ const Terms = () => (
       <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
         <section>
           <h2 className="font-heading text-lg font-700">1. Platform Overview</h2>
-          <p className="text-muted-foreground">Backupshala is a digital skills learning marketplace that connects course creators with learners. The Platform facilitates course hosting, payments, certificate issuance, and referral management. Backupshala is a <strong>platform provider</strong> — not a guarantor of results, income, or outcomes.</p>
+          <p className="text-muted-foreground">These Terms of Service govern your use of Backupshala, a digital skills learning platform owned and operated by <strong>Nevorai Technologies</strong>, a proprietorship registered under <strong>GSTIN 23CBCPC3986J1ZN</strong>, Madhya Pradesh, India. Backupshala is a <strong>platform provider</strong> — not a guarantor of results, income, or outcomes.</p>
         </section>
 
         <section>
@@ -97,8 +97,15 @@ const Terms = () => (
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">12. Contact</h2>
-          <p className="text-muted-foreground">For questions about these Terms, contact <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
+          <h2 className="font-heading text-lg font-700">12. Contact & Legal Notices</h2>
+          <p className="text-muted-foreground">For any legal notices or disputes, contact:</p>
+          <p className="text-muted-foreground mt-2">
+            <strong>Nevorai Technologies</strong><br />
+            Attn: Adarsh Chaturvedi<br />
+            Email: <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a><br />
+            GSTIN: 23CBCPC3986J1ZN<br />
+            Jurisdiction: Madhya Pradesh, India
+          </p>
         </section>
       </div>
     </main>

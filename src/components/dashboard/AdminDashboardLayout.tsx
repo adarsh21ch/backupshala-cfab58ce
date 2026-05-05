@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useMemo } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
+import DashboardFooter from '@/components/dashboard/DashboardFooter';
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 type Group = { label: string; items: NavItem[]; collapsible?: boolean };
@@ -224,7 +225,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       <main className="pt-[60px] pb-6 lg:pl-[220px]">
-        <div className="container mx-auto p-4 md:p-6">{children}</div>
+        <div className="container mx-auto p-4 md:p-6">{children}<DashboardFooter /></div>
       </main>
     </div>
   );

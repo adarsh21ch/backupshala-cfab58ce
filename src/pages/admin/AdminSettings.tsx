@@ -367,6 +367,7 @@ const AdminSettings = () => {
               <CardHeader><CardTitle className="text-base">General</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <TextField k="platform_name" label="Platform Name" value={values.platform_name} onChange={v => setVal('platform_name', v)} error={errors.platform_name} />
+                <TextField k="legal_entity_name" label="Legal Entity Name" value={values.legal_entity_name} onChange={v => setVal('legal_entity_name', v)} error={errors.legal_entity_name} />
                 <TextField k="support_email" label="Support Email" value={values.support_email} onChange={v => setVal('support_email', v)} error={errors.support_email} />
                 <NumberField k="min_payout_amount" label="Minimum Payout" value={values.min_payout_amount} onChange={v => setVal('min_payout_amount', v)} error={errors.min_payout_amount} prefix="₹" hint="Smallest payout request the system will accept (creator side)." />
                 <div className="space-y-1.5">
@@ -393,6 +394,23 @@ const AdminSettings = () => {
                   onChange={v => setVal('maintenance_mode', v ? 'true' : 'false')}
                   hint="Blocks new signups & purchases when on."
                 />
+
+                <div className="pt-4 border-t border-border space-y-4">
+                  <p className="text-sm font-semibold">GST & Legal</p>
+                  <ToggleField
+                    k="gst_enabled"
+                    label="GST Enabled"
+                    checked={values.gst_enabled === 'true'}
+                    onChange={v => setVal('gst_enabled', v ? 'true' : 'false')}
+                    hint="GST is extracted from the displayed price (price-inclusive)."
+                  />
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <TextField k="gstin" label="GSTIN" value={values.gstin} onChange={v => setVal('gstin', v)} error={errors.gstin} />
+                    <NumberField k="gst_rate_percent" label="GST Rate %" value={values.gst_rate_percent} onChange={v => setVal('gst_rate_percent', v)} error={errors.gst_rate_percent} suffix="%" />
+                    <TextField k="business_state" label="Business State" value={values.business_state} onChange={v => setVal('business_state', v)} error={errors.business_state} />
+                    <TextField k="hsn_sac_code" label="HSN / SAC Code" value={values.hsn_sac_code} onChange={v => setVal('hsn_sac_code', v)} error={errors.hsn_sac_code} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

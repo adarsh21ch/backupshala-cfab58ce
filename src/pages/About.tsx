@@ -24,6 +24,16 @@ const About = () => (
           <p>For just ₹249, our Standard Bundle gives you access to curated resources from across the internet, expert guidance, a private community, and a verified certificate of completion.</p>
           <p>For creators and educators, Backupshala provides the complete legal infrastructure to sell your courses, manage your students, and receive automatic commission payouts — all compliant with Indian law.</p>
           <p>We are based in India, built for India.</p>
+          <div className="mt-4 rounded-lg border border-border bg-card p-4 text-sm not-prose">
+            <p className="font-semibold text-foreground mb-2">Legal & Business Information</p>
+            <p className="text-muted-foreground">Backupshala is a product of <strong>Nevorai Technologies</strong>, a proprietorship based in Madhya Pradesh, India.</p>
+            <ul className="mt-2 space-y-0.5 text-muted-foreground text-xs">
+              <li>Legal Name: Nevorai Technologies</li>
+              <li>GSTIN: 23CBCPC3986J1ZN</li>
+              <li>State: Madhya Pradesh, India</li>
+              <li>Email: support@backupshala.com</li>
+            </ul>
+          </div>
         </div>
 
         <div className="mt-16">

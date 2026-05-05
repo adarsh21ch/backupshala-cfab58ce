@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import Logo from '@/components/Logo';
+import DashboardFooter from '@/components/dashboard/DashboardFooter';
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 type NavSection = { label: string; items: NavItem[] };
@@ -248,7 +249,7 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
       </nav>
 
       <main className="pt-[60px] pb-20 lg:pb-6 lg:pl-[220px]">
-        <div className="container mx-auto p-4 md:p-6">{children}</div>
+        <div className="container mx-auto p-4 md:p-6">{children}<DashboardFooter /></div>
       </main>
     </div>
   );

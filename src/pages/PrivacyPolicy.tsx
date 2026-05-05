@@ -15,6 +15,10 @@ const PrivacyPolicy = () => (
 
       <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
         <section>
+          <h2 className="font-heading text-lg font-700">Operator</h2>
+          <p className="text-muted-foreground">Backupshala is operated by <strong>Nevorai Technologies</strong> (GSTIN: 23CBCPC3986J1ZN), a proprietorship based in Madhya Pradesh, India. When you use Backupshala, your data is collected and processed by Nevorai Technologies.</p>
+        </section>
+        <section>
           <h2 className="font-heading text-lg font-700">1. Information We Collect</h2>
           <p className="text-muted-foreground">We collect the following personal information when you use Backupshala:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
@@ -95,7 +99,8 @@ const PrivacyPolicy = () => (
 
         <section>
           <h2 className="font-heading text-lg font-700">9. Contact Us</h2>
-          <p className="text-muted-foreground">For privacy-related inquiries, contact us at <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
+          <p className="text-muted-foreground">For privacy-related inquiries, contact <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
+          <p className="text-muted-foreground mt-2">Nevorai Technologies, Madhya Pradesh, India · GSTIN: 23CBCPC3986J1ZN</p>
         </section>
       </div>
     </main>
