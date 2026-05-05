@@ -97,8 +97,15 @@ const Terms = () => (
         </section>
 
         <section>
-          <h2 className="font-heading text-lg font-700">12. Contact</h2>
-          <p className="text-muted-foreground">For questions about these Terms, contact <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
+          <h2 className="font-heading text-lg font-700">12. Contact & Legal Notices</h2>
+          <p className="text-muted-foreground">For any legal notices or disputes, contact:</p>
+          <p className="text-muted-foreground mt-2">
+            <strong>Nevorai Technologies</strong><br />
+            Attn: Adarsh Chaturvedi<br />
+            Email: <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a><br />
+            GSTIN: 23CBCPC3986J1ZN<br />
+            Jurisdiction: Madhya Pradesh, India
+          </p>
         </section>
       </div>
     </main>
