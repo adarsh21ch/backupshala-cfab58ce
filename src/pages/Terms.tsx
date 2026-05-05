@@ -16,7 +16,7 @@ const Terms = () => (
       <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
         <section>
           <h2 className="font-heading text-lg font-700">1. Platform Overview</h2>
-          <p className="text-muted-foreground">Backupshala is a digital skills learning marketplace that connects course creators with learners. The Platform facilitates course hosting, payments, certificate issuance, and referral management. Backupshala is a <strong>platform provider</strong> — not a guarantor of results, income, or outcomes.</p>
+          <p className="text-muted-foreground">These Terms of Service govern your use of Backupshala, a digital skills learning platform owned and operated by <strong>Nevorai Technologies</strong>, a proprietorship registered under <strong>GSTIN 23CBCPC3986J1ZN</strong>, Madhya Pradesh, India. Backupshala is a <strong>platform provider</strong> — not a guarantor of results, income, or outcomes.</p>
         </section>
 
         <section>
