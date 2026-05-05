@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import Logo from '@/components/Logo';
+import DashboardFooter from '@/components/dashboard/DashboardFooter';
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 type NavSection = { label: string; items: NavItem[] };
