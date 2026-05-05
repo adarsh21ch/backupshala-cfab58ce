@@ -465,7 +465,9 @@ const CourseEnrollment = () => {
                   )}
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">Price inclusive of 18% GST. GST invoice emailed after payment.</p>
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                Price includes 18% GST (CGST 9% + SGST 9%). GST invoice issued by Nevorai Technologies (GSTIN: 23CBCPC3986J1ZN). Invoice emailed after successful payment.
+              </p>
               {canRefer ? (
                 <Button variant="outline" size="sm" className="w-full rounded-md text-xs" onClick={() => setShareOpen(true)}>
                   <Share2 className="h-3 w-3 mr-1" /> Share & Earn
