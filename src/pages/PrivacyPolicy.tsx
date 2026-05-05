@@ -99,7 +99,8 @@ const PrivacyPolicy = () => (
 
         <section>
           <h2 className="font-heading text-lg font-700">9. Contact Us</h2>
-          <p className="text-muted-foreground">For privacy-related inquiries, contact us at <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
+          <p className="text-muted-foreground">For privacy-related inquiries, contact <a href="mailto:support@backupshala.com" className="text-primary hover:underline">support@backupshala.com</a>.</p>
+          <p className="text-muted-foreground mt-2">Nevorai Technologies, Madhya Pradesh, India · GSTIN: 23CBCPC3986J1ZN</p>
         </section>
       </div>
     </main>
