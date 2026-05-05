@@ -195,7 +195,7 @@ const CourseEnrollment = () => {
           </Button>
           {showSuccess.paymentId && (
             <Button onClick={() => navigate(`/receipt/${showSuccess.paymentId}`)} variant="outline" className="w-full rounded-md font-semibold">
-              📄 Download Receipt
+              📄 View GST Invoice
             </Button>
           )}
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
