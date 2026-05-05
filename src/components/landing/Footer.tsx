@@ -49,8 +49,10 @@ const Footer = () => (
         </div>
       </div>
       <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground space-y-1">
-        <p>© {new Date().getFullYear()} Backupshala. All rights reserved.</p>
         <p>Backupshala is a digital learning marketplace. We do not guarantee any income, results, or specific outcomes. All course content is provided by independent creators.</p>
+        <p className="pt-2">© {new Date().getFullYear()} Nevorai Technologies. All rights reserved.</p>
+        <p>Backupshala is a product of Nevorai Technologies.</p>
+        <p>GSTIN: 23CBCPC3986J1ZN | Madhya Pradesh, India</p>
       </div>
     </div>
   </footer>
