@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useMemo } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
+import DashboardFooter from '@/components/dashboard/DashboardFooter';
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 type Group = { label: string; items: NavItem[]; collapsible?: boolean };
