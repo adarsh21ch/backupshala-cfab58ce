@@ -1,5 +1,4 @@
-import navyMask from '@/assets/backupshala-icon-navy.png';
-import orangeSrc from '@/assets/backupshala-icon-orange.png';
+import iconSrc from '@/assets/backupshala-icon.png';
 
 interface LogoProps {
   /** Pixel size of the icon. Text scales with `textClassName`. */
@@ -27,37 +26,15 @@ const Logo = ({
   className = '',
 }: LogoProps) => (
   <span className={`inline-flex items-center gap-2 ${className}`}>
-    <span
-      role="img"
-      aria-label="Backupshala"
-      className="relative shrink-0 select-none text-foreground"
+    <img
+      src={iconSrc}
+      alt="Backupshala"
+      width={iconSize}
+      height={iconSize}
+      draggable={false}
+      className="shrink-0 select-none"
       style={{ width: iconSize, height: iconSize }}
-    >
-      {/* Navy layer — recolored via CSS mask so it follows the theme */}
-      <span
-        aria-hidden
-        className="absolute inset-0 bg-current"
-        style={{
-          WebkitMaskImage: `url(${navyMask})`,
-          maskImage: `url(${navyMask})`,
-          WebkitMaskRepeat: 'no-repeat',
-          maskRepeat: 'no-repeat',
-          WebkitMaskSize: 'contain',
-          maskSize: 'contain',
-          WebkitMaskPosition: 'center',
-          maskPosition: 'center',
-        }}
-      />
-      {/* Orange cap + book — fixed brand color in both modes */}
-      <img
-        src={orangeSrc}
-        alt=""
-        width={iconSize}
-        height={iconSize}
-        draggable={false}
-        className="absolute inset-0 h-full w-full"
-      />
-    </span>
+    />
     {!iconOnly && (
       <span className={`font-heading font-bold tracking-tight leading-none ${textClassName}`}>
         <span className="text-foreground">Backup</span>
