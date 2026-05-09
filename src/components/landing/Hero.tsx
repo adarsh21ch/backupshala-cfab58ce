@@ -1,14 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Star } from 'lucide-react';
-
-const features = [
-  '₹249 One-time access fee',
-  '5+ Digital skill courses',
-  'Verified certificate on completion',
-  'Community access included',
-  'Refer & earn rewards',
-];
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const avatars = [
   { initial: 'A', bg: 'bg-primary/80' },
@@ -18,6 +11,15 @@ const avatars = [
 ];
 
 const Hero = () => {
+  const { data: settings, isLoading } = usePlatformSettings();
+  const priceLabel = isLoading ? '—' : `₹${settings.basic_price}`;
+  const features = [
+    `${priceLabel} One-time access fee`,
+    '5+ Digital skill courses',
+    'Verified certificate on completion',
+    'Community access included',
+    'Refer & earn rewards',
+  ];
   return (
     <section className="relative overflow-hidden bg-hero-gradient py-16 md:py-24">
       {/* Subtle radial glow behind text */}
@@ -61,7 +63,7 @@ const Hero = () => {
                 className="btn-lift rounded-xl bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-glow hover:bg-accent hover:shadow-accent-glow-hover"
               >
                 <Link to="/c/backupshala/backupshala-standard-bundle">
-                  Explore Standard Bundle — ₹249
+                  Explore Standard Bundle — {priceLabel}
                 </Link>
               </Button>
               <Button

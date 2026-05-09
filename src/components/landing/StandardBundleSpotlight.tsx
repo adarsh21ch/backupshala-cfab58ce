@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check, Star, Award } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const includes = [
   'Video Editing — learn CapCut and short-form editing',
@@ -14,7 +15,10 @@ const includes = [
   'Refer & earn — share courses, earn commissions',
 ];
 
-const StandardBundleSpotlight = () => (
+const StandardBundleSpotlight = () => {
+  const { data: settings, isLoading } = usePlatformSettings();
+  const priceLabel = isLoading ? '—' : `₹${settings.basic_price}`;
+  return (
   <section id="standard-bundle" className="py-16 md:py-24">
     <div className="container mx-auto px-4">
       <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -25,10 +29,10 @@ const StandardBundleSpotlight = () => (
             <span className="text-sm font-semibold text-primary">Backupshala Official</span>
           </div>
           <h2 className="font-heading text-3xl font-bold tracking-tight md:text-4xl">
-            Start Your Digital Skills Journey for ₹249
+            Start Your Digital Skills Journey for {priceLabel}
           </h2>
           <p className="mt-3 text-muted-foreground md:text-lg">
-            Our flagship bundle includes everything a beginner needs to build practical digital skills — curated resources, expert guidance, and community access.
+            Everything you need to start earning with digital skills. Video editing, content creation, Canva, AI tools, and more — all in one course for {priceLabel}.
           </p>
           <ul className="mt-6 space-y-2">
             {includes.map((item, i) => (
@@ -49,7 +53,7 @@ const StandardBundleSpotlight = () => (
               size="lg"
               className="btn-lift rounded-xl bg-primary px-8 font-semibold text-primary-foreground shadow-soft hover:bg-primary/90"
             >
-              <Link to="/c/backupshala/backupshala-standard-bundle">Enroll Now — ₹249</Link>
+              <Link to="/c/backupshala/backupshala-standard-bundle">Enroll Now — {priceLabel}</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-xl border-[1.5px] px-8">
               <Link to="/c/backupshala/backupshala-standard-bundle">Preview the Course</Link>
@@ -86,7 +90,7 @@ const StandardBundleSpotlight = () => (
               <h3 className="font-heading text-2xl font-bold leading-tight">
                 Backupshala Standard Bundle
               </h3>
-              <p className="mt-5 font-heading text-5xl font-extrabold tracking-tight">₹249</p>
+              <p className="mt-5 font-heading text-5xl font-extrabold tracking-tight">{priceLabel}</p>
               <p className="mt-1 text-sm opacity-80">7 modules · Certificate · Community</p>
 
               <div className="mt-6">
@@ -111,5 +115,8 @@ const StandardBundleSpotlight = () => (
     </div>
   </section>
 );
+
+  );
+};
 
 export default StandardBundleSpotlight;
