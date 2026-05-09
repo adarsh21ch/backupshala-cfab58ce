@@ -1,167 +1,105 @@
-# Backupshala Production Upgrade Plan
-
-This is a large, multi-phase upgrade. To keep each step shippable and reviewable, I will execute it in **phases**, pausing between major phases for you to verify in the preview. Each phase is independently useful — nothing is half-broken at any point.
-
----
-
-## Phase 1 — Critical pricing bug (ship first, alone)
-
-**Goal:** No hardcoded ₹249 anywhere on the public landing or CTAs. All prices flow from `platform_settings.basic_price` / `advanced_price` via `usePlatformSettings` (already exists).
-
-Files to update:
-- `src/components/landing/Hero.tsx` — CTA "Explore Standard Bundle — ₹{basic_price}", "What you get" line.
-- `src/components/landing/StandardBundleSpotlight.tsx` — heading, description, card price, both buttons, GST note.
-- `src/components/landing/Footer.tsx` / "Ready to Start" section (locate the component) — bundle button price.
-- Any SEO meta containing ₹249.
-- Loading state: while `usePlatformSettings` is loading, show price as `—` or a skeleton (never fallback to a hardcoded number per your rule).
-
-**Verify:** Change `basic_price` in admin settings → reload landing → all five locations update.
+## Goal
+Wire prices/commissions to `usePlatformSettings()` and align fallback defaults with current DB values. No layout/design changes.
 
 ---
 
-## Phase 2 — Database foundations (single migration)
+## File 1 — `src/hooks/usePlatformSettings.ts`
 
-One migration that adds everything later phases need:
+Update the `defaults` object only:
 
-```sql
--- courses
-ALTER TABLE courses
-  ADD COLUMN IF NOT EXISTS course_level TEXT
-  CHECK (course_level IN ('basic','advanced','creator'));
-
--- enrollments: admin grant + expiry
-ALTER TABLE enrollments
-  ADD COLUMN IF NOT EXISTS granted_by_admin BOOLEAN DEFAULT false,
-  ADD COLUMN IF NOT EXISTS access_expires_at TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS grant_reason TEXT;
-
--- chapters
-CREATE TABLE course_chapters (
-  id UUID PK, module_id UUID FK, course_id UUID FK,
-  title, description, chapter_order INT,
-  video_url, video_asset_id UUID,
-  duration_minutes INT,
-  pdf_url, pdf_filename,
-  is_preview BOOL, is_published BOOL,
-  created_at, updated_at
-);
-
-ALTER TABLE modules ADD COLUMN has_pdf_resources BOOLEAN DEFAULT false;
-
-CREATE TABLE pdf_download_logs (
-  id, user_id, chapter_id, course_id, downloaded_at
-);
-
--- platform_settings rows (insert if missing)
-basic_price = 449, advanced_price = 4449,
-basic_course_id, advanced_course_id
+```ts
+const defaults: PlatformSettings = {
+  platform_name: 'Backupshala',
+  platform_fee_percent: 5,              // was 10
+  default_commission_percent: 75,       // was 70
+  min_payout_amount: 500,
+  support_email: 'support@backupshala.com',
+  razorpay_enabled: true,
+  maintenance_mode: false,
+  basic_price: 449,                     // was 249
+  advanced_price: 4449,                 // was 499
+  upgrade_price: 4000,                  // was 250
+};
 ```
 
-RLS:
-- `course_chapters`: enrolled students read published rows; creator/admin full access for their courses.
-- `pdf_download_logs`: insert by owner, select own + admin.
-
-I will also seed `course_level='basic'` on the existing Standard Bundle.
+Note: the `parsed.upgrade_price` is computed as `advanced_price - basic_price`, so it will naturally be `4000` when DB values match; the `defaults.upgrade_price = 4000` is the sane fallback if either price is missing.
 
 ---
 
-## Phase 3 — Admin: Grant Course Access
+## File 2 — `src/pages/About.tsx`
 
-- New action on `AdminStudents` row menu → "Grant Course Access" modal.
-- Course (Basic / Advanced / Both), Duration (1m, 3m, 6m, 1y, lifetime), Reason (required), notify toggle.
-- Creates enrollment(s) with `granted_by_admin=true`, `access_expires_at`, logs to `admin_audit_log`, inserts notification.
-- Advanced auto-grants Basic.
-- Show expiry column in admin enrollments.
-- Enforce expiry in `ModulePlayer` (block + "Renew Access" CTA) and badge in My Courses.
+1. Add hook + dynamic label:
+   ```tsx
+   import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+   import { formatINR } from '@/lib/format';
+   ```
+   Convert `About` from arrow-const expression to a function body so we can call the hook:
+   ```tsx
+   const About = () => {
+     const { data } = usePlatformSettings();
+     const priceLabel = formatINR(data.basic_price);
+     return (
+       // ...existing JSX
+     );
+   };
+   ```
+2. Line 24 — replace `For just ₹249,` with `For just {priceLabel},`.
+3. Line 54 — replace `Start Learning for ₹249` with `Start Learning for {priceLabel}`.
 
----
-
-## Phase 4 — Thumbnail upload UX fix
-
-`src/components/course/ThumbnailUpload.tsx` → compact 400×225 (16:9) centered card, hover "Change", mobile full-width max 200h.
-
----
-
-## Phase 5 — Chapters inside modules + PDF download
-
-- Update Course Builder to show Module → Chapter tree (left) + Chapter editor (right).
-- Chapter editor: title, desc, video upload/URL, optional PDF (≤10MB → R2), preview toggle, duration.
-- ModulePlayer: render chapter list under module, video per chapter, "📄 Download Chapter Notes" when `pdf_url`.
-- Module completion = all chapters watched ≥ min_watch_percent.
+(If `formatINR` doesn't exist in `@/lib/format`, fall back to `` `₹${data.basic_price}` ``. I'll check at implementation time and pick whichever is exported.)
 
 ---
 
-## Phase 6 — Admin Platform Courses section
+## File 3 — `src/components/landing/FAQ.tsx`
 
-- New admin route `/admin/platform-courses` with Basic + Advanced cards (price, modules, chapters, enrollments).
-- Edit opens the same builder from Phase 5.
-- Sidebar entry under PLATFORM group.
+Convert the static `faqs` array into a function of settings so values inject at render:
 
----
+```tsx
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
-## Phase 7 — Advanced includes Basic (server enforcement)
+const buildFaqs = (minPayout: number, platformFee: number, creatorMax: number) => [
+  // ...same items, but the two hardcoded ₹500s become `₹${minPayout}`
+  // and "anywhere from 0% to 85%. The remaining 15% is Backupshala's platform fee"
+  // becomes `anywhere from 0% to ${creatorMax}%. The remaining ${platformFee}% is Backupshala's platform fee.`
+  // and "Backupshala charges a 15% platform fee" becomes `Backupshala charges a ${platformFee}% platform fee`
+];
 
-- `verify-razorpay-payment` edge function: after Advanced enrollment, upsert Basic enrollment (`amount_paid=0`, same `payment_id`, lifetime).
-- Checkout page shows "Includes everything in Basic (₹X value) — free".
+const FAQ = () => {
+  const { data } = usePlatformSettings();
+  const platformFee = data.platform_fee_percent;     // 5
+  const creatorMax = 100 - platformFee;              // 95
+  const faqs = buildFaqs(data.min_payout_amount, platformFee, creatorMax);
+  // existing JSX unchanged
+};
+```
 
----
+Specifically replace, in the FAQ strings:
+- `Minimum payout threshold is ₹500.` → `` `Minimum payout threshold is ₹${minPayout}.` ``
+- `wallet balance reaches ₹500 or more` → `` `wallet balance reaches ₹${minPayout} or more` ``
+- `anywhere from 0% to 85%. The remaining 15% is Backupshala's platform fee.` → `` `anywhere from 0% to ${creatorMax}%. The remaining ${platformFee}% is Backupshala's platform fee.` ``
+- `Backupshala charges a 15% platform fee` → `` `Backupshala charges a ${platformFee}% platform fee` ``
 
-## Phase 8 — Admin overview polish
-
-- Add KPIs: Basic Enrollments, Advanced Enrollments, This Month Revenue, Pending Affiliate Commissions.
-- Charts: empty state when zero data; Y-axis based on real range.
-- "Revenue by Course" top-5 table.
-- Audit Active Creator Pro count.
-
----
-
-## Phase 9 — Course builder copy/UX fixes
-
-- Yellow warning above Standard Bundle description if it contains `₹249`.
-- Pricing hint copy + suggestion pills (₹449 / ₹999 / ₹1999 / ₹4449).
-- "Preview Video" — accept any YouTube URL, auto-convert `watch?v=` → `embed/`.
-- "What you'll learn" placeholder + 100-char counter + min 3 to publish.
-
----
-
-## Phase 10 — Mobile pass
-
-Audit at 375px: Hero (h1 36px, stacked CTAs full-width), StandardBundleSpotlight (full-width card, sticky enroll), Dashboard cards single-column, ModulePlayer controls 44px, Admin sidebar hamburger + KPI 2×2.
+The "₹99 to ₹9,999" range stays unchanged per your instruction.
 
 ---
 
-## Phase 11 — Landing content updates
+## File 4 — `src/components/landing/ForCreators.tsx`
 
-- "What you get" items per your spec, dynamic price.
-- Updated Standard Bundle subtitle with dynamic price.
+1. Reuse the existing `usePlatformSettings()` import — already pulled as `{ raw }`. Add `data` to the destructure:
+   ```tsx
+   const { raw, data } = usePlatformSettings();
+   ```
+2. Line 162 — replace `Withdraw your earnings anytime (min ₹500)` with:
+   ```tsx
+   <li className="flex items-start gap-2"><span className="text-primary">✓</span> Withdraw your earnings anytime (min ₹{data.min_payout_amount})</li>
+   ```
 
----
-
-## Phase 12 — Advanced course landing page
-
-- New route `/advanced` with dark navy theme + amber accents, "Includes Basic" callout, Enroll, GST.
-- Nav link + "Upgrade to Advanced" CTA inside Basic player.
-
----
-
-## Phase 13 — Invoice/GST verification
-
-- Manual test of `/receipt/:id`: Nevorai Technologies, GSTIN 23CBCPC3986J1ZN, SAC 999293, CGST 9% + SGST 9%, base = price/1.18, sequential `BSH-YYYY-000001`. Fix any gaps found.
+No other changes in this file.
 
 ---
 
-## Execution approach
+## Verification
 
-Because this is ~30+ files and 1 destructive-ish migration, I'll proceed phase-by-phase and check in:
+After edits I'll print the relevant sections of each file (the `defaults` object, the About hook block + 2 swapped strings, the new FAQ builder + hook, and the ForCreators line 162) so you can confirm.
 
-1. **Now**: implement **Phase 1** (pricing bug — highest user impact, no DB changes, ~5 file edits).
-2. **Next message**: send the **Phase 2 migration** for your approval.
-3. After migration approved: continue Phases 3–13 in order, pausing only if I hit ambiguity.
-
-### Questions before I start
-
-1. **Basic price**: spec says `basic_price = 449` but current setting/UI shows `249`. Should Phase 2 change it to **449**, or leave **249** and you'll change it in admin?
-2. **Advanced referral amount**: any specific ₹ figure, or compute from existing commission % on `advanced_price`?
-3. **Sticky mobile enroll button** on the Standard Bundle section — confirm you want it sticky (can feel intrusive on long pages)?
-
-If you reply "go" without answering, I'll assume: keep `basic_price=249` for now, compute referral from existing %, and make enroll button sticky only on the bundle section (not site-wide).
+No build/typecheck needed beyond what the harness runs automatically.
