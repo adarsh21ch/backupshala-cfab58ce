@@ -16,7 +16,11 @@ import {
   Loader2,
   CheckCircle2,
   X,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
