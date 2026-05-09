@@ -32,7 +32,7 @@ const CreatorCourses = () => {
   const { data: courses, isLoading } = useQuery({
     queryKey: ['creator-courses', user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('courses').select('*').eq('creator_id', user!.id).order('created_at', { ascending: false });
+      const { data } = await supabase.from('courses').select('*').eq('creator_id', user!.id).eq('is_platform_course', false).order('created_at', { ascending: false });
       return data || [];
     },
     enabled: !!user,

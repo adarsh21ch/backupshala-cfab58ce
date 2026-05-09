@@ -23,7 +23,7 @@ const groups: Group[] = [
     collapsible: true,
     items: [
       { to: '/admin/creators', label: 'Creators', icon: UserCheck },
-      { to: '/admin/courses', label: 'Courses', icon: BookOpen },
+      { to: '/admin/courses', label: 'Creator Courses', icon: BookOpen },
       { to: '/admin/videos', label: 'Videos', icon: Film },
       { to: '/admin/students', label: 'Students', icon: Users },
     ],
@@ -40,12 +40,10 @@ const groups: Group[] = [
   {
     label: 'PLATFORM',
     items: [
+      { to: '/admin/platform-courses', label: 'Platform Courses', icon: Trophy },
       { to: '/admin/featured', label: 'Featured', icon: Sparkles },
-      { to: '/admin/support', label: 'Support', icon: MessageSquare },
       { to: '/admin/creator-pro', label: 'Creator Pro', icon: Star },
-      { to: '/admin/standard-bundle', label: 'Standard Bundle', icon: Trophy },
-      { to: '/admin/platform-courses', label: 'Platform Courses', icon: BookOpen },
-      { to: '/admin/courses/new-platform', label: 'New Platform Course', icon: BookOpen },
+      { to: '/admin/support', label: 'Support', icon: MessageSquare },
     ],
   },
   {
