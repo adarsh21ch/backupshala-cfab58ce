@@ -45,6 +45,7 @@ import AdminDashboardHome from "./pages/admin/AdminDashboardHome";
 import AdminCreators from "./pages/admin/AdminCreators";
 import AdminCourses from "./pages/admin/AdminCourses";
 import AdminPlatformCourseNew from "./pages/admin/AdminPlatformCourseNew";
+import AdminPlatformCourses from "./pages/admin/AdminPlatformCourses";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminCommissions from "./pages/admin/AdminCommissions";
