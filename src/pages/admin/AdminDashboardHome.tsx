@@ -6,7 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatINR } from '@/lib/format';
 import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp, Wallet, Star, Check, X, Eye, GraduationCap, Award, CalendarDays, Coins } from 'lucide-react';
 import { startOfMonth } from 'date-fns';
+import { useState } from 'react';
 import KPICard from '@/components/dashboard/KPICard';
+import { KPIBreakdownModal, type KPIMetric } from '@/components/admin/KPIBreakdownModal';
 import { SkeletonKPI } from '@/components/dashboard/SkeletonCards';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { format, subDays, subMonths } from 'date-fns';
@@ -15,6 +17,34 @@ import { toast } from 'sonner';
 
 const AdminDashboardHome = () => {
   const qc = useQueryClient();
+
+  const [activeMetric, setActiveMetric] = useState<KPIMetric | null>(null);
+
+  // Today counts for KPI subtitles
+  const { data: todayCounts } = useQuery({
+    queryKey: ['admin-kpi-today'],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const iso = today.toISOString();
+      const [u, cr, en, co, pay] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', iso),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_creator', true).gte('created_at', iso),
+        supabase.from('enrollments').select('*', { count: 'exact', head: true }).gte('enrolled_at', iso),
+        supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_platform_course', false).gte('created_at', iso),
+        supabase.from('payments').select('amount_total').in('status', ['paid', 'success']).gte('created_at', iso),
+      ]);
+      const todayRevenue = (pay.data || []).reduce((s, p: { amount_total: number | null }) => s + Number(p.amount_total ?? 0), 0);
+      return {
+        users: u.count || 0,
+        creators: cr.count || 0,
+        enrollments: en.count || 0,
+        courses: co.count || 0,
+        revenue: todayRevenue,
+      };
+    },
+    staleTime: 60_000,
+  });
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
@@ -182,21 +212,40 @@ const AdminDashboardHome = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KPICard icon={Users}      label="Total Users"        value={stats?.totalUsers || 0}        color="info"        vibrantValue />
-            <KPICard icon={UserCheck}  label="Creators"           value={stats?.totalCreators || 0}     color="success"     vibrantValue />
-            <KPICard icon={BookOpen}   label="Courses"            value={stats?.totalCourses || 0}      color="accent"      vibrantValue />
-            <KPICard icon={TrendingUp} label="Enrollments"        value={stats?.totalEnrollments || 0}  color="purple"      vibrantValue />
+            <button type="button" onClick={() => setActiveMetric('users')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={Users} label="Total Users" value={stats?.totalUsers || 0} color="info" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.users ?? 0} today · click for breakdown</span>} />
+            </button>
+            <button type="button" onClick={() => setActiveMetric('creators')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={UserCheck} label="Creators" value={stats?.totalCreators || 0} color="success" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.creators ?? 0} today · click for breakdown</span>} />
+            </button>
+            <button type="button" onClick={() => setActiveMetric('courses')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={BookOpen} label="Creator Courses" value={stats?.totalCourses || 0} color="accent" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.courses ?? 0} today · click for breakdown</span>} />
+            </button>
+            <button type="button" onClick={() => setActiveMetric('enrollments')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={TrendingUp} label="Enrollments" value={stats?.totalEnrollments || 0} color="purple" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.enrollments ?? 0} today · click for breakdown</span>} />
+            </button>
             <KPICard icon={GraduationCap} label="Basic Enrollments"   value={stats?.basicEnrollments || 0}    color="info"     vibrantValue />
             <KPICard icon={Award}         label="Advanced Enrollments" value={stats?.advancedEnrollments || 0} color="accent"   vibrantValue />
             <KPICard icon={CalendarDays}  label="This Month Revenue"  value={formatINR(stats?.monthRevenue || 0)} color="success" vibrantValue />
             <KPICard icon={Coins}         label="Pending Affiliate"   value={formatINR(stats?.pendingAffiliate || 0)} color="warning" vibrantValue
               subtitle={<span className="text-muted-foreground">{stats?.pendingAffiliateCount || 0} commission(s)</span>} />
-            <KPICard icon={CreditCard} label="Total Revenue"      value={formatINR(stats?.totalRevenue || 0)}     color="success" vibrantValue />
+            <button type="button" onClick={() => setActiveMetric('revenue')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={CreditCard} label="Total Revenue" value={formatINR(stats?.totalRevenue || 0)} color="success" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{formatINR(todayCounts?.revenue ?? 0)} today · click for breakdown</span>} />
+            </button>
             <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="accent"  vibrantValue />
             <KPICard icon={Wallet}     label="Pending Payouts"    value={formatINR(stats?.pendingPayoutAmount || 0)} color="warning" vibrantValue
               subtitle={<span className="text-muted-foreground">{stats?.pendingPayoutCount || 0} request(s)</span>} />
             <KPICard icon={Star}       label="Active Creator Pro" value={stats?.activeProSubs || 0}     color="purple"      vibrantValue />
           </div>
+        )}
+
+        {activeMetric && (
+          <KPIBreakdownModal metric={activeMetric} onClose={() => setActiveMetric(null)} />
         )}
 
         {/* Charts */}

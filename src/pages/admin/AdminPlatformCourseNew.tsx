@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -20,17 +20,28 @@ const slugify = (t: string) =>
 
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
+type CourseLevel = 'basic' | 'advanced' | 'premium' | 'creator';
+
 const AdminPlatformCourseNew = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: settings } = usePlatformSettings();
+  const [searchParams] = useSearchParams();
+  const presetTier = (searchParams.get('tier') as CourseLevel | null) ?? null;
+  const { data: settings, getSetting } = usePlatformSettings();
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDesc, setShortDesc] = useState('');
   const [category, setCategory] = useState('Digital Skills');
   const [level, setLevel] = useState('Beginner');
-  const [price, setPrice] = useState(String(settings?.basic_price || 449));
-  const [courseLevel, setCourseLevel] = useState<'basic' | 'advanced' | 'creator'>('basic');
+  const initialTier: CourseLevel = presetTier && ['basic', 'advanced', 'premium', 'creator'].includes(presetTier) ? presetTier : 'basic';
+  const tierPriceMap: Record<string, number> = {
+    basic: settings?.basic_price ?? 449,
+    advanced: settings?.advanced_price ?? 4449,
+    premium: Number(getSetting('premium_price', '9999')) || 9999,
+    creator: 449,
+  };
+  const [price, setPrice] = useState(String(tierPriceMap[initialTier]));
+  const [courseLevel, setCourseLevel] = useState<CourseLevel>(initialTier);
   const [saving, setSaving] = useState(false);
 
   const onTitleChange = (v: string) => {
@@ -70,8 +81,13 @@ const AdminPlatformCourseNew = () => {
       if (error) throw error;
 
       // Wire to platform_settings so the rest of the platform finds this course
-      if (courseLevel === 'basic' || courseLevel === 'advanced') {
-        const settingKey = courseLevel === 'basic' ? 'basic_course_id' : 'advanced_course_id';
+      const settingKeyMap: Record<string, string> = {
+        basic: 'basic_course_id',
+        advanced: 'advanced_course_id',
+        premium: 'premium_course_id',
+      };
+      const settingKey = settingKeyMap[courseLevel];
+      if (settingKey) {
         await supabase.from('platform_settings').upsert(
           { key: settingKey, value: data.id },
           { onConflict: 'key' }
@@ -133,16 +149,26 @@ const AdminPlatformCourseNew = () => {
             </div>
             <div>
               <Label>Course Level *</Label>
-              <Select value={courseLevel} onValueChange={(v: 'basic' | 'advanced' | 'creator') => setCourseLevel(v)}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="basic">Basic (Standard Bundle)</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
-                  <SelectItem value="creator">Creator (other platform course)</SelectItem>
-                </SelectContent>
-              </Select>
+              {presetTier ? (
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-md border border-border bg-muted px-2.5 py-1 text-sm capitalize">
+                    {courseLevel} Tier
+                  </span>
+                  <span className="text-xs text-muted-foreground">(set from tier card)</span>
+                </div>
+              ) : (
+                <Select value={courseLevel} onValueChange={(v: CourseLevel) => setCourseLevel(v)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Basic (Standard Bundle)</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="creator">Creator (other platform course)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
-                Selecting Basic or Advanced will register this course as the platform default for that tier.
+                Selecting Basic, Advanced or Premium registers this course as the platform default for that tier.
               </p>
             </div>
             <div>

@@ -50,13 +50,15 @@ const AdminCourses = () => {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   const { data: courses, isLoading } = useQuery({
-    queryKey: ['admin-courses'],
+    queryKey: ['admin-creator-courses'],
     queryFn: async () => {
       const { data } = await supabase.from('courses')
         .select('*, profiles!courses_creator_id_fkey(full_name, creator_display_name)')
+        .eq('is_platform_course', false)
         .order('created_at', { ascending: false });
       return data || [];
     },
+    staleTime: 60_000,
   });
 
   const updateMutation = useMutation({
@@ -68,7 +70,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Course updated');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
       setRejectingId(null);
       setRejectionReason('');
     },
@@ -82,7 +84,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Updated');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
     },
   });
 
@@ -102,7 +104,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Course deleted');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
       setDeleteTarget(null);
     },
     onError: (err: any) => {
@@ -149,7 +151,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Override applied');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
       setOverrideCourse(null);
       setOverrideReason('');
     },
@@ -266,10 +268,12 @@ const AdminCourses = () => {
     <AdminDashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-2xl font-heading font-bold">Course Management</h1>
-          <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md">
-            <Link to="/admin/courses/new-platform">+ Create Platform Course</Link>
-          </Button>
+          <div>
+            <h1 className="text-2xl font-heading font-bold">Creator Courses</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Courses submitted by platform creators. Use Platform Courses to manage Basic / Advanced / Premium tiers.
+            </p>
+          </div>
         </div>
         <Tabs defaultValue="pending_review">
           <TabsList>
