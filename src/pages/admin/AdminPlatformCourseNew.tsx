@@ -27,6 +27,7 @@ const AdminPlatformCourseNew = () => {
   const [category, setCategory] = useState('Digital Skills');
   const [level, setLevel] = useState('Beginner');
   const [price, setPrice] = useState('249');
+  const [courseLevel, setCourseLevel] = useState<'basic' | 'advanced' | 'creator'>('basic');
   const [saving, setSaving] = useState(false);
 
   const onTitleChange = (v: string) => {
