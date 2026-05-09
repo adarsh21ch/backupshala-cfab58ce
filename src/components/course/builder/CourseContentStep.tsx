@@ -266,10 +266,9 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
                     )}
                     onClick={() => selectAndShow({ type: "module", id: mod.id })}
                   >
-                    <GripVertical
-                      className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 cursor-grab"
-                      title="Drag to reorder"
-                    />
+                    <span title="Drag to reorder" className="shrink-0 cursor-grab">
+                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40" />
+                    </span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
