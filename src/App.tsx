@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import ProtectedRoute, { CreatorRoute, AdminRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Explore from "./pages/Explore";
+import Advanced from "./pages/Advanced";
 import CreatorProfile from "./pages/CreatorProfile";
 import CourseEnrollment from "./pages/CourseEnrollment";
 import Login from "./pages/Login";
