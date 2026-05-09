@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import Logo from '@/components/Logo';
 
 const Advanced = () => {
-  const { parsed, isLoading } = usePlatformSettings();
+  const { data: parsed, isLoading } = usePlatformSettings();
   const advancedLabel = isLoading ? '—' : `₹${parsed.advanced_price.toLocaleString('en-IN')}`;
   const basicLabel = isLoading ? '—' : `₹${parsed.basic_price.toLocaleString('en-IN')}`;
 
