@@ -61,9 +61,20 @@ const AdminPlatformCourseNew = () => {
         commission_percent: 0,
         platform_fee_percent: 0,
         is_platform_course: true,
+        course_level: courseLevel,
         status: 'draft',
       }).select('id').single();
       if (error) throw error;
+
+      // Wire to platform_settings so the rest of the platform finds this course
+      if (courseLevel === 'basic' || courseLevel === 'advanced') {
+        const settingKey = courseLevel === 'basic' ? 'basic_course_id' : 'advanced_course_id';
+        await supabase.from('platform_settings').upsert(
+          { key: settingKey, value: data.id },
+          { onConflict: 'key' }
+        );
+      }
+
       toast.success('Platform course created — add modules next');
       navigate(`/creator/courses/${data.id}/edit`);
     } catch (e: any) {
