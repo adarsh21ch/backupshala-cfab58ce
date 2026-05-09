@@ -316,10 +316,6 @@ Deno.serve(async (req) => {
               tier: "basic",
               grant_reason: "Included with Advanced purchase",
             });
-            await supabase
-              .from("courses")
-              .update({ total_students: undefined })
-              .eq("id", basicCourseId);
             const { data: bc } = await supabase
               .from("courses")
               .select("total_students")
