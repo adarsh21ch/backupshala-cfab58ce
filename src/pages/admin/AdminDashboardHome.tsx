@@ -207,8 +207,9 @@ const AdminDashboardHome = () => {
               <span className="text-xs text-muted-foreground">Last 30 days</span>
             </CardHeader>
             <CardContent className="pt-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+              {(revenueData || []).every(d => d.amount === 0) ? (
+                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">No revenue in the last 30 days yet.</div>
+              ) : (
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
                   <YAxis
