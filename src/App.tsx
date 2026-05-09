@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import ProtectedRoute, { CreatorRoute, AdminRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Explore from "./pages/Explore";
+import Advanced from "./pages/Advanced";
 import CreatorProfile from "./pages/CreatorProfile";
 import CourseEnrollment from "./pages/CourseEnrollment";
 import Login from "./pages/Login";
@@ -97,6 +98,7 @@ const App = () => (
             {/* Public pages */}
             <Route path="/" element={<Index />} />
             <Route path="/explore" element={<Explore />} />
+            <Route path="/advanced" element={<Advanced />} />
             <Route path="/c/:creatorSlug" element={<CreatorProfile />} />
             <Route path="/c/:creatorSlug/:courseSlug" element={<CourseEnrollment />} />
             <Route path="/login" element={<Login />} />

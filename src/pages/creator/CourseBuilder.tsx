@@ -245,7 +245,14 @@ const CourseBuilder = () => {
         full_description: fullDesc.trim() || null,
         category, language, level,
         thumbnail_url: thumbnailUrl.trim() || null,
-        preview_video_url: previewVideoUrl.trim() || null,
+        preview_video_url: (() => {
+          const u = previewVideoUrl.trim();
+          if (!u) return null;
+          // Auto-convert any YouTube URL to embed form
+          const ytMatch = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+          if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+          return u;
+        })(),
         what_you_learn: whatYouLearn.filter(w => w.trim()),
         requirements: requirements.filter(r => r.trim()),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -459,6 +466,11 @@ const CourseBuilder = () => {
               <div>
                 <Label>Full Description <span className="text-muted-foreground font-normal">({fullDesc.length}/500)</span></Label>
                 <Textarea value={fullDesc} onChange={e => setFullDesc(e.target.value.slice(0, 500))} className="mt-1 rounded-lg min-h-[120px]" />
+                {(shortDesc.includes('₹249') || fullDesc.includes('₹249')) && (
+                  <p className="mt-2 text-xs rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-2">
+                    Heads up — your description mentions <strong>₹249</strong>. Platform pricing is dynamic; avoid hardcoding amounts so future price changes stay consistent.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>

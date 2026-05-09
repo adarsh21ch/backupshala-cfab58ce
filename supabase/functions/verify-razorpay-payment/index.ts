@@ -282,6 +282,57 @@ Deno.serve(async (req) => {
       amount_paid: payment.amount_total,
     });
 
+    // ─────────────────────────────────────────────────────────
+    // Phase 7: If purchased course is Advanced, auto-grant Basic
+    // ─────────────────────────────────────────────────────────
+    try {
+      const { data: lvlRow } = await supabase
+        .from("courses")
+        .select("course_level")
+        .eq("id", course_id)
+        .maybeSingle();
+
+      if (lvlRow?.course_level === "advanced") {
+        const { data: basicSetting } = await supabase
+          .from("platform_settings")
+          .select("value")
+          .eq("key", "basic_course_id")
+          .maybeSingle();
+        const basicCourseId = basicSetting?.value;
+        if (basicCourseId && basicCourseId !== course_id) {
+          const { data: existing } = await supabase
+            .from("enrollments")
+            .select("id")
+            .eq("student_id", user.id)
+            .eq("course_id", basicCourseId)
+            .maybeSingle();
+          if (!existing) {
+            await supabase.from("enrollments").insert({
+              student_id: user.id,
+              course_id: basicCourseId,
+              referrer_email: student?.referrer_email || "none@backupshala.com",
+              payment_id: payment.id,
+              amount_paid: 0,
+              tier: "basic",
+              grant_reason: "Included with Advanced purchase",
+            });
+            const { data: bc } = await supabase
+              .from("courses")
+              .select("total_students")
+              .eq("id", basicCourseId)
+              .single();
+            await supabase
+              .from("courses")
+              .update({ total_students: (bc?.total_students || 0) + 1 })
+              .eq("id", basicCourseId);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Auto-grant Basic with Advanced failed:", e);
+    }
+
+
     // Update course total_students
     const { data: courseData } = await supabase
       .from("courses")

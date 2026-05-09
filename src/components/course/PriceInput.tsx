@@ -18,9 +18,10 @@ interface Props {
 }
 
 const SUGGESTIONS: { value: number; label: string }[] = [
-  { value: 299, label: 'Great for starter courses' },
-  { value: 499, label: 'Most popular price point' },
-  { value: 999, label: 'For in-depth courses' },
+  { value: 449, label: 'Entry-level — high conversion' },
+  { value: 999, label: 'Most popular price point' },
+  { value: 1999, label: 'For in-depth courses' },
+  { value: 4449, label: 'Advanced / premium tier' },
 ];
 
 export const validatePrice = (raw: string): string | null => {
