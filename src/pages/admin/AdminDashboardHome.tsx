@@ -18,6 +18,34 @@ import { toast } from 'sonner';
 const AdminDashboardHome = () => {
   const qc = useQueryClient();
 
+  const [activeMetric, setActiveMetric] = useState<KPIMetric | null>(null);
+
+  // Today counts for KPI subtitles
+  const { data: todayCounts } = useQuery({
+    queryKey: ['admin-kpi-today'],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const iso = today.toISOString();
+      const [u, cr, en, co, pay] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', iso),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_creator', true).gte('created_at', iso),
+        supabase.from('enrollments').select('*', { count: 'exact', head: true }).gte('enrolled_at', iso),
+        supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_platform_course', false).gte('created_at', iso),
+        supabase.from('payments').select('amount_total').in('status', ['paid', 'success']).gte('created_at', iso),
+      ]);
+      const todayRevenue = (pay.data || []).reduce((s, p: { amount_total: number | null }) => s + Number(p.amount_total ?? 0), 0);
+      return {
+        users: u.count || 0,
+        creators: cr.count || 0,
+        enrollments: en.count || 0,
+        courses: co.count || 0,
+        revenue: todayRevenue,
+      };
+    },
+    staleTime: 60_000,
+  });
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
