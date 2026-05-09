@@ -178,7 +178,7 @@ const AdminDashboardHome = () => {
 
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => <SkeletonKPI key={i} />)}
+            {[...Array(12)].map((_, i) => <SkeletonKPI key={i} />)}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -186,6 +186,11 @@ const AdminDashboardHome = () => {
             <KPICard icon={UserCheck}  label="Creators"           value={stats?.totalCreators || 0}     color="success"     vibrantValue />
             <KPICard icon={BookOpen}   label="Courses"            value={stats?.totalCourses || 0}      color="accent"      vibrantValue />
             <KPICard icon={TrendingUp} label="Enrollments"        value={stats?.totalEnrollments || 0}  color="purple"      vibrantValue />
+            <KPICard icon={GraduationCap} label="Basic Enrollments"   value={stats?.basicEnrollments || 0}    color="info"     vibrantValue />
+            <KPICard icon={Award}         label="Advanced Enrollments" value={stats?.advancedEnrollments || 0} color="accent"   vibrantValue />
+            <KPICard icon={CalendarDays}  label="This Month Revenue"  value={formatINR(stats?.monthRevenue || 0)} color="success" vibrantValue />
+            <KPICard icon={Coins}         label="Pending Affiliate"   value={formatINR(stats?.pendingAffiliate || 0)} color="warning" vibrantValue
+              subtitle={<span className="text-muted-foreground">{stats?.pendingAffiliateCount || 0} commission(s)</span>} />
             <KPICard icon={CreditCard} label="Total Revenue"      value={formatINR(stats?.totalRevenue || 0)}     color="success" vibrantValue />
             <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="accent"  vibrantValue />
             <KPICard icon={Wallet}     label="Pending Payouts"    value={formatINR(stats?.pendingPayoutAmount || 0)} color="warning" vibrantValue
