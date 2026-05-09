@@ -17,7 +17,7 @@ const benefits = [
 
 const ForCreators = () => {
   const { user, profile } = useAuth();
-  const { raw } = usePlatformSettings();
+  const { raw, data } = usePlatformSettings();
 
   const ctaHref = user && profile?.is_creator && profile?.creator_approved
     ? '/creator/dashboard'
@@ -159,7 +159,7 @@ const ForCreators = () => {
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Free to create an account</li>
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Free to upload and publish courses</li>
             <li className="flex items-start gap-2"><span className="text-primary">✓</span> Keep 15% guaranteed + 75% when you sell directly</li>
-            <li className="flex items-start gap-2"><span className="text-primary">✓</span> Withdraw your earnings anytime (min ₹500)</li>
+            <li className="flex items-start gap-2"><span className="text-primary">✓</span> Withdraw your earnings anytime (min ₹{data.min_payout_amount})</li>
           </ul>
           <p className="mt-4 text-xs text-muted-foreground">
             <strong>Creator Pro</strong> is an optional upgrade with reduced fees and advanced tools. It is never required to sell on Backupshala.
