@@ -39,7 +39,7 @@ const creatorSteps: Step[] = [
   {
     icon: Wrench,
     title: 'Build Your Course',
-    desc: 'Upload videos or curate resources. Set your own price between ₹99–₹9,999.',
+    desc: 'Upload videos or curate resources. Set your own price.',
     tint: 'bg-accent/10 text-accent',
   },
   {
