@@ -400,6 +400,22 @@ const ModulePlayer = () => {
             />
           )}
 
+          {/* Platform: Upgrade to Advanced course CTA — when in platform Basic course */}
+          {courseId && platformSettings?.basic_course_id === courseId && platformSettings?.advanced_course_id && (
+            <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/10 to-accent/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-heading font-bold text-sm">Ready for the next level?</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Unlock the Advanced course — deeper skills, freelancing playbook, and more.</p>
+              </div>
+              <Link
+                to="/advanced"
+                className="shrink-0 inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 transition-colors"
+              >
+                Upgrade to Advanced →
+              </Link>
+            </div>
+          )}
+
           {/* Audio note — before video */}
           {accessCheck?.hasAudioNote && accessCheck?.audioPosition === 'before' && accessCheck?.audioR2Key && (
             <AudioNotePlayer
