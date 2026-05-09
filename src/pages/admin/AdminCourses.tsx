@@ -267,7 +267,7 @@ const AdminCourses = () => {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-2xl font-heading font-bold">Course Management</h1>
           <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md">
-            <a href="/admin/courses/new-platform">+ Create Platform Course</a>
+            <Link to="/admin/courses/new-platform">+ Create Platform Course</Link>
           </Button>
         </div>
         <Tabs defaultValue="pending_review">
