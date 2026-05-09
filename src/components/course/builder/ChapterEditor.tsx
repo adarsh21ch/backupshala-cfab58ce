@@ -404,19 +404,57 @@ const ChapterEditor = ({ chapter, courseId, onSaved, onDelete }: Props) => {
         )}
       </div>
 
-      {/* Preview toggle */}
-      <div className="flex items-center justify-between rounded-lg border border-border p-3">
-        <div>
-          <p className="text-sm font-medium">Preview Chapter</p>
-          <p className="text-xs text-muted-foreground">Visible to non-enrolled visitors</p>
-        </div>
-        <Switch
-          checked={isPreview}
-          onCheckedChange={(v) => {
-            setIsPreview(v);
-            save({ is_preview: v });
-          }}
-        />
+      {/* Advanced Settings (collapsible) */}
+      <div className="rounded-lg border border-border overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="w-full flex items-center justify-between p-3 text-sm font-medium hover:bg-muted/50 transition-colors"
+        >
+          Advanced Settings
+          {showAdvanced ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+        {showAdvanced && (
+          <div className="border-t border-border p-3 space-y-3">
+            {/* Free Preview */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Free Preview</p>
+                <p className="text-xs text-muted-foreground">
+                  Non-enrolled visitors can watch this chapter for free. Use for your best content
+                  to attract students.
+                </p>
+              </div>
+              <Switch
+                checked={isPreview}
+                onCheckedChange={(v) => {
+                  setIsPreview(v);
+                  save({ is_preview: v });
+                }}
+              />
+            </div>
+
+            {/* Sequential Lock — Creator Pro only (disabled) */}
+            <div className="flex items-center justify-between gap-3 opacity-70">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">Sequential Lock</p>
+                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] gap-1 border-accent/40 text-accent">
+                    <Sparkles className="h-2.5 w-2.5" /> Creator Pro
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Lock this chapter until the previous one is completed.
+                </p>
+              </div>
+              <Switch checked={false} disabled />
+            </div>
+          </div>
+        )}
       </div>
 
       <Button onClick={() => save()} disabled={saving} className="w-full sm:w-auto">
