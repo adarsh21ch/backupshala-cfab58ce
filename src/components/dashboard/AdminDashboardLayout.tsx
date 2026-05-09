@@ -44,6 +44,7 @@ const groups: Group[] = [
       { to: '/admin/support', label: 'Support', icon: MessageSquare },
       { to: '/admin/creator-pro', label: 'Creator Pro', icon: Star },
       { to: '/admin/standard-bundle', label: 'Standard Bundle', icon: Trophy },
+      { to: '/admin/platform-courses', label: 'Platform Courses', icon: BookOpen },
       { to: '/admin/courses/new-platform', label: 'New Platform Course', icon: BookOpen },
     ],
   },
