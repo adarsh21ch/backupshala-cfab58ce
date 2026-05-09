@@ -372,7 +372,26 @@ const CourseEnrollment = () => {
                         key={m.id}
                         type="button"
                         disabled={!isPreviewable}
-                        onClick={() => isPreviewable && setPreviewModule(m)}
+                        onClick={async () => {
+                          if (!isPreviewable) return;
+                          // If module lacks playable video, look at first chapter
+                          let merged = { ...m };
+                          const placeholderUrl = !m.video_asset_id && (!m.video_url || m.video_url.includes('placeholder'));
+                          if (placeholderUrl) {
+                            const { data: chapters } = await supabase
+                              .from('course_chapters')
+                              .select('video_url, video_asset_id')
+                              .eq('module_id', m.id)
+                              .order('chapter_order', { ascending: true })
+                              .limit(1);
+                            const ch = chapters?.[0];
+                            if (ch) {
+                              merged.video_url = ch.video_url || merged.video_url;
+                              merged.video_asset_id = ch.video_asset_id || merged.video_asset_id;
+                            }
+                          }
+                          setPreviewModule(merged);
+                        }}
                         className={`w-full text-left flex items-center gap-3 rounded-lg border border-border p-3 ${isPreviewable ? 'hover:border-primary/40 cursor-pointer transition-colors' : 'cursor-default'}`}
                       >
                         <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-xs font-semibold">
