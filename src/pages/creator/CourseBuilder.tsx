@@ -245,7 +245,14 @@ const CourseBuilder = () => {
         full_description: fullDesc.trim() || null,
         category, language, level,
         thumbnail_url: thumbnailUrl.trim() || null,
-        preview_video_url: previewVideoUrl.trim() || null,
+        preview_video_url: (() => {
+          const u = previewVideoUrl.trim();
+          if (!u) return null;
+          // Auto-convert any YouTube URL to embed form
+          const ytMatch = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+          if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+          return u;
+        })(),
         what_you_learn: whatYouLearn.filter(w => w.trim()),
         requirements: requirements.filter(r => r.trim()),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
