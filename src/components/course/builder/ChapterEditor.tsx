@@ -61,6 +61,7 @@ const ChapterEditor = ({ chapter, courseId, onSaved, onDelete }: Props) => {
   const [videoUrl, setVideoUrl] = useState(chapter.video_url || "");
   const [duration, setDuration] = useState(String(chapter.duration_minutes || 0));
   const [isPreview, setIsPreview] = useState(chapter.is_preview || false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
