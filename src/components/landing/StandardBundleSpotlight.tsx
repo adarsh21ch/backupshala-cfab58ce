@@ -19,7 +19,7 @@ const StandardBundleSpotlight = () => {
   const { data: settings, isLoading } = usePlatformSettings();
   const priceLabel = isLoading ? '—' : `₹${settings.basic_price}`;
   return (
-  <section id="standard-bundle" className="py-16 md:py-24">
+  <section id="standard-bundle" className="relative py-16 md:py-24 pb-24 md:pb-24">
     <div className="container mx-auto px-4">
       <div className="grid items-center gap-12 lg:grid-cols-2">
         {/* Left */}
@@ -51,11 +51,11 @@ const StandardBundleSpotlight = () => {
             <Button
               asChild
               size="lg"
-              className="btn-lift rounded-xl bg-primary px-8 font-semibold text-primary-foreground shadow-soft hover:bg-primary/90"
+              className="btn-lift w-full sm:w-auto rounded-xl bg-primary px-8 font-semibold text-primary-foreground shadow-soft hover:bg-primary/90"
             >
               <Link to="/c/backupshala/backupshala-standard-bundle">Enroll Now — {priceLabel}</Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="rounded-xl border-[1.5px] px-8">
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto rounded-xl border-[1.5px] px-8">
               <Link to="/c/backupshala/backupshala-standard-bundle">Preview the Course</Link>
             </Button>
           </div>
@@ -111,6 +111,19 @@ const StandardBundleSpotlight = () => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    {/* Sticky mobile enroll bar (bundle section only) */}
+    <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground leading-none">Standard Bundle</p>
+          <p className="font-heading text-lg font-bold leading-tight">{priceLabel} <span className="text-xs font-normal text-muted-foreground">incl. GST</span></p>
+        </div>
+        <Button asChild size="lg" className="ml-auto rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-soft">
+          <Link to="/c/backupshala/backupshala-standard-bundle">Enroll Now</Link>
+        </Button>
       </div>
     </div>
   </section>

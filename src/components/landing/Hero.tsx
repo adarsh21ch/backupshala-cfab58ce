@@ -45,7 +45,7 @@ const Hero = () => {
 
             <h1
               className="font-heading font-bold leading-[1.05] tracking-tight"
-              style={{ fontSize: 'clamp(2.5rem, 6vw, 4.25rem)' }}
+              style={{ fontSize: 'clamp(2.25rem, 6vw, 4.25rem)' }}
             >
               Learn Digital Skills.{' '}
               <span className="text-gradient-accent">Get Certified.</span>{' '}
@@ -60,7 +60,7 @@ const Hero = () => {
               <Button
                 asChild
                 size="lg"
-                className="btn-lift rounded-xl bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-glow hover:bg-accent hover:shadow-accent-glow-hover"
+                className="btn-lift w-full sm:w-auto rounded-xl bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-glow hover:bg-accent hover:shadow-accent-glow-hover"
               >
                 <Link to="/c/backupshala/backupshala-standard-bundle">
                   Explore Standard Bundle — {priceLabel}
@@ -70,7 +70,7 @@ const Hero = () => {
                 asChild
                 variant="outline"
                 size="lg"
-                className="rounded-xl border-[1.5px] px-8 text-base hover:bg-secondary"
+                className="w-full sm:w-auto rounded-xl border-[1.5px] px-8 text-base hover:bg-secondary"
               >
                 <Link to="/explore">Browse Courses</Link>
               </Button>
