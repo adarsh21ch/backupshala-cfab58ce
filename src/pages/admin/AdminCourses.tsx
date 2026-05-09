@@ -268,10 +268,12 @@ const AdminCourses = () => {
     <AdminDashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-2xl font-heading font-bold">Course Management</h1>
-          <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-md">
-            <Link to="/admin/courses/new-platform">+ Create Platform Course</Link>
-          </Button>
+          <div>
+            <h1 className="text-2xl font-heading font-bold">Creator Courses</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Courses submitted by platform creators. Use Platform Courses to manage Basic / Advanced / Premium tiers.
+            </p>
+          </div>
         </div>
         <Tabs defaultValue="pending_review">
           <TabsList>
