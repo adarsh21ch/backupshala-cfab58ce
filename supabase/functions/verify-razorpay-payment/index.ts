@@ -283,7 +283,9 @@ Deno.serve(async (req) => {
     });
 
     // ─────────────────────────────────────────────────────────
-    // Phase 7: If purchased course is Advanced, auto-grant Basic
+    // Phase 7: Tier auto-grants
+    //   Advanced → Basic
+    //   Premium  → Basic + Advanced
     // ─────────────────────────────────────────────────────────
     try {
       const { data: lvlRow } = await supabase
@@ -292,44 +294,53 @@ Deno.serve(async (req) => {
         .eq("id", course_id)
         .maybeSingle();
 
-      if (lvlRow?.course_level === "advanced") {
-        const { data: basicSetting } = await supabase
+      const tiersToGrant: string[] = [];
+      if (lvlRow?.course_level === "advanced") tiersToGrant.push("basic");
+      if (lvlRow?.course_level === "premium") tiersToGrant.push("basic", "advanced");
+
+      if (tiersToGrant.length > 0) {
+        const settingKeys = tiersToGrant.map((t) => `${t}_course_id`);
+        const { data: settingRows } = await supabase
           .from("platform_settings")
-          .select("value")
-          .eq("key", "basic_course_id")
-          .maybeSingle();
-        const basicCourseId = basicSetting?.value;
-        if (basicCourseId && basicCourseId !== course_id) {
+          .select("key, value")
+          .in("key", settingKeys);
+
+        for (const row of settingRows ?? []) {
+          const targetCourseId = row.value;
+          const tierName = row.key.replace("_course_id", "");
+          if (!targetCourseId || targetCourseId === course_id) continue;
+
           const { data: existing } = await supabase
             .from("enrollments")
             .select("id")
             .eq("student_id", user.id)
-            .eq("course_id", basicCourseId)
+            .eq("course_id", targetCourseId)
             .maybeSingle();
-          if (!existing) {
-            await supabase.from("enrollments").insert({
-              student_id: user.id,
-              course_id: basicCourseId,
-              referrer_email: student?.referrer_email || "none@backupshala.com",
-              payment_id: payment.id,
-              amount_paid: 0,
-              tier: "basic",
-              grant_reason: "Included with Advanced purchase",
-            });
-            const { data: bc } = await supabase
-              .from("courses")
-              .select("total_students")
-              .eq("id", basicCourseId)
-              .single();
-            await supabase
-              .from("courses")
-              .update({ total_students: (bc?.total_students || 0) + 1 })
-              .eq("id", basicCourseId);
-          }
+          if (existing) continue;
+
+          await supabase.from("enrollments").insert({
+            student_id: user.id,
+            course_id: targetCourseId,
+            referrer_email: student?.referrer_email || "none@backupshala.com",
+            payment_id: payment.id,
+            amount_paid: 0,
+            tier: tierName,
+            grant_reason: `Included with ${lvlRow?.course_level} purchase`,
+          });
+
+          const { data: bc } = await supabase
+            .from("courses")
+            .select("total_students")
+            .eq("id", targetCourseId)
+            .single();
+          await supabase
+            .from("courses")
+            .update({ total_students: (bc?.total_students || 0) + 1 })
+            .eq("id", targetCourseId);
         }
       }
     } catch (e) {
-      console.error("Auto-grant Basic with Advanced failed:", e);
+      console.error("Tier auto-grant failed:", e);
     }
 
 
