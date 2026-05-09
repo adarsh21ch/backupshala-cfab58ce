@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import AdminDashboardLayout from '@/components/dashboard/AdminDashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,8 +57,8 @@ const AdminWebhookLogs = () => {
                 {logs.map((log: any) => {
                   const isOpen = !!expanded[log.id];
                   return (
-                    <>
-                      <tr key={log.id} className="hover:bg-secondary/30 cursor-pointer" onClick={() => setExpanded(p => ({ ...p, [log.id]: !p[log.id] }))}>
+                    <Fragment key={log.id}>
+                      <tr className="hover:bg-secondary/30 cursor-pointer" onClick={() => setExpanded(p => ({ ...p, [log.id]: !p[log.id] }))}>
                         <td className="px-4 py-3">
                           {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                         </td>
@@ -73,7 +73,7 @@ const AdminWebhookLogs = () => {
                         </td>
                       </tr>
                       {isOpen && (
-                        <tr key={`${log.id}-payload`} className="bg-secondary/20">
+                        <tr className="bg-secondary/20">
                           <td></td>
                           <td colSpan={3} className="px-4 py-3">
                             <pre className="text-[10px] font-mono whitespace-pre-wrap break-all max-h-96 overflow-auto rounded-md bg-background p-3 border border-border">
@@ -82,7 +82,7 @@ const AdminWebhookLogs = () => {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
