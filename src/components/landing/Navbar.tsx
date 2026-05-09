@@ -112,6 +112,7 @@ const LandingNavbar = () => {
             <div className="flex-1 overflow-y-auto p-4 space-y-1">
               <Link to="/explore" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Explore Courses</Link>
               <a href="/#standard-bundle" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Standard Bundle</a>
+              <Link to="/advanced" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Advanced</Link>
               <a href="/#for-creators" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">For Creators</a>
               <a href="/#how-it-works" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">How It Works</a>
               {user && (
