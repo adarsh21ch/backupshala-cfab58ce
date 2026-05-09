@@ -5,6 +5,7 @@ import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner@3.525.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 Deno.serve(async (req) => {
@@ -21,20 +22,30 @@ Deno.serve(async (req) => {
     if (authErr || !user) throw new Error("Unauthorized");
 
     const body = await req.json();
-    const { filename, content_type, file_size_bytes, course_id, module_title } = body;
+    // Accept both new (camelCase) and legacy (snake_case) param names
+    const filename = body.fileName ?? body.filename ?? "video.mp4";
+    const content_type = body.fileType ?? body.content_type ?? "video/mp4";
+    const file_size_bytes = body.fileSize ?? body.file_size_bytes ?? 0;
+    const course_id = body.course_id ?? body.courseId ?? null;
 
-    // Validate creator owns the course
-    const { data: course, error: courseErr } = await supabase
-      .from("courses")
-      .select("id, creator_id")
-      .eq("id", course_id)
-      .single();
-    if (courseErr || !course) throw new Error("Course not found");
-    if (course.creator_id !== user.id) throw new Error("You don't own this course");
+    // Validate course ownership only if a course_id was provided
+    if (course_id) {
+      const { data: course, error: courseErr } = await supabase
+        .from("courses")
+        .select("id, creator_id")
+        .eq("id", course_id)
+        .single();
+      if (courseErr || !course) throw new Error("Course not found");
+      if (course.creator_id !== user.id) throw new Error("You don't own this course");
+    }
 
     const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo", "video/x-matroska"];
-    if (!validTypes.includes(content_type)) throw new Error("Invalid file type. Accepted: MP4, WebM, MOV, AVI, MKV");
-    if (!file_size_bytes || file_size_bytes <= 0 || file_size_bytes > 524_288_000) throw new Error("File size must be between 1 byte and 500MB");
+    if (!validTypes.includes(content_type)) {
+      throw new Error("Invalid file type. Accepted: MP4, WebM, MOV, AVI, MKV");
+    }
+    if (file_size_bytes && file_size_bytes > 524_288_000) {
+      throw new Error("File size exceeds 500MB limit");
+    }
 
     const sanitized = (filename || "video.mp4").toLowerCase().replace(/[^a-z0-9.\-_]/g, "-").replace(/-+/g, "-");
     const objectKey = `creator-videos/${user.id}/${Date.now()}-${sanitized}`;
@@ -63,13 +74,19 @@ Deno.serve(async (req) => {
     const R2_PUBLIC_URL = Deno.env.get("R2_PUBLIC_URL") || "";
     const publicUrl = R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${objectKey}` : "";
 
+    // Return both naming conventions for backward compatibility
     return new Response(JSON.stringify({
+      uploadUrl,
+      objectKey,
+      publicUrl,
+      // legacy keys
       upload_url: uploadUrl,
       object_key: objectKey,
       public_url: publicUrl,
       expires_in: 1800,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
+    console.error("creator-upload-url error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
