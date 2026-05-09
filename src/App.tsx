@@ -68,6 +68,7 @@ import ContentPolicy from "./pages/ContentPolicy";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import CancellationPolicy from "./pages/CancellationPolicy";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import AdminWebhookLogs from "./pages/admin/AdminWebhookLogs";
 import OrderHistory from "./pages/OrderHistory";
 import CookieConsent from "./components/CookieConsent";
 import InstallPrompt from "./components/InstallPrompt";
@@ -172,6 +173,7 @@ const App = () => (
             <Route path="/admin/revenue" element={<AdminRoute><AdminRevenue /></AdminRoute>} />
             <Route path="/admin/featured" element={<AdminRoute><AdminFeaturedListings /></AdminRoute>} />
             <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
+            <Route path="/admin/webhook-logs" element={<AdminRoute><AdminWebhookLogs /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
