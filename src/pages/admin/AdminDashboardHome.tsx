@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatINR } from '@/lib/format';
-import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp, Wallet, Star, Check, X, Eye } from 'lucide-react';
+import { Users, BookOpen, IndianRupee, UserCheck, CreditCard, TrendingUp, Wallet, Star, Check, X, Eye, GraduationCap, Award, CalendarDays, Coins } from 'lucide-react';
+import { startOfMonth } from 'date-fns';
 import KPICard from '@/components/dashboard/KPICard';
 import { SkeletonKPI } from '@/components/dashboard/SkeletonCards';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
@@ -18,7 +19,8 @@ const AdminDashboardHome = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [profiles, courses, enrollments, payments, creators, payoutReqs, proSubs] = await Promise.all([
+      const monthStart = startOfMonth(new Date()).toISOString();
+      const [profiles, courses, enrollments, payments, creators, payoutReqs, proSubs, basicEnr, advEnr, monthPays, pendingAff, settings] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('courses').select('*', { count: 'exact', head: true }),
         supabase.from('enrollments').select('*', { count: 'exact', head: true }),
@@ -26,11 +28,18 @@ const AdminDashboardHome = () => {
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_creator', true),
         supabase.from('payout_requests').select('amount, status').eq('status', 'pending'),
         supabase.from('creator_pro_subscriptions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('enrollments').select('*', { count: 'exact', head: true }).eq('tier', 'basic'),
+        supabase.from('enrollments').select('*', { count: 'exact', head: true }).eq('tier', 'advanced'),
+        supabase.from('payments').select('amount_total, status').gte('created_at', monthStart).in('status', ['success', 'paid']),
+        supabase.from('commissions').select('amount, status, commission_type').eq('commission_type', 'affiliate').eq('status', 'pending'),
+        supabase.from('platform_settings').select('key, value').in('key', ['basic_course_id', 'advanced_course_id']),
       ]);
-      const paidPayments = (payments.data || []).filter(p => p.status === 'success');
+      const paidPayments = (payments.data || []).filter(p => p.status === 'success' || p.status === 'paid');
       const totalRevenue = paidPayments.reduce((s, p) => s + Number(p.amount_total), 0);
       const platformEarnings = paidPayments.reduce((s, p) => s + Number(p.platform_fee_amount), 0);
       const pendingPayoutAmount = (payoutReqs.data || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+      const monthRevenue = (monthPays.data || []).reduce((s, p) => s + Number(p.amount_total), 0);
+      const pendingAffiliate = (pendingAff.data || []).reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
       return {
         totalUsers: profiles.count || 0,
         totalCourses: courses.count || 0,
@@ -41,7 +50,36 @@ const AdminDashboardHome = () => {
         pendingPayoutCount: (payoutReqs.data || []).length,
         pendingPayoutAmount,
         activeProSubs: proSubs.count || 0,
+        basicEnrollments: basicEnr.count || 0,
+        advancedEnrollments: advEnr.count || 0,
+        monthRevenue,
+        pendingAffiliate,
+        pendingAffiliateCount: (pendingAff.data || []).length,
       };
+    },
+  });
+
+  // Top 5 courses by revenue
+  const { data: topCourses } = useQuery({
+    queryKey: ['admin-top-courses'],
+    queryFn: async () => {
+      const { data: pays } = await supabase.from('payments')
+        .select('course_id, amount_total, status')
+        .in('status', ['success', 'paid']);
+      const byCourse: Record<string, number> = {};
+      (pays || []).forEach((p: any) => {
+        if (!p.course_id) return;
+        byCourse[p.course_id] = (byCourse[p.course_id] || 0) + Number(p.amount_total || 0);
+      });
+      const ids = Object.keys(byCourse);
+      if (ids.length === 0) return [];
+      const { data: cs } = await supabase.from('courses').select('id, title').in('id', ids);
+      const titleMap: Record<string, string> = {};
+      (cs || []).forEach((c: any) => { titleMap[c.id] = c.title; });
+      return Object.entries(byCourse)
+        .map(([id, revenue]) => ({ id, title: titleMap[id] || 'Untitled', revenue }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
     },
   });
 
@@ -140,7 +178,7 @@ const AdminDashboardHome = () => {
 
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => <SkeletonKPI key={i} />)}
+            {[...Array(12)].map((_, i) => <SkeletonKPI key={i} />)}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -148,6 +186,11 @@ const AdminDashboardHome = () => {
             <KPICard icon={UserCheck}  label="Creators"           value={stats?.totalCreators || 0}     color="success"     vibrantValue />
             <KPICard icon={BookOpen}   label="Courses"            value={stats?.totalCourses || 0}      color="accent"      vibrantValue />
             <KPICard icon={TrendingUp} label="Enrollments"        value={stats?.totalEnrollments || 0}  color="purple"      vibrantValue />
+            <KPICard icon={GraduationCap} label="Basic Enrollments"   value={stats?.basicEnrollments || 0}    color="info"     vibrantValue />
+            <KPICard icon={Award}         label="Advanced Enrollments" value={stats?.advancedEnrollments || 0} color="accent"   vibrantValue />
+            <KPICard icon={CalendarDays}  label="This Month Revenue"  value={formatINR(stats?.monthRevenue || 0)} color="success" vibrantValue />
+            <KPICard icon={Coins}         label="Pending Affiliate"   value={formatINR(stats?.pendingAffiliate || 0)} color="warning" vibrantValue
+              subtitle={<span className="text-muted-foreground">{stats?.pendingAffiliateCount || 0} commission(s)</span>} />
             <KPICard icon={CreditCard} label="Total Revenue"      value={formatINR(stats?.totalRevenue || 0)}     color="success" vibrantValue />
             <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="accent"  vibrantValue />
             <KPICard icon={Wallet}     label="Pending Payouts"    value={formatINR(stats?.pendingPayoutAmount || 0)} color="warning" vibrantValue
@@ -164,23 +207,27 @@ const AdminDashboardHome = () => {
               <span className="text-xs text-muted-foreground">Last 30 days</span>
             </CardHeader>
             <CardContent className="pt-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
-                  <YAxis
-                    tick={{ fontSize: 10 }}
-                    stroke="hsl(var(--muted-foreground))"
-                    tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
-                    width={48}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-                    formatter={(v: number) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Revenue']}
-                  />
-                  <Line type="monotone" dataKey="amount" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              {(revenueData || []).every(d => d.amount === 0) ? (
+                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">No revenue in the last 30 days yet.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={revenueData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
+                    <YAxis
+                      tick={{ fontSize: 10 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
+                      width={48}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                      formatter={(v: number) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Revenue']}
+                    />
+                    <Line type="monotone" dataKey="amount" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
@@ -190,18 +237,47 @@ const AdminDashboardHome = () => {
               <span className="text-xs text-muted-foreground">Last 6 months</span>
             </CardHeader>
             <CardContent className="pt-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={enrollmentData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={32} allowDecimals={false} />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {(enrollmentData || []).every(d => d.count === 0) ? (
+                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">No enrollments in the last 6 months yet.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={enrollmentData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={32} allowDecimals={false} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Top Courses by Revenue */}
+        <Card className="bg-card border-border">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base font-heading font-bold">Top Courses by Revenue</CardTitle>
+            <span className="text-xs text-muted-foreground">All-time top 5</span>
+          </CardHeader>
+          <CardContent>
+            {(!topCourses || topCourses.length === 0) ? (
+              <p className="text-sm text-muted-foreground">No paid enrollments yet.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {topCourses.map((c, i) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="h-6 w-6 shrink-0 rounded-full bg-muted text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                      <Link to={`/admin/courses`} className="text-sm font-medium truncate hover:text-primary">{c.title}</Link>
+                    </div>
+                    <span className="text-sm font-semibold text-success shrink-0">{formatINR(c.revenue)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Platform Health */}
         <div>
