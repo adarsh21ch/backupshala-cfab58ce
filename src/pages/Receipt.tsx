@@ -103,8 +103,8 @@ const Receipt = () => {
         </Button>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-8 print:py-4 print:px-0">
-        <div className="rounded-xl border border-border bg-card p-8 shadow-warm print:shadow-none print:border-0 print:bg-white print:text-black">
+      <div className="mx-auto max-w-2xl px-4 py-8 print:py-4 print:px-0 overflow-x-auto">
+        <div className="rounded-xl border border-border bg-card p-8 shadow-warm print:shadow-none print:border-0 print:bg-white print:text-black min-w-[480px]">
           {/* Header */}
           <div className="flex items-start justify-between mb-6 gap-4">
             <div>
