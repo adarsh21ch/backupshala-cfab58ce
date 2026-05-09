@@ -114,8 +114,6 @@ const StandardBundleSpotlight = () => {
       </div>
     </div>
   </section>
-);
-
   );
 };
 
