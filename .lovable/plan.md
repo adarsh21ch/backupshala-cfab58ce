@@ -1,105 +1,57 @@
-## Goal
-Wire prices/commissions to `usePlatformSettings()` and align fallback defaults with current DB values. No layout/design changes.
+# Backupshala — Admin + Platform Course System V2
+
+This is a large, multi-area change set. I'll execute in the order you specified and report back with a complete list of touched files. Below is the implementation plan so you can confirm scope before I start writing code.
+
+## Scope summary
+
+12 sequenced work items across 7 parts: a global link/navigation fix, admin nav consolidation + auto-grant Creator Pro on KYC, course builder UI polish, video upload pipeline fix, platform-course access logic, and a few small data/UX fixes.
 
 ---
 
-## File 1 — `src/hooks/usePlatformSettings.ts`
+## Part 1 — Internal links opening new tabs
+- Grep `src/` for `target="_blank"` and `window.open('/`.
+- Convert internal `<a target="_blank">` and `window.open('/...')` to React Router `<Link>` / `navigate()`.
+- Keep `target="_blank" rel="noopener noreferrer"` only on `http(s)://` links and on the explicit "open public course page" preview button in admin.
 
-Update the `defaults` object only:
+## Part 2 — Admin nav + Creators + Platform Courses
+- `AdminDashboardLayout`: rebuild sidebar groups exactly as specified (Overview / Manage / Finance / Platform / Settings); remove "Standard Bundle" and "New Platform Course" entries; rename "Courses" → "Creator Courses".
+- `AdminCreators`: on approve, set `creator_approved = true` AND `is_creator_pro = true`, upsert a free `creator_pro_subscriptions` row (plan `annual`, amount 0), and write an `admin_audit_log` entry.
+- `AdminPlatformCourses`: replace current two-tier card view with a list-style management page (Standard Bundle, Advanced Program, then any additional `is_platform_course = true` rows ordered by `course_level`), each row with Edit (→ `/creator/courses/:id/edit`) and external "open public page" button (this one keeps `target="_blank"`), plus a top-right "+ New Platform Course" CTA and an inline "Create new" footer card.
 
-```ts
-const defaults: PlatformSettings = {
-  platform_name: 'Backupshala',
-  platform_fee_percent: 5,              // was 10
-  default_commission_percent: 75,       // was 70
-  min_payout_amount: 500,
-  support_email: 'support@backupshala.com',
-  razorpay_enabled: true,
-  maintenance_mode: false,
-  basic_price: 449,                     // was 249
-  advanced_price: 4449,                 // was 499
-  upgrade_price: 4000,                  // was 250
-};
-```
+## Part 3 — Course Builder UI improvements
+- `BuilderSidebar` / outline panel: widen to `w-72`, `line-clamp-2` titles with `title=` tooltip, show `+ Add chapter` on module-row hover (auto-expands), `cursor-grab` + tooltip on drag handles.
+- Right-panel empty state: replace with the 3-step "Build Your Course" guide.
+- `ChapterEditor`: tighten spacing to `space-y-4`; auto-detect duration from selected video file (read-only with "✓ Auto-detected", click to override); add collapsible "Advanced Settings" with Free Preview toggle and Sequential Lock toggle (gated behind Creator Pro with a "Requires Creator Pro" note when not Pro).
+- Module editor: title + description + chapter list with reorder handles + destructive "Delete Module" button with warning copy.
+- Layout: 3-column at ≥1280px (240 / 280 / flex), 2-column at 768–1280px (hide step sidebar), single-pane with back button on mobile.
 
-Note: the `parsed.upgrade_price` is computed as `advanced_price - basic_price`, so it will naturally be `4000` when DB values match; the `defaults.upgrade_price = 4000` is the sane fallback if either price is missing.
+## Part 4 — Video upload end-to-end
+- `creator-upload-url` edge function: already accepts both param formats — verify CORS headers are returned on every response (including the error path) and keep AWS SDK presigner.
+- `useVideoUpload`: align with the spec — also call `r2-confirm-upload` after the PUT and return `{ objectKey, publicUrl }`.
+- `ChapterEditor`: wire the hook, persist `video_url` + `video_asset_id` to `course_chapters` on success, show success state with filename + Replace button, surface exact error via `sonner` toast on failure (no silent failures).
+- `ModulePlayer`: ensure the three video sources (R2 asset → signed URL via `r2-get-playback-url`, YouTube → embed, direct MP4 → BackupshalaVideoPlayer) all play; do not touch player internals.
 
----
+## Part 5 — Platform course access + builder mode
+- `verify-razorpay-payment`: after enrolling a buyer in the Advanced course, upsert an enrollment for `basic_course_id` (amount 0, tier `basic`).
+- `CourseBuilder`: when editing a course where `is_platform_course = true`, hide the Pricing step + commission fields, show a "Course Level" selector (basic / advanced / specialized) + Admin Notes, and replace "Submit for Review" with a direct "Publish" action.
 
-## File 2 — `src/pages/About.tsx`
+## Part 6 — Creator My Courses filter
+- `CreatorCourses`: add `.eq('is_platform_course', false)` so platform courses never leak into a creator's list.
 
-1. Add hook + dynamic label:
-   ```tsx
-   import { usePlatformSettings } from '@/hooks/usePlatformSettings';
-   import { formatINR } from '@/lib/format';
-   ```
-   Convert `About` from arrow-const expression to a function body so we can call the hook:
-   ```tsx
-   const About = () => {
-     const { data } = usePlatformSettings();
-     const priceLabel = formatINR(data.basic_price);
-     return (
-       // ...existing JSX
-     );
-   };
-   ```
-2. Line 24 — replace `For just ₹249,` with `For just {priceLabel},`.
-3. Line 54 — replace `Start Learning for ₹249` with `Start Learning for {priceLabel}`.
-
-(If `formatINR` doesn't exist in `@/lib/format`, fall back to `` `₹${data.basic_price}` ``. I'll check at implementation time and pick whichever is exported.)
+## Part 7 — Small fixes
+- `AdminPlatformCourseNew`: default price reads from `usePlatformSettings().basic_price` (fallback 449) instead of hard-coded 249.
+- Slug generator: `src/lib/slug.ts` already strips leading/trailing hyphens — audit any local slug helpers and route them through `generateSlug` from `@/lib/slug`.
 
 ---
 
-## File 3 — `src/components/landing/FAQ.tsx`
+## Out of scope (per your instructions)
+- Pricing tab UI, Publish checklist, BackupshalaVideoPlayer internals.
+- No new courses created in DB (Standard Bundle + Advanced already exist).
+- No hard-coded commission/price values — read from `platform_settings`.
 
-Convert the static `faqs` array into a function of settings so values inject at render:
+## Risks / things I'll flag if I hit them
+- If `r2-confirm-upload` requires fields not currently sent (e.g. duration, mime), I'll match its existing contract rather than invent one.
+- If `AdminCreators` has no current "approve" handler (only a stub), I'll wire it; if the approve mutation already exists, I'll extend it.
+- Three-column builder layout may require minor refactor of `BuilderSidebar` rendering in `CourseBuilder.tsx`; I'll keep the existing component API.
 
-```tsx
-import { usePlatformSettings } from '@/hooks/usePlatformSettings';
-
-const buildFaqs = (minPayout: number, platformFee: number, creatorMax: number) => [
-  // ...same items, but the two hardcoded ₹500s become `₹${minPayout}`
-  // and "anywhere from 0% to 85%. The remaining 15% is Backupshala's platform fee"
-  // becomes `anywhere from 0% to ${creatorMax}%. The remaining ${platformFee}% is Backupshala's platform fee.`
-  // and "Backupshala charges a 15% platform fee" becomes `Backupshala charges a ${platformFee}% platform fee`
-];
-
-const FAQ = () => {
-  const { data } = usePlatformSettings();
-  const platformFee = data.platform_fee_percent;     // 5
-  const creatorMax = 100 - platformFee;              // 95
-  const faqs = buildFaqs(data.min_payout_amount, platformFee, creatorMax);
-  // existing JSX unchanged
-};
-```
-
-Specifically replace, in the FAQ strings:
-- `Minimum payout threshold is ₹500.` → `` `Minimum payout threshold is ₹${minPayout}.` ``
-- `wallet balance reaches ₹500 or more` → `` `wallet balance reaches ₹${minPayout} or more` ``
-- `anywhere from 0% to 85%. The remaining 15% is Backupshala's platform fee.` → `` `anywhere from 0% to ${creatorMax}%. The remaining ${platformFee}% is Backupshala's platform fee.` ``
-- `Backupshala charges a 15% platform fee` → `` `Backupshala charges a ${platformFee}% platform fee` ``
-
-The "₹99 to ₹9,999" range stays unchanged per your instruction.
-
----
-
-## File 4 — `src/components/landing/ForCreators.tsx`
-
-1. Reuse the existing `usePlatformSettings()` import — already pulled as `{ raw }`. Add `data` to the destructure:
-   ```tsx
-   const { raw, data } = usePlatformSettings();
-   ```
-2. Line 162 — replace `Withdraw your earnings anytime (min ₹500)` with:
-   ```tsx
-   <li className="flex items-start gap-2"><span className="text-primary">✓</span> Withdraw your earnings anytime (min ₹{data.min_payout_amount})</li>
-   ```
-
-No other changes in this file.
-
----
-
-## Verification
-
-After edits I'll print the relevant sections of each file (the `defaults` object, the About hook block + 2 swapped strings, the new FAQ builder + hook, and the ForCreators line 162) so you can confirm.
-
-No build/typecheck needed beyond what the harness runs automatically.
+Reply **approve** to proceed, or tell me what to change.
