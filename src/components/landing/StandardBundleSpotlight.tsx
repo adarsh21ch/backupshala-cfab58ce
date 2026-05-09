@@ -19,7 +19,7 @@ const StandardBundleSpotlight = () => {
   const { data: settings, isLoading } = usePlatformSettings();
   const priceLabel = isLoading ? '—' : `₹${settings.basic_price}`;
   return (
-  <section id="standard-bundle" className="py-16 md:py-24">
+  <section id="standard-bundle" className="relative py-16 md:py-24 pb-24 md:pb-24">
     <div className="container mx-auto px-4">
       <div className="grid items-center gap-12 lg:grid-cols-2">
         {/* Left */}
