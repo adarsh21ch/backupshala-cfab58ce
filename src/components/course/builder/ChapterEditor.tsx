@@ -118,16 +118,44 @@ const ChapterEditor = ({ chapter, courseId, onSaved, onDelete }: Props) => {
     }
   };
 
+  const [autoDetectedDuration, setAutoDetectedDuration] = useState(false);
+
+  const detectDuration = (file: File) =>
+    new Promise<number>((resolve) => {
+      try {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = () => {
+          const minutes = Math.max(1, Math.round(video.duration / 60));
+          URL.revokeObjectURL(video.src);
+          resolve(minutes);
+        };
+        video.onerror = () => resolve(0);
+        video.src = URL.createObjectURL(file);
+      } catch {
+        resolve(0);
+      }
+    });
+
   const handleVideoFile = async (file: File) => {
     if (!file) return;
     setUploading(true);
     setUploadProgress(0);
     try {
+      // Auto-detect duration before upload
+      const detected = await detectDuration(file);
+      let detectedStr = duration;
+      if (detected > 0) {
+        detectedStr = String(detected);
+        setDuration(detectedStr);
+        setAutoDetectedDuration(true);
+      }
+
       const { objectKey, publicUrl } = await uploadVideoToR2(file, setUploadProgress, courseId);
       const finalUrl = publicUrl || objectKey;
       setVideoUrl(finalUrl);
       setUploadedFile(file.name);
-      await save({ video_url: finalUrl });
+      await save({ video_url: finalUrl, duration_minutes: Number(detectedStr) || 0 });
       toast.success("Video uploaded");
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
@@ -295,12 +323,17 @@ const ChapterEditor = ({ chapter, courseId, onSaved, onDelete }: Props) => {
 
       {/* Duration */}
       <div className="space-y-1.5">
-        <Label>Duration (minutes)</Label>
+        <Label className="flex items-center gap-2">
+          Duration (minutes)
+          {autoDetectedDuration && (
+            <span className="text-[10px] font-normal text-primary">✓ Auto-detected · click to override</span>
+          )}
+        </Label>
         <Input
           type="number"
           min={0}
           value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+          onChange={(e) => { setDuration(e.target.value); setAutoDetectedDuration(false); }}
           onBlur={() => save()}
           className="w-32"
         />
