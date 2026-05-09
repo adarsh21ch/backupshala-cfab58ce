@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,34 +42,16 @@ import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
-import AdminDashboardHome from "./pages/admin/AdminDashboardHome";
-import AdminCreators from "./pages/admin/AdminCreators";
-import AdminCourses from "./pages/admin/AdminCourses";
-import AdminPlatformCourseNew from "./pages/admin/AdminPlatformCourseNew";
-import AdminPlatformCourses from "./pages/admin/AdminPlatformCourses";
-import AdminStudents from "./pages/admin/AdminStudents";
-import AdminPayments from "./pages/admin/AdminPayments";
-import AdminCommissions from "./pages/admin/AdminCommissions";
-import AdminPayouts from "./pages/admin/AdminPayouts";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminSupport from "./pages/admin/AdminSupport";
-import AdminStandardBundle from "./pages/admin/AdminStandardBundle";
-import AdminVideos from "./pages/admin/AdminVideos";
 import CreatorVideos from "./pages/creator/CreatorVideos";
 import CreatorSettings from "./pages/creator/CreatorSettings";
 import CreatorUnlockRequests from "./pages/creator/CreatorUnlockRequests";
 import CreatorUpgrade from "./pages/creator/CreatorUpgrade";
 import StudentVideos from "./pages/StudentVideos";
 import WatchVideo from "./pages/WatchVideo";
-import AdminCreatorPro from "./pages/admin/AdminCreatorPro";
-import AdminRevenue from "./pages/admin/AdminRevenue";
-import AdminFeaturedListings from "./pages/admin/AdminFeaturedListings";
 import CreatorAgreement from "./pages/CreatorAgreement";
 import ContentPolicy from "./pages/ContentPolicy";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import CancellationPolicy from "./pages/CancellationPolicy";
-import AdminAuditLog from "./pages/admin/AdminAuditLog";
-import AdminWebhookLogs from "./pages/admin/AdminWebhookLogs";
 import OrderHistory from "./pages/OrderHistory";
 import CookieConsent from "./components/CookieConsent";
 import InstallPrompt from "./components/InstallPrompt";
@@ -76,6 +59,33 @@ import CreatorCoupons from "./pages/creator/CreatorCoupons";
 import CreatorAnnouncements from "./pages/creator/CreatorAnnouncements";
 import CreatorDiscussions from "./pages/creator/CreatorDiscussions";
 import { ThemeProvider } from "next-themes";
+import { Loader2 } from "lucide-react";
+
+// Lazy-loaded admin routes (split into a separate chunk)
+const AdminDashboardHome = lazy(() => import("./pages/admin/AdminDashboardHome"));
+const AdminCreators = lazy(() => import("./pages/admin/AdminCreators"));
+const AdminCourses = lazy(() => import("./pages/admin/AdminCourses"));
+const AdminPlatformCourseNew = lazy(() => import("./pages/admin/AdminPlatformCourseNew"));
+const AdminPlatformCourses = lazy(() => import("./pages/admin/AdminPlatformCourses"));
+const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
+const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
+const AdminCommissions = lazy(() => import("./pages/admin/AdminCommissions"));
+const AdminPayouts = lazy(() => import("./pages/admin/AdminPayouts"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminSupport = lazy(() => import("./pages/admin/AdminSupport"));
+const AdminStandardBundle = lazy(() => import("./pages/admin/AdminStandardBundle"));
+const AdminVideos = lazy(() => import("./pages/admin/AdminVideos"));
+const AdminCreatorPro = lazy(() => import("./pages/admin/AdminCreatorPro"));
+const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+const AdminFeaturedListings = lazy(() => import("./pages/admin/AdminFeaturedListings"));
+const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
+const AdminWebhookLogs = lazy(() => import("./pages/admin/AdminWebhookLogs"));
+
+const AdminFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+  </div>
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,6 +106,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <Suspense fallback={<AdminFallback />}>
           <Routes>
             {/* Public pages */}
             <Route path="/" element={<Index />} />
@@ -155,7 +166,7 @@ const App = () => (
             <Route path="/creator/announcements" element={<CreatorRoute><CreatorAnnouncements /></CreatorRoute>} />
             <Route path="/creator/discussions" element={<CreatorRoute><CreatorDiscussions /></CreatorRoute>} />
 
-            {/* Admin panel */}
+            {/* Admin panel (lazy-loaded) */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
             <Route path="/admin/creators" element={<AdminRoute><AdminCreators /></AdminRoute>} />
             <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
@@ -177,6 +188,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
           <CookieConsent />
           <InstallPrompt />
         </AuthProvider>

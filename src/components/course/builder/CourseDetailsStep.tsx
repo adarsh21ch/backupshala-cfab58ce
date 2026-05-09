@@ -11,7 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ThumbnailUpload from "@/components/course/ThumbnailUpload";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronRight, Settings2 } from "lucide-react";
 
 const CATEGORIES = [
   "Video Editing",
@@ -50,6 +51,7 @@ interface Props {
 
 const CourseDetailsStep = ({ form, onChange, onSave, onNext }: Props) => {
   const [showSlug, setShowSlug] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [learnItem, setLearnItem] = useState("");
   const [reqItem, setReqItem] = useState("");
   const [tagItem, setTagItem] = useState("");
@@ -117,22 +119,6 @@ const CourseDetailsStep = ({ form, onChange, onSave, onNext }: Props) => {
         <span className="text-xs text-muted-foreground">
           {form.short_description.length}/150 (min 50)
         </span>
-      </div>
-
-      {/* Full description */}
-      <div className="space-y-1.5">
-        <Label>
-          Full Description{" "}
-          <span className="text-muted-foreground font-normal">(optional)</span>
-        </Label>
-        <Textarea
-          placeholder="Describe what students will learn, who this is for, and what makes it special."
-          value={form.full_description}
-          onChange={(e) => onChange({ full_description: e.target.value.slice(0, 2000) })}
-          onBlur={() => onSave()}
-          rows={5}
-          maxLength={2000}
-        />
       </div>
 
       {/* Category / Language / Level */}
@@ -215,55 +201,95 @@ const CourseDetailsStep = ({ form, onChange, onSave, onNext }: Props) => {
         />
       </div>
 
-      {/* Preview video */}
-      <div className="space-y-1.5">
-        <Label>
-          Preview Video URL{" "}
-          <span className="text-muted-foreground font-normal">(optional, YouTube)</span>
-        </Label>
-        <Input
-          placeholder="https://www.youtube.com/watch?v=..."
-          value={form.preview_video_url}
-          onChange={(e) => onChange({ preview_video_url: e.target.value })}
-          onBlur={() => onSave()}
-        />
-      </div>
+      {/* Advanced (optional) options */}
+      <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="w-full flex items-center justify-between rounded-md border border-border bg-muted/30 px-4 py-3 hover:bg-muted/50 transition-colors"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              Advanced Options
+              <span className="text-xs text-muted-foreground font-normal">
+                (full description, preview video, learning outcomes, requirements, tags)
+              </span>
+            </span>
+            {showAdvanced ? (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-6 pt-4">
+          {/* Full description */}
+          <div className="space-y-1.5">
+            <Label>
+              Full Description{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Textarea
+              placeholder="Describe what students will learn, who this is for, and what makes it special."
+              value={form.full_description}
+              onChange={(e) => onChange({ full_description: e.target.value.slice(0, 2000) })}
+              onBlur={() => onSave()}
+              rows={5}
+              maxLength={2000}
+            />
+          </div>
 
-      {/* What you'll learn */}
-      <ListEditor
-        label="What Students Will Learn"
-        helper="Add concrete outcomes (e.g. How to edit Reels in CapCut)"
-        items={form.what_you_learn}
-        onChange={(arr) => onChange({ what_you_learn: arr })}
-        onSave={onSave}
-        draft={learnItem}
-        setDraft={setLearnItem}
-        placeholder="e.g. How to create Reels using CapCut"
-      />
+          {/* Preview video */}
+          <div className="space-y-1.5">
+            <Label>
+              Preview Video URL{" "}
+              <span className="text-muted-foreground font-normal">(optional, YouTube)</span>
+            </Label>
+            <Input
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={form.preview_video_url}
+              onChange={(e) => onChange({ preview_video_url: e.target.value })}
+              onBlur={() => onSave()}
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste a YouTube link — we'll auto-convert it to an embed.
+            </p>
+          </div>
 
-      {/* Requirements */}
-      <ListEditor
-        label="Requirements"
-        helper="What students need before starting"
-        items={form.requirements}
-        onChange={(arr) => onChange({ requirements: arr })}
-        onSave={onSave}
-        draft={reqItem}
-        setDraft={setReqItem}
-        placeholder="e.g. A smartphone with CapCut installed"
-      />
+          <ListEditor
+            label="What Students Will Learn"
+            helper="Add concrete outcomes (e.g. How to edit Reels in CapCut)"
+            items={form.what_you_learn}
+            onChange={(arr) => onChange({ what_you_learn: arr })}
+            onSave={onSave}
+            draft={learnItem}
+            setDraft={setLearnItem}
+            placeholder="e.g. How to create Reels using CapCut"
+          />
 
-      {/* Tags */}
-      <ListEditor
-        label="Tags"
-        helper="Help students find this course"
-        items={form.tags}
-        onChange={(arr) => onChange({ tags: arr })}
-        onSave={onSave}
-        draft={tagItem}
-        setDraft={setTagItem}
-        placeholder="e.g. capcut"
-      />
+          <ListEditor
+            label="Requirements"
+            helper="What students need before starting"
+            items={form.requirements}
+            onChange={(arr) => onChange({ requirements: arr })}
+            onSave={onSave}
+            draft={reqItem}
+            setDraft={setReqItem}
+            placeholder="e.g. A smartphone with CapCut installed"
+          />
+
+          <ListEditor
+            label="Tags"
+            helper="Help students find this course"
+            items={form.tags}
+            onChange={(arr) => onChange({ tags: arr })}
+            onSave={onSave}
+            draft={tagItem}
+            setDraft={setTagItem}
+            placeholder="e.g. capcut"
+          />
+        </CollapsibleContent>
+      </Collapsible>
 
       <div className="pt-4 border-t border-border">
         <Button onClick={onNext} className="w-full sm:w-auto">
