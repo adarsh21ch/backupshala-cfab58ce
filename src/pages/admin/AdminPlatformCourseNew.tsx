@@ -20,17 +20,28 @@ const slugify = (t: string) =>
 
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
+type CourseLevel = 'basic' | 'advanced' | 'premium' | 'creator';
+
 const AdminPlatformCourseNew = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const presetTier = (searchParams.get('tier') as CourseLevel | null) ?? null;
   const { data: settings } = usePlatformSettings();
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDesc, setShortDesc] = useState('');
   const [category, setCategory] = useState('Digital Skills');
   const [level, setLevel] = useState('Beginner');
-  const [price, setPrice] = useState(String(settings?.basic_price || 449));
-  const [courseLevel, setCourseLevel] = useState<'basic' | 'advanced' | 'creator'>('basic');
+  const initialTier: CourseLevel = presetTier && ['basic', 'advanced', 'premium', 'creator'].includes(presetTier) ? presetTier : 'basic';
+  const tierPriceMap: Record<string, number> = {
+    basic: Number((settings as Record<string, unknown> | undefined)?.basic_price ?? 449),
+    advanced: Number((settings as Record<string, unknown> | undefined)?.advanced_price ?? 4449),
+    premium: Number((settings as Record<string, unknown> | undefined)?.premium_price ?? 9999),
+    creator: 449,
+  };
+  const [price, setPrice] = useState(String(tierPriceMap[initialTier]));
+  const [courseLevel, setCourseLevel] = useState<CourseLevel>(initialTier);
   const [saving, setSaving] = useState(false);
 
   const onTitleChange = (v: string) => {
