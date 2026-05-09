@@ -129,6 +129,20 @@ const AdminPlatformCourseNew = () => {
               </div>
             </div>
             <div>
+              <Label>Course Level *</Label>
+              <Select value={courseLevel} onValueChange={(v: 'basic' | 'advanced' | 'creator') => setCourseLevel(v)}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="basic">Basic (Standard Bundle)</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="creator">Creator (other platform course)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Selecting Basic or Advanced will register this course as the platform default for that tier.
+              </p>
+            </div>
+            <div>
               <Label>Course Price ₹ *</Label>
               <Input type="number" value={price} onChange={e => setPrice(e.target.value)} min={1} max={49999} className="mt-1" />
               <p className="text-xs text-muted-foreground mt-1">Admin sets any price freely. Platform keeps 100% of revenue.</p>
