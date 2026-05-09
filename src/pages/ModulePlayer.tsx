@@ -401,7 +401,7 @@ const ModulePlayer = () => {
           )}
 
           {/* Platform: Upgrade to Advanced course CTA — when in platform Basic course */}
-          {courseId && platformSettings?.basic_course_id === courseId && platformSettings?.advanced_course_id && (
+          {courseId && getSetting('basic_course_id') === courseId && getSetting('advanced_course_id') && (
             <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/10 to-accent/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="font-heading font-bold text-sm">Ready for the next level?</p>
