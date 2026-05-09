@@ -212,21 +212,40 @@ const AdminDashboardHome = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KPICard icon={Users}      label="Total Users"        value={stats?.totalUsers || 0}        color="info"        vibrantValue />
-            <KPICard icon={UserCheck}  label="Creators"           value={stats?.totalCreators || 0}     color="success"     vibrantValue />
-            <KPICard icon={BookOpen}   label="Courses"            value={stats?.totalCourses || 0}      color="accent"      vibrantValue />
-            <KPICard icon={TrendingUp} label="Enrollments"        value={stats?.totalEnrollments || 0}  color="purple"      vibrantValue />
+            <button type="button" onClick={() => setActiveMetric('users')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={Users} label="Total Users" value={stats?.totalUsers || 0} color="info" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.users ?? 0} today · click for breakdown</span>} />
+            </button>
+            <button type="button" onClick={() => setActiveMetric('creators')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={UserCheck} label="Creators" value={stats?.totalCreators || 0} color="success" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.creators ?? 0} today · click for breakdown</span>} />
+            </button>
+            <button type="button" onClick={() => setActiveMetric('courses')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={BookOpen} label="Creator Courses" value={stats?.totalCourses || 0} color="accent" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.courses ?? 0} today · click for breakdown</span>} />
+            </button>
+            <button type="button" onClick={() => setActiveMetric('enrollments')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={TrendingUp} label="Enrollments" value={stats?.totalEnrollments || 0} color="purple" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{todayCounts?.enrollments ?? 0} today · click for breakdown</span>} />
+            </button>
             <KPICard icon={GraduationCap} label="Basic Enrollments"   value={stats?.basicEnrollments || 0}    color="info"     vibrantValue />
             <KPICard icon={Award}         label="Advanced Enrollments" value={stats?.advancedEnrollments || 0} color="accent"   vibrantValue />
             <KPICard icon={CalendarDays}  label="This Month Revenue"  value={formatINR(stats?.monthRevenue || 0)} color="success" vibrantValue />
             <KPICard icon={Coins}         label="Pending Affiliate"   value={formatINR(stats?.pendingAffiliate || 0)} color="warning" vibrantValue
               subtitle={<span className="text-muted-foreground">{stats?.pendingAffiliateCount || 0} commission(s)</span>} />
-            <KPICard icon={CreditCard} label="Total Revenue"      value={formatINR(stats?.totalRevenue || 0)}     color="success" vibrantValue />
+            <button type="button" onClick={() => setActiveMetric('revenue')} className="text-left focus:outline-none focus:ring-2 focus:ring-accent rounded-[14px]">
+              <KPICard icon={CreditCard} label="Total Revenue" value={formatINR(stats?.totalRevenue || 0)} color="success" vibrantValue
+                subtitle={<span className="text-muted-foreground">+{formatINR(todayCounts?.revenue ?? 0)} today · click for breakdown</span>} />
+            </button>
             <KPICard icon={IndianRupee} label="Platform Earnings" value={formatINR(stats?.platformEarnings || 0)} color="accent"  vibrantValue />
             <KPICard icon={Wallet}     label="Pending Payouts"    value={formatINR(stats?.pendingPayoutAmount || 0)} color="warning" vibrantValue
               subtitle={<span className="text-muted-foreground">{stats?.pendingPayoutCount || 0} request(s)</span>} />
             <KPICard icon={Star}       label="Active Creator Pro" value={stats?.activeProSubs || 0}     color="purple"      vibrantValue />
           </div>
+        )}
+
+        {activeMetric && (
+          <KPIBreakdownModal metric={activeMetric} onClose={() => setActiveMetric(null)} />
         )}
 
         {/* Charts */}
