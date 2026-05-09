@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles, ChevronDown, Webhook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { prefetchAdminRoutes } from '@/App';
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 import DashboardFooter from '@/components/dashboard/DashboardFooter';
@@ -61,6 +62,18 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Warm every admin route chunk in the background once the admin layout is
+  // mounted. This makes subsequent tab clicks instant (no Suspense fallback).
+  useEffect(() => {
+    const id = window.requestIdleCallback
+      ? window.requestIdleCallback(() => prefetchAdminRoutes())
+      : window.setTimeout(() => prefetchAdminRoutes(), 200);
+    return () => {
+      if (window.cancelIdleCallback && typeof id === 'number') window.cancelIdleCallback(id);
+      else clearTimeout(id as number);
+    };
+  }, []);
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
   const isActive = (path: string) => location.pathname === path;
