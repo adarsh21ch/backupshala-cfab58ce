@@ -81,8 +81,13 @@ const AdminPlatformCourseNew = () => {
       if (error) throw error;
 
       // Wire to platform_settings so the rest of the platform finds this course
-      if (courseLevel === 'basic' || courseLevel === 'advanced') {
-        const settingKey = courseLevel === 'basic' ? 'basic_course_id' : 'advanced_course_id';
+      const settingKeyMap: Record<string, string> = {
+        basic: 'basic_course_id',
+        advanced: 'advanced_course_id',
+        premium: 'premium_course_id',
+      };
+      const settingKey = settingKeyMap[courseLevel];
+      if (settingKey) {
         await supabase.from('platform_settings').upsert(
           { key: settingKey, value: data.id },
           { onConflict: 'key' }
