@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import GateSettingsForm from '@/components/module/GateSettingsForm';
 import ThumbnailUpload from '@/components/course/ThumbnailUpload';
 import ModuleVideoPicker from '@/components/video/ModuleVideoPicker';
+import ChaptersManager from '@/components/course/ChaptersManager';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
