@@ -23,6 +23,7 @@ import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { Sparkles } from 'lucide-react';
 import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
+import ChapterList from '@/components/module/ChapterList';
 
 // Resolve a player setting: module override > course override > platform default
 const resolveBool = (m: boolean | null | undefined, c: boolean | null | undefined, p: boolean): boolean => {
@@ -496,6 +497,11 @@ const ModulePlayer = () => {
                 {currentModule.description && <p className="mt-2 text-sm text-muted-foreground">{currentModule.description}</p>}
                 <p className="mt-1 text-xs text-muted-foreground">{currentModule.duration_minutes} minutes</p>
               </div>
+
+              {/* Chapters under this module (Phase 5) */}
+              {moduleId && courseId && (
+                <ChapterList moduleId={moduleId} courseId={courseId} enrolled={!!enrollment} />
+              )}
               {isCompleted ? (
                 <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-4">
                   <CheckCircle className="h-5 w-5 text-primary" />

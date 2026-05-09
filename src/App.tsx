@@ -45,6 +45,7 @@ import AdminDashboardHome from "./pages/admin/AdminDashboardHome";
 import AdminCreators from "./pages/admin/AdminCreators";
 import AdminCourses from "./pages/admin/AdminCourses";
 import AdminPlatformCourseNew from "./pages/admin/AdminPlatformCourseNew";
+import AdminPlatformCourses from "./pages/admin/AdminPlatformCourses";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminCommissions from "./pages/admin/AdminCommissions";
@@ -158,6 +159,7 @@ const App = () => (
             <Route path="/admin/creators" element={<AdminRoute><AdminCreators /></AdminRoute>} />
             <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
             <Route path="/admin/courses/new-platform" element={<AdminRoute><AdminPlatformCourseNew /></AdminRoute>} />
+            <Route path="/admin/platform-courses" element={<AdminRoute><AdminPlatformCourses /></AdminRoute>} />
             <Route path="/admin/students" element={<AdminRoute><AdminStudents /></AdminRoute>} />
             <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
             <Route path="/admin/commissions" element={<AdminRoute><AdminCommissions /></AdminRoute>} />

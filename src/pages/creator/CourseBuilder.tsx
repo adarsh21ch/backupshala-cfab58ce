@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import GateSettingsForm from '@/components/module/GateSettingsForm';
 import ThumbnailUpload from '@/components/course/ThumbnailUpload';
 import ModuleVideoPicker from '@/components/video/ModuleVideoPicker';
+import ChaptersManager from '@/components/course/ChaptersManager';
 
 const CATEGORIES = ['Video Editing', 'Content Creation', 'Personal Branding', 'Sales & Communication', 'Freelancing', 'Business Skills', 'Digital Marketing', 'Other'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -65,6 +66,7 @@ const CourseBuilder = () => {
 
   const [modules, setModules] = useState<any[]>([]);
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
   const [editingModule, setEditingModule] = useState<any>(null);
   const [mTitle, setMTitle] = useState('');
   const [mDesc, setMDesc] = useState('');
@@ -726,22 +728,38 @@ const CourseBuilder = () => {
               ) : modules.length > 0 ? (
                 <div className="space-y-2">
                   {modules.map((m: any, i: number) => (
-                    <div key={m.id} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/20 p-3 hover:border-accent/20 transition-colors">
-                      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/40 cursor-grab" />
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xs font-bold text-accent">{i + 1}</div>
-                      <span className="text-base">
-                        {m.module_type === 'resource' ? '📚' : m.module_type === 'community' ? '👥' : '▶️'}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{m.title}</p>
-                        <div className="flex gap-2 text-xs text-muted-foreground">
-                          <span>{m.module_type === 'resource' ? 'Resource Library' : m.module_type === 'community' ? 'Community Module' : `Video Lesson`}</span>
-                          {m.module_type === 'video' && m.duration_minutes > 0 && <span>· {m.duration_minutes}m</span>}
-                          {m.is_preview && <span className="text-accent font-medium">· 👁 Preview</span>}
+                    <div key={m.id} className="rounded-xl border border-border bg-secondary/20 hover:border-accent/20 transition-colors">
+                      <div className="flex items-center gap-3 p-3">
+                        <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/40 cursor-grab" />
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xs font-bold text-accent">{i + 1}</div>
+                        <span className="text-base">
+                          {m.module_type === 'resource' ? '📚' : m.module_type === 'community' ? '👥' : '▶️'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{m.title}</p>
+                          <div className="flex gap-2 text-xs text-muted-foreground">
+                            <span>{m.module_type === 'resource' ? 'Resource Library' : m.module_type === 'community' ? 'Community Module' : `Video Lesson`}</span>
+                            {m.module_type === 'video' && m.duration_minutes > 0 && <span>· {m.duration_minutes}m</span>}
+                            {m.is_preview && <span className="text-accent font-medium">· 👁 Preview</span>}
+                            {m.has_pdf_resources && <span className="text-primary font-medium">· 📄 PDF</span>}
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExpandedModuleId(expandedModuleId === m.id ? null : m.id)}
+                          className="text-xs"
+                        >
+                          {expandedModuleId === m.id ? '▴ Chapters' : '▾ Chapters'}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEditModule(m)} className="text-xs">✏️</Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id, m.title)} className="text-destructive hover:text-destructive text-xs">🗑</Button>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => openEditModule(m)} className="text-xs">✏️</Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteModule(m.id, m.title)} className="text-destructive hover:text-destructive text-xs">🗑</Button>
+                      {expandedModuleId === m.id && (
+                        <div className="border-t border-border/60 px-4 py-3 bg-background/40 rounded-b-xl">
+                          <ChaptersManager moduleId={m.id} courseId={id!} />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
