@@ -70,7 +70,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Course updated');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
       setRejectingId(null);
       setRejectionReason('');
     },
@@ -84,7 +84,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Updated');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
     },
   });
 
@@ -104,7 +104,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Course deleted');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
       setDeleteTarget(null);
     },
     onError: (err: any) => {
@@ -151,7 +151,7 @@ const AdminCourses = () => {
     },
     onSuccess: () => {
       toast.success('Override applied');
-      qc.invalidateQueries({ queryKey: ['admin-courses'] });
+      qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
       setOverrideCourse(null);
       setOverrideReason('');
     },
