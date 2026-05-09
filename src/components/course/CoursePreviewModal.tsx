@@ -79,19 +79,36 @@ const CoursePreviewModal = ({
             watermarkText={watermarkText}
             onEnded={() => setShowCta(true)}
           />
-        ) : module?.video_url ? (
-          <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black">
-            <iframe
-              src={module.video_url}
-              title={module.title}
-              className="h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-            <div className="pointer-events-none absolute bottom-12 right-3 text-white text-sm font-bold opacity-60" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-              {watermarkText}
-            </div>
-          </div>
+        ) : module?.video_url && !module.video_url.includes('placeholder') ? (
+          (() => {
+            const url = module.video_url;
+            const isEmbed = /youtube\.com\/embed|player\.vimeo\.com|youtu\.be|vimeo\.com\/\d+/.test(url);
+            return (
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-black">
+                {isEmbed ? (
+                  <iframe
+                    src={url}
+                    title={module.title}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={url}
+                    controls
+                    playsInline
+                    className="h-full w-full object-contain"
+                    controlsList="nodownload"
+                    onEnded={() => setShowCta(true)}
+                  />
+                )}
+                <div className="pointer-events-none absolute bottom-12 right-3 text-white text-sm font-bold opacity-60" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                  {watermarkText}
+                </div>
+              </div>
+            );
+          })()
         ) : (
           <div className="aspect-video w-full rounded-xl border border-border bg-secondary flex items-center justify-center">
             <p className="text-sm text-muted-foreground">Preview unavailable</p>
