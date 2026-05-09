@@ -27,7 +27,7 @@ const AdminPlatformCourseNew = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const presetTier = (searchParams.get('tier') as CourseLevel | null) ?? null;
-  const { data: settings } = usePlatformSettings();
+  const { data: settings, getSetting } = usePlatformSettings();
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDesc, setShortDesc] = useState('');
@@ -35,9 +35,9 @@ const AdminPlatformCourseNew = () => {
   const [level, setLevel] = useState('Beginner');
   const initialTier: CourseLevel = presetTier && ['basic', 'advanced', 'premium', 'creator'].includes(presetTier) ? presetTier : 'basic';
   const tierPriceMap: Record<string, number> = {
-    basic: Number((settings as Record<string, unknown> | undefined)?.basic_price ?? 449),
-    advanced: Number((settings as Record<string, unknown> | undefined)?.advanced_price ?? 4449),
-    premium: Number((settings as Record<string, unknown> | undefined)?.premium_price ?? 9999),
+    basic: settings?.basic_price ?? 449,
+    advanced: settings?.advanced_price ?? 4449,
+    premium: Number(getSetting('premium_price', '9999')) || 9999,
     creator: 449,
   };
   const [price, setPrice] = useState(String(tierPriceMap[initialTier]));
