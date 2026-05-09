@@ -270,6 +270,60 @@ export type Database = {
         }
         Relationships: []
       }
+      course_chapters: {
+        Row: {
+          chapter_order: number
+          course_id: string
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_preview: boolean
+          is_published: boolean
+          module_id: string
+          pdf_filename: string | null
+          pdf_url: string | null
+          title: string
+          updated_at: string
+          video_asset_id: string | null
+          video_url: string | null
+        }
+        Insert: {
+          chapter_order?: number
+          course_id: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_preview?: boolean
+          is_published?: boolean
+          module_id: string
+          pdf_filename?: string | null
+          pdf_url?: string | null
+          title: string
+          updated_at?: string
+          video_asset_id?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          chapter_order?: number
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_preview?: boolean
+          is_published?: boolean
+          module_id?: string
+          pdf_filename?: string | null
+          pdf_url?: string | null
+          title?: string
+          updated_at?: string
+          video_asset_id?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       course_discussions: {
         Row: {
           content: string
@@ -466,6 +520,7 @@ export type Database = {
           base_price: number | null
           category: string
           commission_percent: number
+          course_level: string | null
           course_tier: string | null
           created_at: string
           creator_id: string
@@ -508,6 +563,7 @@ export type Database = {
           base_price?: number | null
           category?: string
           commission_percent?: number
+          course_level?: string | null
           course_tier?: string | null
           created_at?: string
           creator_id: string
@@ -550,6 +606,7 @@ export type Database = {
           base_price?: number | null
           category?: string
           commission_percent?: number
+          course_level?: string | null
           course_tier?: string | null
           created_at?: string
           creator_id?: string
@@ -791,10 +848,13 @@ export type Database = {
       }
       enrollments: {
         Row: {
+          access_expires_at: string | null
           amount_paid: number
           completed_at: string | null
           course_id: string
           enrolled_at: string
+          grant_reason: string | null
+          granted_by_admin: boolean
           id: string
           is_completed: boolean
           payment_id: string | null
@@ -803,10 +863,13 @@ export type Database = {
           tier: string
         }
         Insert: {
+          access_expires_at?: string | null
           amount_paid?: number
           completed_at?: string | null
           course_id: string
           enrolled_at?: string
+          grant_reason?: string | null
+          granted_by_admin?: boolean
           id?: string
           is_completed?: boolean
           payment_id?: string | null
@@ -815,10 +878,13 @@ export type Database = {
           tier?: string
         }
         Update: {
+          access_expires_at?: string | null
           amount_paid?: number
           completed_at?: string | null
           course_id?: string
           enrolled_at?: string
+          grant_reason?: string | null
+          granted_by_admin?: boolean
           id?: string
           is_completed?: boolean
           payment_id?: string | null
@@ -1284,6 +1350,7 @@ export type Database = {
           description: string | null
           duration_minutes: number | null
           gate_type: string | null
+          has_pdf_resources: boolean
           id: string
           is_gated: boolean | null
           is_preview: boolean | null
@@ -1310,6 +1377,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           gate_type?: string | null
+          has_pdf_resources?: boolean
           id?: string
           is_gated?: boolean | null
           is_preview?: boolean | null
@@ -1336,6 +1404,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           gate_type?: string | null
+          has_pdf_resources?: boolean
           id?: string
           is_gated?: boolean | null
           is_preview?: boolean | null
@@ -1603,6 +1672,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pdf_download_logs: {
+        Row: {
+          chapter_id: string
+          course_id: string
+          downloaded_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          course_id: string
+          downloaded_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          course_id?: string
+          downloaded_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       platform_settings: {
         Row: {
