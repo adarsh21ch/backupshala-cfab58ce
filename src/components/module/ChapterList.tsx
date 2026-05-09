@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +10,78 @@ interface Props {
   courseId: string;
   enrolled: boolean;
 }
+
+const isYouTube = (url: string) =>
+  url.includes('youtube.com') || url.includes('youtu.be');
+
+const toYouTubeEmbed = (url: string): string => {
+  const watch = url.match(/youtube\.com\/watch\?v=([^&]+)/);
+  if (watch) return `https://www.youtube.com/embed/${watch[1]}`;
+  const short = url.match(/youtu\.be\/([^?]+)/);
+  if (short) return `https://www.youtube.com/embed/${short[1]}`;
+  if (url.includes('/embed/')) return url;
+  return url;
+};
+
+const ChapterVideo = ({ chapter }: { chapter: any }) => {
+  const [resolvedUrl, setResolvedUrl] = useState<string>('');
+  const [videoType, setVideoType] = useState<'r2' | 'youtube' | 'direct'>('direct');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // Priority 1: signed R2 URL via video_asset_id
+      if (chapter.video_asset_id) {
+        try {
+          const { data } = await supabase.functions.invoke('r2-get-playback-url', {
+            body: { objectKey: chapter.video_asset_id },
+          });
+          if (!cancelled && data?.url) {
+            setResolvedUrl(data.url);
+            setVideoType('direct');
+            return;
+          }
+        } catch (err) {
+          console.warn('R2 signed URL failed, falling back', err);
+        }
+      }
+      const url = chapter.video_url || '';
+      if (cancelled) return;
+      if (url && isYouTube(url)) {
+        setResolvedUrl(toYouTubeEmbed(url));
+        setVideoType('youtube');
+      } else {
+        setResolvedUrl(url);
+        setVideoType('direct');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [chapter.video_url, chapter.video_asset_id]);
+
+  if (!resolvedUrl) {
+    return (
+      <div className="aspect-video w-full flex items-center justify-center bg-muted">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (videoType === 'youtube') {
+    return (
+      <iframe
+        src={resolvedUrl}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        title={chapter.title}
+      />
+    );
+  }
+
+  return <video src={resolvedUrl} controls controlsList="nodownload" className="w-full h-full" />;
+};
 
 const ChapterList = ({ moduleId, courseId, enrolled }: Props) => {
   const { user } = useAuth();
@@ -31,13 +104,15 @@ const ChapterList = ({ moduleId, courseId, enrolled }: Props) => {
   const downloadPdf = async (chapter: any) => {
     if (!chapter.pdf_url) return;
     try {
-      // Log download (best-effort, non-blocking)
       if (user?.id) {
-        supabase.from('pdf_download_logs').insert({
-          user_id: user.id,
-          chapter_id: chapter.id,
-          course_id: courseId,
-        }).then(() => {});
+        supabase
+          .from('pdf_download_logs')
+          .insert({
+            user_id: user.id,
+            chapter_id: chapter.id,
+            course_id: courseId,
+          })
+          .then(() => {});
       }
       window.open(chapter.pdf_url, '_blank', 'noopener,noreferrer');
     } catch (err) {
@@ -64,6 +139,7 @@ const ChapterList = ({ moduleId, courseId, enrolled }: Props) => {
       <ul className="divide-y divide-border">
         {chapters.map((c: any, i: number) => {
           const canSee = enrolled || c.is_preview;
+          const hasVideo = !!(c.video_url || c.video_asset_id);
           return (
             <li key={c.id} className="px-4 py-3">
               <div className="flex items-start gap-3">
@@ -83,7 +159,7 @@ const ChapterList = ({ moduleId, courseId, enrolled }: Props) => {
                     <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{c.description}</p>
                   )}
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                    {c.video_url && (
+                    {hasVideo && (
                       <span className="inline-flex items-center gap-1">
                         <Play className="h-3 w-3" /> Video
                       </span>
@@ -92,8 +168,8 @@ const ChapterList = ({ moduleId, courseId, enrolled }: Props) => {
                   </div>
                 </div>
 
-                {c.pdf_url && (
-                  canSee ? (
+                {c.pdf_url &&
+                  (canSee ? (
                     <Button
                       type="button"
                       size="sm"
@@ -107,24 +183,12 @@ const ChapterList = ({ moduleId, courseId, enrolled }: Props) => {
                     <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
                       <FileText className="h-3 w-3" /> PDF (enroll to access)
                     </span>
-                  )
-                )}
+                  ))}
               </div>
 
-              {/* Inline chapter video player when no module video, or as a per-chapter mini-player */}
-              {canSee && c.video_url && (
+              {canSee && hasVideo && (
                 <div className="mt-3 rounded-lg overflow-hidden border border-border bg-black aspect-video">
-                  {c.video_url.includes('youtube.com/embed') ? (
-                    <iframe
-                      src={c.video_url}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={c.title}
-                    />
-                  ) : (
-                    <video src={c.video_url} controls className="w-full h-full" />
-                  )}
+                  <ChapterVideo chapter={c} />
                 </div>
               )}
             </li>
