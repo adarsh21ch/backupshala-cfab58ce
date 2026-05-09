@@ -353,7 +353,7 @@ const CourseBuilder = () => {
               <CourseDetailsStep
                 form={details}
                 onChange={updateDetails}
-                onSave={saveCourse}
+                onSave={async () => { await saveCourse(); }}
                 onNext={async () => {
                   const ok = await saveCourse();
                   if (ok) setActiveStep(2);

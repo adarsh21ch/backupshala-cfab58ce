@@ -18,15 +18,18 @@ const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const slugify = (t: string) =>
   t.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').trim();
 
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+
 const AdminPlatformCourseNew = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: settings } = usePlatformSettings();
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDesc, setShortDesc] = useState('');
   const [category, setCategory] = useState('Digital Skills');
   const [level, setLevel] = useState('Beginner');
-  const [price, setPrice] = useState('249');
+  const [price, setPrice] = useState(String(settings?.basic_price || 449));
   const [courseLevel, setCourseLevel] = useState<'basic' | 'advanced' | 'creator'>('basic');
   const [saving, setSaving] = useState(false);
 

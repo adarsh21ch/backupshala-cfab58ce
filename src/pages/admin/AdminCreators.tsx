@@ -38,15 +38,35 @@ const AdminCreators = () => {
 
   const approveMutation = useMutation({
     mutationFn: async ({ id, approve }: { id: string; approve: boolean }) => {
-      const { error } = await supabase.from('profiles').update({ creator_approved: approve }).eq('id', id);
+      // On approve: also auto-grant Creator Pro (free, lifetime — KYC benefit)
+      const updates: any = { creator_approved: approve };
+      if (approve) updates.is_creator_pro = true;
+      const { error } = await supabase.from('profiles').update(updates).eq('id', id);
       if (error) throw error;
+
+      if (approve) {
+        await supabase.from('creator_pro_subscriptions').upsert({
+          creator_id: id,
+          plan: 'annual',
+          status: 'active',
+          pro_started_at: new Date().toISOString(),
+          pro_ends_at: null,
+          amount_per_month: 0,
+          razorpay_subscription_id: 'kyc_grant',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'creator_id' });
+      }
+
       await supabase.from('admin_audit_log').insert({
-        admin_id: user!.id, action: approve ? 'approve_creator' : 'reject_creator',
-        target_type: 'creator', target_id: id,
+        admin_id: user!.id,
+        action: approve ? 'approve_creator_kyc' : 'reject_creator',
+        target_type: 'creator',
+        target_id: id,
+        details: approve ? { note: 'Creator Pro granted automatically on KYC approval' } : {},
       });
     },
     onSuccess: (_, { approve }) => {
-      toast.success(approve ? 'Creator approved' : 'Creator rejected');
+      toast.success(approve ? 'Creator approved — Pro granted' : 'Creator rejected');
       qc.invalidateQueries({ queryKey: ['admin-creators'] });
     },
     onError: () => toast.error('Action failed'),
