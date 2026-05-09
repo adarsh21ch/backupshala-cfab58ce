@@ -237,18 +237,47 @@ const AdminDashboardHome = () => {
               <span className="text-xs text-muted-foreground">Last 6 months</span>
             </CardHeader>
             <CardContent className="pt-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={enrollmentData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={32} allowDecimals={false} />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {(enrollmentData || []).every(d => d.count === 0) ? (
+                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">No enrollments in the last 6 months yet.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={enrollmentData || []} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={32} allowDecimals={false} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Top Courses by Revenue */}
+        <Card className="bg-card border-border">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base font-heading font-bold">Top Courses by Revenue</CardTitle>
+            <span className="text-xs text-muted-foreground">All-time top 5</span>
+          </CardHeader>
+          <CardContent>
+            {(!topCourses || topCourses.length === 0) ? (
+              <p className="text-sm text-muted-foreground">No paid enrollments yet.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {topCourses.map((c, i) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="h-6 w-6 shrink-0 rounded-full bg-muted text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                      <Link to={`/admin/courses`} className="text-sm font-medium truncate hover:text-primary">{c.title}</Link>
+                    </div>
+                    <span className="text-sm font-semibold text-success shrink-0">{formatINR(c.revenue)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Platform Health */}
         <div>
