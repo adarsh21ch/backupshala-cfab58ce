@@ -87,7 +87,12 @@ const ModulePlayer = () => {
   const { data: enrollment } = useQuery({
     queryKey: ['enrollment-tier', user?.id, courseId],
     queryFn: async () => {
-      const { data } = await supabase.from('enrollments').select('enrolled_at, tier').eq('student_id', user!.id).eq('course_id', courseId!).maybeSingle();
+      const { data } = await supabase
+        .from('enrollments')
+        .select('enrolled_at, tier, access_expires_at, granted_by_admin')
+        .eq('student_id', user!.id)
+        .eq('course_id', courseId!)
+        .maybeSingle();
       return data;
     },
     enabled: !!user && !!courseId,
@@ -184,6 +189,40 @@ const ModulePlayer = () => {
       </div>
     </DashboardLayout>
   );
+
+  // Access expiry check (admin-granted free access only)
+  const accessExpired = (() => {
+    const exp = (enrollment as any)?.access_expires_at;
+    if (!exp) return false;
+    return new Date(exp) < new Date();
+  })();
+
+  if (accessExpired) {
+    const expDate = new Date((enrollment as any).access_expires_at);
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto flex flex-col items-center justify-center py-20 text-center space-y-4">
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+            <Lock className="h-8 w-8 text-destructive" />
+          </div>
+          <h2 className="font-heading text-xl font-700">Your Access Expired</h2>
+          <p className="text-sm text-muted-foreground">
+            Your access to this course expired on{' '}
+            <span className="font-semibold text-foreground">
+              {expDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>.
+          </p>
+          <p className="text-xs text-muted-foreground">Renew your access to continue learning.</p>
+          <Button asChild className="rounded-md">
+            <Link to={`/courses/${courseId}`}>Renew Access</Link>
+          </Button>
+          <Button asChild variant="outline" className="rounded-md">
+            <Link to="/dashboard"><ChevronLeft className="h-4 w-4 mr-1" /> Back to Dashboard</Link>
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   // Drip content check
   const dripUnlockDate = (() => {
