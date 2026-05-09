@@ -51,11 +51,11 @@ const StandardBundleSpotlight = () => {
             <Button
               asChild
               size="lg"
-              className="btn-lift rounded-xl bg-primary px-8 font-semibold text-primary-foreground shadow-soft hover:bg-primary/90"
+              className="btn-lift w-full sm:w-auto rounded-xl bg-primary px-8 font-semibold text-primary-foreground shadow-soft hover:bg-primary/90"
             >
               <Link to="/c/backupshala/backupshala-standard-bundle">Enroll Now — {priceLabel}</Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="rounded-xl border-[1.5px] px-8">
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto rounded-xl border-[1.5px] px-8">
               <Link to="/c/backupshala/backupshala-standard-bundle">Preview the Course</Link>
             </Button>
           </div>
