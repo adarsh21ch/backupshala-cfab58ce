@@ -66,6 +66,7 @@ const CourseBuilder = () => {
 
   const [modules, setModules] = useState<any[]>([]);
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
   const [editingModule, setEditingModule] = useState<any>(null);
   const [mTitle, setMTitle] = useState('');
   const [mDesc, setMDesc] = useState('');
