@@ -23,6 +23,7 @@ import { useUpgradeFlow } from '@/hooks/useUpgradeFlow';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { Sparkles } from 'lucide-react';
 import BackupshalaVideoPlayer from '@/components/video/BackupshalaVideoPlayer';
+import ChapterList from '@/components/module/ChapterList';
 
 // Resolve a player setting: module override > course override > platform default
 const resolveBool = (m: boolean | null | undefined, c: boolean | null | undefined, p: boolean): boolean => {
