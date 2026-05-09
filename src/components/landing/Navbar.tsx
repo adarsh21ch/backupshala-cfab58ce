@@ -36,6 +36,7 @@ const LandingNavbar = () => {
         <div className="hidden items-center gap-5 xl:gap-7 lg:flex whitespace-nowrap">
           <Link to="/explore" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Explore Courses</Link>
           <a href="/#standard-bundle" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Standard Bundle</a>
+          <Link to="/advanced" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Advanced</Link>
           <a href="/#for-creators" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">For Creators</a>
           <a href="/#how-it-works" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">How It Works</a>
 
