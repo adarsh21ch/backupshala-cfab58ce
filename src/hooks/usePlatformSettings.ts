@@ -16,15 +16,15 @@ export interface PlatformSettings {
 
 const defaults: PlatformSettings = {
   platform_name: 'Backupshala',
-  platform_fee_percent: 10,
-  default_commission_percent: 70,
+  platform_fee_percent: 5,
+  default_commission_percent: 75,
   min_payout_amount: 500,
   support_email: 'support@backupshala.com',
   razorpay_enabled: true,
   maintenance_mode: false,
-  basic_price: 249,
-  advanced_price: 499,
-  upgrade_price: 250,
+  basic_price: 449,
+  advanced_price: 4449,
+  upgrade_price: 4000,
 };
 
 export const usePlatformSettings = () => {
