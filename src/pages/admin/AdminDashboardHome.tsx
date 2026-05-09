@@ -19,7 +19,8 @@ const AdminDashboardHome = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [profiles, courses, enrollments, payments, creators, payoutReqs, proSubs] = await Promise.all([
+      const monthStart = startOfMonth(new Date()).toISOString();
+      const [profiles, courses, enrollments, payments, creators, payoutReqs, proSubs, basicEnr, advEnr, monthPays, pendingAff, settings] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('courses').select('*', { count: 'exact', head: true }),
         supabase.from('enrollments').select('*', { count: 'exact', head: true }),
@@ -27,11 +28,18 @@ const AdminDashboardHome = () => {
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_creator', true),
         supabase.from('payout_requests').select('amount, status').eq('status', 'pending'),
         supabase.from('creator_pro_subscriptions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('enrollments').select('*', { count: 'exact', head: true }).eq('tier', 'basic'),
+        supabase.from('enrollments').select('*', { count: 'exact', head: true }).eq('tier', 'advanced'),
+        supabase.from('payments').select('amount_total, status').gte('created_at', monthStart).in('status', ['success', 'paid']),
+        supabase.from('commissions').select('amount, status, commission_type').eq('commission_type', 'affiliate').eq('status', 'pending'),
+        supabase.from('platform_settings').select('key, value').in('key', ['basic_course_id', 'advanced_course_id']),
       ]);
-      const paidPayments = (payments.data || []).filter(p => p.status === 'success');
+      const paidPayments = (payments.data || []).filter(p => p.status === 'success' || p.status === 'paid');
       const totalRevenue = paidPayments.reduce((s, p) => s + Number(p.amount_total), 0);
       const platformEarnings = paidPayments.reduce((s, p) => s + Number(p.platform_fee_amount), 0);
       const pendingPayoutAmount = (payoutReqs.data || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+      const monthRevenue = (monthPays.data || []).reduce((s, p) => s + Number(p.amount_total), 0);
+      const pendingAffiliate = (pendingAff.data || []).reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
       return {
         totalUsers: profiles.count || 0,
         totalCourses: courses.count || 0,
@@ -42,7 +50,36 @@ const AdminDashboardHome = () => {
         pendingPayoutCount: (payoutReqs.data || []).length,
         pendingPayoutAmount,
         activeProSubs: proSubs.count || 0,
+        basicEnrollments: basicEnr.count || 0,
+        advancedEnrollments: advEnr.count || 0,
+        monthRevenue,
+        pendingAffiliate,
+        pendingAffiliateCount: (pendingAff.data || []).length,
       };
+    },
+  });
+
+  // Top 5 courses by revenue
+  const { data: topCourses } = useQuery({
+    queryKey: ['admin-top-courses'],
+    queryFn: async () => {
+      const { data: pays } = await supabase.from('payments')
+        .select('course_id, amount_total, status')
+        .in('status', ['success', 'paid']);
+      const byCourse: Record<string, number> = {};
+      (pays || []).forEach((p: any) => {
+        if (!p.course_id) return;
+        byCourse[p.course_id] = (byCourse[p.course_id] || 0) + Number(p.amount_total || 0);
+      });
+      const ids = Object.keys(byCourse);
+      if (ids.length === 0) return [];
+      const { data: cs } = await supabase.from('courses').select('id, title').in('id', ids);
+      const titleMap: Record<string, string> = {};
+      (cs || []).forEach((c: any) => { titleMap[c.id] = c.title; });
+      return Object.entries(byCourse)
+        .map(([id, revenue]) => ({ id, title: titleMap[id] || 'Untitled', revenue }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
     },
   });
 
