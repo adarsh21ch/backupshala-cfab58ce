@@ -61,25 +61,58 @@ import CreatorDiscussions from "./pages/creator/CreatorDiscussions";
 import { ThemeProvider } from "next-themes";
 import { Loader2 } from "lucide-react";
 
-// Lazy-loaded admin routes (split into a separate chunk)
-const AdminDashboardHome = lazy(() => import("./pages/admin/AdminDashboardHome"));
-const AdminCreators = lazy(() => import("./pages/admin/AdminCreators"));
-const AdminCourses = lazy(() => import("./pages/admin/AdminCourses"));
-const AdminPlatformCourseNew = lazy(() => import("./pages/admin/AdminPlatformCourseNew"));
-const AdminPlatformCourses = lazy(() => import("./pages/admin/AdminPlatformCourses"));
-const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
-const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
-const AdminCommissions = lazy(() => import("./pages/admin/AdminCommissions"));
-const AdminPayouts = lazy(() => import("./pages/admin/AdminPayouts"));
-const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
-const AdminSupport = lazy(() => import("./pages/admin/AdminSupport"));
-const AdminStandardBundle = lazy(() => import("./pages/admin/AdminStandardBundle"));
-const AdminVideos = lazy(() => import("./pages/admin/AdminVideos"));
-const AdminCreatorPro = lazy(() => import("./pages/admin/AdminCreatorPro"));
-const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
-const AdminFeaturedListings = lazy(() => import("./pages/admin/AdminFeaturedListings"));
-const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
-const AdminWebhookLogs = lazy(() => import("./pages/admin/AdminWebhookLogs"));
+// Lazy-loaded admin routes — kept as factories so we can prefetch them all
+// the first time any admin route mounts. After prefetch, tab navigation is
+// instant because every chunk is already in the browser cache.
+const adminLoaders = {
+  AdminDashboardHome: () => import("./pages/admin/AdminDashboardHome"),
+  AdminCreators: () => import("./pages/admin/AdminCreators"),
+  AdminCourses: () => import("./pages/admin/AdminCourses"),
+  AdminPlatformCourseNew: () => import("./pages/admin/AdminPlatformCourseNew"),
+  AdminPlatformCourses: () => import("./pages/admin/AdminPlatformCourses"),
+  AdminStudents: () => import("./pages/admin/AdminStudents"),
+  AdminPayments: () => import("./pages/admin/AdminPayments"),
+  AdminCommissions: () => import("./pages/admin/AdminCommissions"),
+  AdminPayouts: () => import("./pages/admin/AdminPayouts"),
+  AdminSettings: () => import("./pages/admin/AdminSettings"),
+  AdminSupport: () => import("./pages/admin/AdminSupport"),
+  AdminStandardBundle: () => import("./pages/admin/AdminStandardBundle"),
+  AdminVideos: () => import("./pages/admin/AdminVideos"),
+  AdminCreatorPro: () => import("./pages/admin/AdminCreatorPro"),
+  AdminRevenue: () => import("./pages/admin/AdminRevenue"),
+  AdminFeaturedListings: () => import("./pages/admin/AdminFeaturedListings"),
+  AdminAuditLog: () => import("./pages/admin/AdminAuditLog"),
+  AdminWebhookLogs: () => import("./pages/admin/AdminWebhookLogs"),
+};
+
+let adminPrefetched = false;
+export const prefetchAdminRoutes = () => {
+  if (adminPrefetched) return;
+  adminPrefetched = true;
+  // Fire all imports in parallel; ignore errors (will retry on real navigation)
+  Object.values(adminLoaders).forEach((load) => {
+    load().catch(() => { adminPrefetched = false; });
+  });
+};
+
+const AdminDashboardHome = lazy(adminLoaders.AdminDashboardHome);
+const AdminCreators = lazy(adminLoaders.AdminCreators);
+const AdminCourses = lazy(adminLoaders.AdminCourses);
+const AdminPlatformCourseNew = lazy(adminLoaders.AdminPlatformCourseNew);
+const AdminPlatformCourses = lazy(adminLoaders.AdminPlatformCourses);
+const AdminStudents = lazy(adminLoaders.AdminStudents);
+const AdminPayments = lazy(adminLoaders.AdminPayments);
+const AdminCommissions = lazy(adminLoaders.AdminCommissions);
+const AdminPayouts = lazy(adminLoaders.AdminPayouts);
+const AdminSettings = lazy(adminLoaders.AdminSettings);
+const AdminSupport = lazy(adminLoaders.AdminSupport);
+const AdminStandardBundle = lazy(adminLoaders.AdminStandardBundle);
+const AdminVideos = lazy(adminLoaders.AdminVideos);
+const AdminCreatorPro = lazy(adminLoaders.AdminCreatorPro);
+const AdminRevenue = lazy(adminLoaders.AdminRevenue);
+const AdminFeaturedListings = lazy(adminLoaders.AdminFeaturedListings);
+const AdminAuditLog = lazy(adminLoaders.AdminAuditLog);
+const AdminWebhookLogs = lazy(adminLoaders.AdminWebhookLogs);
 
 const AdminFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
