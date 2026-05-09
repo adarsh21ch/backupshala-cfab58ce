@@ -50,13 +50,15 @@ const AdminCourses = () => {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   const { data: courses, isLoading } = useQuery({
-    queryKey: ['admin-courses'],
+    queryKey: ['admin-creator-courses'],
     queryFn: async () => {
       const { data } = await supabase.from('courses')
         .select('*, profiles!courses_creator_id_fkey(full_name, creator_display_name)')
+        .eq('is_platform_course', false)
         .order('created_at', { ascending: false });
       return data || [];
     },
+    staleTime: 60_000,
   });
 
   const updateMutation = useMutation({
