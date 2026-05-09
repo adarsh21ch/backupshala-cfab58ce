@@ -149,16 +149,26 @@ const AdminPlatformCourseNew = () => {
             </div>
             <div>
               <Label>Course Level *</Label>
-              <Select value={courseLevel} onValueChange={(v: 'basic' | 'advanced' | 'creator') => setCourseLevel(v)}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="basic">Basic (Standard Bundle)</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
-                  <SelectItem value="creator">Creator (other platform course)</SelectItem>
-                </SelectContent>
-              </Select>
+              {presetTier ? (
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-md border border-border bg-muted px-2.5 py-1 text-sm capitalize">
+                    {courseLevel} Tier
+                  </span>
+                  <span className="text-xs text-muted-foreground">(set from tier card)</span>
+                </div>
+              ) : (
+                <Select value={courseLevel} onValueChange={(v: CourseLevel) => setCourseLevel(v)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Basic (Standard Bundle)</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="creator">Creator (other platform course)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
-                Selecting Basic or Advanced will register this course as the platform default for that tier.
+                Selecting Basic, Advanced or Premium registers this course as the platform default for that tier.
               </p>
             </div>
             <div>
