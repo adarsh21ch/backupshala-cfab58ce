@@ -128,6 +128,7 @@ const CreatorStudents = () => {
                       {e.is_completed ? 'Completed' : 'In Progress'}
                     </span>
                   </div>
+                  {e.profiles?.email && <p className="text-xs text-muted-foreground truncate">{e.profiles.email}</p>}
                   <p className="text-xs text-muted-foreground">{e.courses?.title}</p>
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{new Date(e.enrolled_at).toLocaleDateString('en-IN')}</span>
