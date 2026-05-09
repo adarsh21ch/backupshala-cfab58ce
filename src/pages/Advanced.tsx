@@ -51,7 +51,7 @@ const Advanced = () => {
       <header className="border-b border-white/10 bg-[#0b1020]/80 backdrop-blur sticky top-0 z-30">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Logo size={28} />
+            <Logo iconSize={28} iconOnly />
             <span className="font-semibold">Backupshala</span>
           </Link>
           <div className="flex items-center gap-2">
