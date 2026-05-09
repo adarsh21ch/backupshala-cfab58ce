@@ -36,7 +36,6 @@ const ThumbnailUpload = ({ value, onChange }: ThumbnailUploadProps) => {
       return;
     }
 
-    // Local preview immediately
     const localUrl = URL.createObjectURL(file);
     setPreviewLocal(localUrl);
     setUploading(true);
@@ -77,63 +76,61 @@ const ThumbnailUpload = ({ value, onChange }: ThumbnailUploadProps) => {
         onChange={handleFile}
       />
 
-      {displayUrl ? (
-        <div className="relative group rounded-lg overflow-hidden border border-border aspect-video bg-secondary">
-          <img src={displayUrl} alt="Course thumbnail" className="w-full h-full object-cover" />
-          {uploading && (
-            <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <Loader2 className="h-6 w-6 text-primary animate-spin mx-auto" />
-                <p className="text-xs text-muted-foreground">Uploading… {progress}%</p>
-              </div>
+      <div className="flex items-center gap-3">
+        {/* Compact preview tile (16:9, ~112x64) */}
+        <div className="relative shrink-0 w-28 h-16 rounded-md overflow-hidden border border-border bg-secondary">
+          {displayUrl ? (
+            <img src={displayUrl} alt="Course thumbnail" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
             </div>
           )}
-          {!uploading && (
-            <div className="absolute bottom-2 right-2 flex gap-1.5">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="rounded-md text-xs h-8 shadow-sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="h-3 w-3 mr-1" /> Change
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="rounded-md text-xs h-8 shadow-sm"
-                onClick={() => { setPreviewLocal(null); onChange(''); }}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+          {uploading && (
+            <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+              <Loader2 className="h-4 w-4 text-primary animate-spin" />
             </div>
           )}
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="w-full aspect-video rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex flex-col items-center justify-center text-center gap-2 bg-secondary/30"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              <p className="text-xs text-muted-foreground">Uploading… {progress}%</p>
-            </>
-          ) : (
-            <>
-              <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
-              <div>
-                <p className="text-sm font-medium">Upload course thumbnail</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">JPG, PNG, or WebP · Recommended 1280×720 · Max 5MB</p>
-              </div>
-            </>
-          )}
-        </button>
-      )}
+
+        {/* Right side: actions + hint */}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" /> {progress}%
+                </>
+              ) : (
+                <>
+                  <Upload className="h-3 w-3 mr-1" /> {displayUrl ? 'Change' : 'Upload thumbnail'}
+                </>
+              )}
+            </Button>
+            {displayUrl && !uploading && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                onClick={() => { setPreviewLocal(null); onChange(''); }}
+              >
+                <X className="h-3 w-3 mr-1" /> Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-tight">
+            JPG, PNG, WebP · 1280×720 recommended · Max 5MB
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
