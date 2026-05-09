@@ -40,12 +40,13 @@ Deno.serve(async (req) => {
     const payload = JSON.parse(bodyText)
     const eventType = payload?.event || 'unknown'
 
-    // Log webhook
-    await supabase.from('webhook_logs').insert({
+    // Log webhook (capture inserted row id for safe later update)
+    const { data: logRow } = await supabase.from('webhook_logs').insert({
       event_type: eventType,
       payload,
       status: isValid ? 'verified' : 'invalid_signature',
-    })
+    }).select('id').single()
+    const logId = logRow?.id
 
     if (!isValid) {
       return new Response(JSON.stringify({ error: 'Invalid signature' }), {
@@ -93,7 +94,9 @@ Deno.serve(async (req) => {
           }
         }
 
-        await supabase.from('webhook_logs').update({ status: 'processed' }).eq('event_type', eventType).eq('status', 'verified').order('created_at', { ascending: false }).limit(1)
+        if (logId) {
+          await supabase.from('webhook_logs').update({ status: 'processed' }).eq('id', logId)
+        }
       }
     }
 
