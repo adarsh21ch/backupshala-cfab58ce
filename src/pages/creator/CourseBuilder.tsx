@@ -466,6 +466,11 @@ const CourseBuilder = () => {
               <div>
                 <Label>Full Description <span className="text-muted-foreground font-normal">({fullDesc.length}/500)</span></Label>
                 <Textarea value={fullDesc} onChange={e => setFullDesc(e.target.value.slice(0, 500))} className="mt-1 rounded-lg min-h-[120px]" />
+                {(shortDesc.includes('₹249') || fullDesc.includes('₹249')) && (
+                  <p className="mt-2 text-xs rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-2">
+                    Heads up — your description mentions <strong>₹249</strong>. Platform pricing is dynamic; avoid hardcoding amounts so future price changes stay consistent.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
