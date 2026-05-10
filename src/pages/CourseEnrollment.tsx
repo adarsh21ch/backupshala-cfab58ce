@@ -266,7 +266,40 @@ const CourseEnrollment = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <SEOHead title={course.title} description={course.short_description} ogImage={course.thumbnail_url || undefined} path={`/c/${creatorSlug}/${courseSlug}`} />
+      <SEOHead
+        title={course.title}
+        description={course.short_description}
+        ogImage={course.thumbnail_url || undefined}
+        path={`/c/${creatorSlug}/${courseSlug}`}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Course',
+          name: course.title,
+          description: course.short_description || course.full_description || '',
+          provider: {
+            '@type': 'Organization',
+            name: 'Backupshala',
+            sameAs: 'https://backupshala.com',
+          },
+          ...(course.thumbnail_url ? { image: course.thumbnail_url } : {}),
+          ...(typeof course.rating === 'number' && course.total_reviews > 0
+            ? {
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: Number(course.rating).toFixed(1),
+                  reviewCount: course.total_reviews,
+                },
+              }
+            : {}),
+          offers: {
+            '@type': 'Offer',
+            price: Number(displayPrice ?? course.price ?? 0),
+            priceCurrency: 'INR',
+            availability: 'https://schema.org/InStock',
+            url: `https://backupshala.com/c/${creatorSlug}/${courseSlug}`,
+          },
+        }}
+      />
       <LandingNavbar />
       {/* Mobile sticky CTA */}
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background p-3 lg:hidden flex items-center justify-between gap-3">
