@@ -141,8 +141,7 @@ const AdminSettings = () => {
     num('creator_course_affiliate_percent', 0, 100, 'Creator-course affiliate %');
     num('gateway_fee_percent', 0, 10, 'Gateway %');
     num('gst_rate_percent', 0, 50, 'GST rate');
-    num('basic_price', 1, 49999, 'Standard course default');
-    num('advanced_price', 1, 49999, 'Premium course default');
+    // basic_price / advanced_price are managed on the Platform Courses page now.
     num('min_payout_amount', 1, 100000, 'Min payout');
     if (!values.support_email?.includes('@')) errs.support_email = 'Invalid email';
 
