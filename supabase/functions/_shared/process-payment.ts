@@ -314,11 +314,14 @@ export async function processPaymentSuccess({ supabase, payment, razorpayPayment
 
   const courseType = isPlatformCourse ? "platform" : "creator";
 
-  // 8. Creator earnings
+  // 8. Creator earnings — single wallet credit per payment (UNIQUE on
+  // wallet_transactions(reference_id, source, user_id) prevents double-credit).
+  // For self-referred sales, finalCreatorAmount already includes the affiliate
+  // slice, so the creator is paid exactly once and never gets a second
+  // affiliate wallet credit.
   if (!isPlatformCourse && finalCreatorAmount > 0 && courseCreatorId) {
-    const creatorAmt = isOwnCourseReferral ? creatorBase : finalCreatorAmount;
     await creditWalletIdempotent(
-      supabase, courseCreatorId, creatorAmt,
+      supabase, courseCreatorId, finalCreatorAmount,
       "creator_earning",
       `Earnings from sale of ${courseRow?.title}`,
       payment.id, creatorHoldDays,
@@ -343,7 +346,28 @@ export async function processPaymentSuccess({ supabase, payment, razorpayPayment
     }
   }
 
-  // 9. Affiliate commission
+  // 9a. Self-referral analytics record. NO wallet credit, NO payout — purely
+  // a marker so creator dashboards can count "own-course recommended sales".
+  if (isOwnCourseReferral && courseCreatorId) {
+    const { data: refProfile } = await supabase
+      .from("profiles").select("email").eq("id", courseCreatorId).maybeSingle();
+    const { error: selfErr } = await supabase.from("commissions").insert({
+      referrer_email: refProfile?.email || "unknown@backupshala.com",
+      referrer_user_id: courseCreatorId,
+      student_id: studentId,
+      course_id: courseId,
+      payment_id: payment.id,
+      amount: 0,
+      status: "self_sale_no_payout",
+      commission_type: "self_referral",
+      course_type: courseType,
+      available_after: null,
+    });
+    if (selfErr && !isDup(selfErr)) console.error("self-referral analytics insert failed", selfErr);
+  }
+
+  // 9b. Affiliate commission — only when referrer is a DIFFERENT user than the
+  // course creator. Self-referrals are handled above and never reach here.
   if (finalAffiliateAmount > 0 && affiliateUserId) {
     const { data: refProfile } = await supabase
       .from("profiles").select("email, full_name").eq("id", affiliateUserId).maybeSingle();
@@ -356,9 +380,7 @@ export async function processPaymentSuccess({ supabase, payment, razorpayPayment
       payment_id: payment.id,
       amount: finalAffiliateAmount,
       status: "credited",
-      commission_type: isOwnCourseReferral
-        ? "self_referral"
-        : (isPlatformCourse ? "platform_course_referral" : "creator_course_referral"),
+      commission_type: isPlatformCourse ? "platform_course_referral" : "creator_course_referral",
       course_type: courseType,
       available_after: referralHoldDate.toISOString(),
     });
@@ -368,10 +390,8 @@ export async function processPaymentSuccess({ supabase, payment, razorpayPayment
     if (commissionInserted) {
       await creditWalletIdempotent(
         supabase, affiliateUserId, finalAffiliateAmount,
-        isOwnCourseReferral ? "affiliate_commission" : "referral_commission",
-        isOwnCourseReferral
-          ? `Affiliate commission (own course) for ${courseRow?.title}`
-          : `Commission for referring ${courseRow?.title}`,
+        "referral_commission",
+        `Commission for referring ${courseRow?.title}`,
         payment.id, referralHoldDays,
       );
       await supabase.from("notifications").insert({
