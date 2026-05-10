@@ -81,44 +81,29 @@ const Wallet = () => {
       if (!amt || amt < 500) throw new Error('Minimum withdrawal is ₹500');
       if (amt > actualAvailable) throw new Error('Amount exceeds available balance');
 
-      const record: any = {
-        user_id: user!.id,
+      const reqBody: any = {
         request_type: 'wallet_withdrawal',
         amount: amt,
+        method: payload.method,
       };
 
       if (payload.method === 'upi') {
         if (!payload.upiId?.trim()) throw new Error('UPI ID is required');
-        record.upi_id = payload.upiId.trim();
+        reqBody.upi_id = payload.upiId.trim();
       } else {
         if (!payload.bankName?.trim() || !payload.accountHolder?.trim() || !payload.accountNumber?.trim() || !payload.ifscCode?.trim()) {
           throw new Error('All bank details required');
         }
         if (payload.accountNumber !== payload.confirmAccount) throw new Error('Account numbers do not match');
-        record.bank_name = payload.bankName.trim();
-        record.account_holder_name = payload.accountHolder.trim();
-        record.account_number = payload.accountNumber.trim();
-        record.ifsc_code = payload.ifscCode.trim().toUpperCase();
+        reqBody.bank_name = payload.bankName.trim();
+        reqBody.account_holder_name = payload.accountHolder.trim();
+        reqBody.account_number = payload.accountNumber.trim();
+        reqBody.ifsc_code = payload.ifscCode.trim().toUpperCase();
       }
 
-      const { error } = await supabase.from('payout_requests').insert(record);
-      if (error) throw error;
-
-      if (wallet) {
-        await supabase.from('wallets').update({
-          balance: Math.max(0, Number(wallet.balance) - amt),
-        }).eq('id', wallet.id);
-
-        await supabase.from('wallet_transactions').insert({
-          wallet_id: wallet.id,
-          user_id: user!.id,
-          type: 'debit',
-          amount: amt,
-          source: 'withdrawal_processed',
-          description: `Withdrawal request of ₹${amt} via ${payload.method === 'upi' ? 'UPI' : 'Bank Transfer'}`,
-          status: 'pending',
-        });
-      }
+      const { data, error } = await supabase.functions.invoke('create-payout-request', { body: reqBody });
+      if (error) throw new Error(error.message || 'Failed to create payout request');
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
       toast({ title: 'Withdrawal request submitted! 🎉', description: 'We\'ll process it within 3-5 business days.' });
