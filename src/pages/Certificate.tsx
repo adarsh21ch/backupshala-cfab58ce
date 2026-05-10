@@ -62,17 +62,18 @@ const Certificate = () => {
 
   const handleDownload = async (cert: any) => {
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const el = document.getElementById(`cert-render-${cert.id}`);
-      if (!el) return;
-      el.style.display = 'block';
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', width: 1200, height: 850 });
-      el.style.display = 'none';
-      const link = document.createElement('a');
-      link.download = `Backupshala-Certificate-${cert.certificate_code}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch {}
+      await downloadCertificatePdf({
+        studentName: profile?.full_name || 'Student',
+        courseTitle: cert.courses?.title || 'Course',
+        creatorName: cert.creator?.creator_display_name || cert.creator?.full_name || 'Creator',
+        issuedAt: cert.issued_at,
+        certificateCode: cert.certificate_code,
+        bodyLine: getSetting('certificate_body_line', 'has successfully completed'),
+        signatureUrl: getSetting('certificate_signature_url', '') || null,
+      });
+    } catch (e) {
+      console.error('Cert PDF error', e);
+    }
   };
 
   const handleShare = (cert: any) => {
