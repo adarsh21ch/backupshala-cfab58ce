@@ -119,11 +119,25 @@ Deno.serve(async (req) => {
       razorpay_refund_id: rzpJson.id,
     }).eq("id", payment.id);
 
-    // Mark enrollment refunded (loses access)
+    // Mark enrollment refunded (loses access via RLS is_refunded checks)
     await supabase.from("enrollments").update({
       is_refunded: true,
       refunded_at: new Date().toISOString(),
     }).eq("payment_id", payment.id);
+
+    // Cancel any pending creator payouts tied to this payment so admin doesn't pay them out
+    await supabase.from("creator_payouts").update({
+      status: "cancelled",
+    }).eq("payment_id", payment.id).eq("status", "pending");
+
+    // Mark referral commissions as reversed so they cannot be paid out
+    await supabase.from("commissions").update({
+      status: "reversed",
+    }).eq("payment_id", payment.id);
+
+    // TODO: certificates issued for this enrollment are NOT revoked here.
+    // If the student already received a certificate, it remains valid until a separate
+    // revocation flow is added (verify_certificate currently has no revoked flag).
 
     // Reverse wallet credits — creator + affiliate
     const reversals: Array<{ user_id: string; amount: number; source: string; description: string }> = [];
