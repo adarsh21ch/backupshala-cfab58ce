@@ -182,7 +182,6 @@ const AdminSettings = () => {
   const TABS = [
     { value: 'commission', label: 'Commission', icon: Percent },
     { value: 'referral', label: 'Referral', icon: Gift },
-    { value: 'pro', label: 'Creator Pro', icon: Star },
     { value: 'certificate', label: 'Certificate', icon: Award },
     { value: 'general', label: 'General', icon: Cog },
   ];
