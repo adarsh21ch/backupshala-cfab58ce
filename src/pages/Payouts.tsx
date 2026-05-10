@@ -25,6 +25,7 @@ const Payouts = () => {
   const [accountHolder, setAccountHolder] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
+  const [panNumber, setPanNumber] = useState('');
 
   const { data: payouts, isLoading } = useQuery({
     queryKey: ['my-payouts', user?.id],
@@ -40,16 +41,49 @@ const Payouts = () => {
     enabled: !!user,
   });
 
+  // Check for KYC saved on profile (one-time PAN capture)
+  const { data: kycProfile } = useQuery({
+    queryKey: ['kyc-profile', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles')
+        .select('pan_number, kyc_verified').eq('id', user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const hasPendingPayout = (payouts || []).some(p =>
+    ['pending', 'approved', 'processing'].includes(p.status)
+  );
+  const savedPan = kycProfile?.pan_number || '';
+  const needsPan = !savedPan;
+
   const submitPayout = useMutation({
     mutationFn: async () => {
       const amt = Number(amount);
       if (!amt || amt < 500) throw new Error('Minimum payout is ₹500');
       if (amt > walletBalance) throw new Error('Amount exceeds wallet balance');
+      if (hasPendingPayout) throw new Error('You already have a pending payout request');
+
+      // Validate PAN if not saved
+      const panToUse = (savedPan || panNumber).trim().toUpperCase();
+      if (!panToUse) throw new Error('PAN number is required (one-time KYC)');
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panToUse)) {
+        throw new Error('Invalid PAN format (e.g. ABCDE1234F)');
+      }
+
+      // Save PAN to profile (one-time KYC)
+      if (!savedPan) {
+        const { error: profErr } = await supabase.from('profiles')
+          .update({ pan_number: panToUse }).eq('id', user!.id);
+        if (profErr) throw profErr;
+      }
 
       const record: any = {
         user_id: user!.id,
         request_type: 'student_commission',
         amount: amt,
+        pan_number: panToUse,
       };
 
       if (paymentMethod === 'upi') {
@@ -69,18 +103,20 @@ const Payouts = () => {
       }
 
       const { error } = await supabase.from('payout_requests').insert(record);
-      if (error) throw error;
+      if (error) {
+        if ((error as any).code === '23505') {
+          throw new Error('You already have a pending payout request');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({ title: 'Payout request submitted! 🎉' });
       queryClient.invalidateQueries({ queryKey: ['my-payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['kyc-profile'] });
       refreshProfile();
-      setAmount('');
-      setUpiId('');
-      setBankName('');
-      setAccountHolder('');
-      setAccountNumber('');
-      setIfscCode('');
+      setAmount(''); setUpiId(''); setBankName(''); setAccountHolder('');
+      setAccountNumber(''); setIfscCode(''); setPanNumber('');
     },
     onError: (err: any) => {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });
