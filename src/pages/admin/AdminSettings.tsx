@@ -183,8 +183,49 @@ const AdminSettings = () => {
     { value: 'commission', label: 'Commission', icon: Percent },
     { value: 'referral', label: 'Referral', icon: Gift },
     { value: 'pro', label: 'Creator Pro', icon: Star },
+    { value: 'certificate', label: 'Certificate', icon: Award },
     { value: 'general', label: 'General', icon: Cog },
   ];
+
+  // ---- Certificate signature upload ----
+  const [uploadingSig, setUploadingSig] = useState(false);
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      toast.error('Signature must be under 1 MB');
+      return;
+    }
+    setUploadingSig(true);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `platform/signature-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('course-resources')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('course-resources').getPublicUrl(path);
+      setVal('certificate_signature_url', pub.publicUrl);
+      toast.success('Signature uploaded — click Save to apply.');
+    } catch (err: any) {
+      toast.error(err.message || 'Upload failed');
+    } finally {
+      setUploadingSig(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePreviewCert = async () => {
+    await downloadCertificatePdf({
+      studentName: 'Aarav Sharma',
+      courseTitle: 'Sample Course Title',
+      creatorName: 'Sample Creator',
+      issuedAt: new Date(),
+      certificateCode: 'BS-PREVIEW',
+      bodyLine: values.certificate_body_line || 'has successfully completed',
+      signatureUrl: values.certificate_signature_url || null,
+    });
+  };
 
   return (
     <AdminDashboardLayout>
