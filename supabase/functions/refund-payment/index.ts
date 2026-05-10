@@ -201,18 +201,19 @@ Deno.serve(async (req) => {
       }
     } catch (e) { console.error("refund email failed", e); }
 
-    // Audit log (table may not exist on all envs — best-effort)
-    await supabase.from("admin_audit_log").insert({
+    // Audit log — use `details` (the actual column), and surface failures in logs
+    const { error: auditErr } = await supabase.from("admin_audit_log").insert({
       admin_id: user.id,
       action: "refund_payment",
       target_type: "payment",
       target_id: payment.id,
-      metadata: {
+      details: {
         razorpay_refund_id: rzpJson.id,
         amount: payment.amount_total,
         reason: refundReason,
       },
-    }).then(() => {}, () => {});
+    });
+    if (auditErr) console.error("admin_audit_log insert failed:", auditErr);
 
     return new Response(JSON.stringify({
       success: true,
