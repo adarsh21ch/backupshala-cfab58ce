@@ -83,6 +83,7 @@ const adminLoaders = {
   AdminFeaturedListings: () => import("./pages/admin/AdminFeaturedListings"),
   AdminAuditLog: () => import("./pages/admin/AdminAuditLog"),
   AdminWebhookLogs: () => import("./pages/admin/AdminWebhookLogs"),
+  AdminUserDetail: () => import("./pages/admin/AdminUserDetail"),
 };
 
 let adminPrefetched = false;
