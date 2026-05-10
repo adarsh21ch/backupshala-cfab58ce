@@ -6,6 +6,7 @@
 // - Reverses creator/affiliate wallet credits + total_earned
 // - Logs an audit entry
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { emailTpl, sendEmail } from "../_shared/emails.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -173,6 +174,18 @@ Deno.serve(async (req) => {
       message: `Your payment of ₹${Number(payment.amount_total).toFixed(2)} has been refunded. It will reflect in 5-7 business days.`,
       type: "info",
     });
+
+    // Email student
+    try {
+      const { data: studentProf } = await supabase.from("profiles")
+        .select("email, full_name").eq("id", payment.student_id).maybeSingle();
+      const { data: courseRow } = await supabase.from("courses")
+        .select("title").eq("id", payment.course_id).maybeSingle();
+      if (studentProf?.email) {
+        await sendEmail(supabase, studentProf.email,
+          emailTpl.refundProcessed(studentProf.full_name, Number(payment.amount_total), courseRow?.title || "course", refundReason));
+      }
+    } catch (e) { console.error("refund email failed", e); }
 
     // Audit log (table may not exist on all envs — best-effort)
     await supabase.from("admin_audit_log").insert({
