@@ -1,126 +1,119 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { processPaymentSuccess } from "../_shared/process-payment.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-razorpay-signature',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-razorpay-signature",
+};
 
-const encoder = new TextEncoder()
+const encoder = new TextEncoder();
 
 async function verifySignature(body: string, signature: string, secret: string): Promise<boolean> {
   const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-  const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(body))
-  const expected = Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('')
-  return expected === signature
+    "raw", encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+  const expected = Array.from(new Uint8Array(mac)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return expected === signature;
 }
 
+const isDup = (err: any) => err && (err.code === "23505" || /duplicate key/i.test(err.message || ""));
+
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const signature = req.headers.get('x-razorpay-signature') || ''
-    const bodyText = await req.text()
+    const signature = req.headers.get("x-razorpay-signature") || "";
+    const bodyText = await req.text();
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const razorpaySecret = Deno.env.get('RAZORPAY_KEY_SECRET')!
-    const supabase = createClient(supabaseUrl, serviceKey)
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    // Verify signature
-    const isValid = await verifySignature(bodyText, signature, razorpaySecret)
+    const isValid = await verifySignature(bodyText, signature, Deno.env.get("RAZORPAY_KEY_SECRET")!);
 
-    const payload = JSON.parse(bodyText)
-    const eventType = payload?.event || 'unknown'
+    const payload = JSON.parse(bodyText);
+    const eventType = payload?.event || "unknown";
+    // Razorpay event id (per docs): top-level `id` on the webhook payload, or fallback to header.
+    const eventId: string | null =
+      payload?.id || req.headers.get("x-razorpay-event-id") || null;
 
-    // Log webhook (capture inserted row id for safe later update)
-    const { data: logRow } = await supabase.from('webhook_logs').insert({
-      event_type: eventType,
-      payload,
-      status: isValid ? 'verified' : 'invalid_signature',
-    }).select('id').single()
-    const logId = logRow?.id
+    // Idempotent webhook log insert. UNIQUE(razorpay_event_id) means a redelivered event
+    // is rejected here and we return early without re-processing.
+    const { data: logRow, error: logErr } = await supabase
+      .from("webhook_logs")
+      .insert({
+        event_type: eventType,
+        payload,
+        status: isValid ? "verified" : "invalid_signature",
+        razorpay_event_id: eventId,
+      })
+      .select("id")
+      .single();
+
+    if (logErr && isDup(logErr)) {
+      return new Response(JSON.stringify({ ok: true, deduped: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const logId = logRow?.id;
 
     if (!isValid) {
-      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Handle payment.captured
-    if (eventType === 'payment.captured') {
-      const paymentEntity = payload?.payload?.payment?.entity
+    if (eventType === "payment.captured") {
+      const paymentEntity = payload?.payload?.payment?.entity;
       if (paymentEntity) {
-        const razorpayOrderId = paymentEntity.order_id
-        const razorpayPaymentId = paymentEntity.id
+        const razorpayOrderId = paymentEntity.order_id;
+        const razorpayPaymentId = paymentEntity.id;
 
-        // Find existing payment record
         const { data: existingPayment } = await supabase
-          .from('payments')
-          .select('id, student_id, course_id, amount_total, status')
-          .eq('razorpay_order_id', razorpayOrderId)
-          .maybeSingle()
+          .from("payments")
+          .select("*")
+          .eq("razorpay_order_id", razorpayOrderId)
+          .maybeSingle();
 
-        if (existingPayment && existingPayment.status !== 'paid') {
-          // Update payment status
-          await supabase
-            .from('payments')
-            .update({ status: 'paid', razorpay_payment_id: razorpayPaymentId, paid_at: new Date().toISOString() })
-            .eq('id', existingPayment.id)
-
-          // Check if enrollment already exists
-          const { data: existingEnrollment } = await supabase
-            .from('enrollments')
-            .select('id')
-            .eq('student_id', existingPayment.student_id)
-            .eq('course_id', existingPayment.course_id)
-            .maybeSingle()
-
-          if (!existingEnrollment) {
-            await supabase.from('enrollments').insert({
-              student_id: existingPayment.student_id,
-              course_id: existingPayment.course_id,
-              payment_id: existingPayment.id,
-              amount_paid: existingPayment.amount_total,
-            })
-          }
+        if (existingPayment) {
+          // Same shared processor as the browser-initiated verify call.
+          // Atomic claim inside ensures only one of (verify, webhook) finalizes.
+          await processPaymentSuccess({
+            supabase,
+            payment: existingPayment,
+            razorpayPaymentId,
+            razorpayOrderId,
+          });
         }
 
         if (logId) {
-          await supabase.from('webhook_logs').update({ status: 'processed' }).eq('id', logId)
+          await supabase.from("webhook_logs").update({ status: "processed" }).eq("id", logId);
         }
       }
     }
 
-    // Handle payment.failed
-    if (eventType === 'payment.failed') {
-      const paymentEntity = payload?.payload?.payment?.entity
+    if (eventType === "payment.failed") {
+      const paymentEntity = payload?.payload?.payment?.entity;
       if (paymentEntity) {
-        const razorpayOrderId = paymentEntity.order_id
+        // Only mark failed if not already successful — never overwrite a captured payment.
         await supabase
-          .from('payments')
-          .update({ status: 'failed' })
-          .eq('razorpay_order_id', razorpayOrderId)
+          .from("payments")
+          .update({ status: "failed" })
+          .eq("razorpay_order_id", paymentEntity.order_id)
+          .neq("status", "success");
       }
     }
 
     return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Webhook error:', error)
-    return new Response(JSON.stringify({ error: 'Internal error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    console.error("Webhook error:", error);
+    return new Response(JSON.stringify({ error: "Internal error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
-})
+});

@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { processPaymentSuccess } from '../_shared/process-payment.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,29 +59,14 @@ Deno.serve(async (req) => {
         const razorpayOrderId = paymentEntity.order_id
         const razorpayPaymentId = paymentEntity.id
         const { data: existingPayment } = await supabase
-          .from('payments')
-          .select('id, student_id, course_id, amount_total, status')
-          .eq('razorpay_order_id', razorpayOrderId)
-          .maybeSingle()
-        if (existingPayment && existingPayment.status !== 'paid') {
-          await supabase.from('payments')
-            .update({ status: 'paid', razorpay_payment_id: razorpayPaymentId, paid_at: new Date().toISOString() })
-            .eq('id', existingPayment.id)
-          const { data: existingEnrollment } = await supabase
-            .from('enrollments').select('id')
-            .eq('student_id', existingPayment.student_id)
-            .eq('course_id', existingPayment.course_id).maybeSingle()
-          if (!existingEnrollment) {
-            await supabase.from('enrollments').insert({
-              student_id: existingPayment.student_id,
-              course_id: existingPayment.course_id,
-              payment_id: existingPayment.id,
-              amount_paid: existingPayment.amount_total,
-            })
-          }
-          result = { handled: true, action: 'payment_captured' }
-        } else {
-          result = { handled: true, action: 'already_processed' }
+          .from('payments').select('*')
+          .eq('razorpay_order_id', razorpayOrderId).maybeSingle()
+        if (existingPayment) {
+          const r = await processPaymentSuccess({
+            supabase, payment: existingPayment,
+            razorpayPaymentId, razorpayOrderId,
+          })
+          result = { handled: true, action: r.alreadyProcessed ? 'already_processed' : 'payment_captured' }
         }
       }
     } else if (eventType === 'payment.failed') {
@@ -89,6 +75,7 @@ Deno.serve(async (req) => {
         await supabase.from('payments')
           .update({ status: 'failed' })
           .eq('razorpay_order_id', paymentEntity.order_id)
+          .neq('status', 'success')
         result = { handled: true, action: 'payment_failed' }
       }
     } else {
