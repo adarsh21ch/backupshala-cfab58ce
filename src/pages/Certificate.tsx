@@ -13,6 +13,7 @@ import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const Certificate = () => {
   const { user, profile } = useAuth();
+  const { getSetting } = usePlatformSettings();
 
   const { data: certificates, isLoading } = useQuery({
     queryKey: ['my-certificates', user?.id],
