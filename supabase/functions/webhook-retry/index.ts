@@ -69,11 +69,13 @@ Deno.serve(async (req) => {
           result = { handled: true, action: r.alreadyProcessed ? 'already_processed' : 'payment_captured' }
         }
       }
+    } else if (eventType === 'payment.failed') {
       const paymentEntity = payload?.payload?.payment?.entity
       if (paymentEntity) {
         await supabase.from('payments')
           .update({ status: 'failed' })
           .eq('razorpay_order_id', paymentEntity.order_id)
+          .neq('status', 'success')
         result = { handled: true, action: 'payment_failed' }
       }
     } else {
