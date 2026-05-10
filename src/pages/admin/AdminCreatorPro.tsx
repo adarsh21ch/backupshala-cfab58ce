@@ -36,8 +36,8 @@ const AdminCreatorPro = () => {
   const [annualPrice, setAnnualPrice] = useState('3999');
   const [trialDays, setTrialDays] = useState('14');
   const [proEnabled, setProEnabled] = useState('true');
-  // Creator signup requirements
-  const [signupPaymentRequired, setSignupPaymentRequired] = useState('false');
+  // Unified billing model: 'one_time' (single signup fee) or 'subscription' (monthly/annual)
+  const [billingModel, setBillingModel] = useState<'one_time' | 'subscription'>('subscription');
   const [signupFee, setSignupFee] = useState('0');
   const [signupKycRequired, setSignupKycRequired] = useState('true');
 
@@ -47,7 +47,8 @@ const AdminCreatorPro = () => {
       setAnnualPrice(getSetting('creator_pro_annual_price', '3999'));
       setTrialDays(getSetting('creator_pro_trial_days', '14'));
       setProEnabled(getSetting('creator_pro_enabled', 'true'));
-      setSignupPaymentRequired(getSetting('creator_signup_payment_required', 'false'));
+      const model = getSetting('creator_pro_billing_model', 'subscription');
+      setBillingModel(model === 'one_time' ? 'one_time' : 'subscription');
       setSignupFee(getSetting('creator_signup_fee', '0'));
       setSignupKycRequired(getSetting('creator_signup_kyc_required', 'true'));
     }
@@ -60,7 +61,9 @@ const AdminCreatorPro = () => {
         { key: 'creator_pro_annual_price', value: annualPrice },
         { key: 'creator_pro_trial_days', value: trialDays },
         { key: 'creator_pro_enabled', value: proEnabled },
-        { key: 'creator_signup_payment_required', value: signupPaymentRequired },
+        { key: 'creator_pro_billing_model', value: billingModel },
+        // Derived: signup payment is required only when one-time model is selected
+        { key: 'creator_signup_payment_required', value: billingModel === 'one_time' ? 'true' : 'false' },
         { key: 'creator_signup_fee', value: signupFee },
         { key: 'creator_signup_kyc_required', value: signupKycRequired },
       ];
@@ -420,14 +423,14 @@ const AdminCreatorPro = () => {
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-4">
-            {/* Creator Pro Plan */}
+            {/* Unified Creator Billing Card */}
             <Card className="bg-card border-border max-w-2xl">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Star className="h-4 w-4 text-amber-500" /> Creator Pro Plan
+                  <Star className="h-4 w-4 text-amber-500" /> Creator Billing & Requirements
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Paid upgrade for creators. Unlocks custom coupons, advanced analytics, featured placement.
+                  Choose how creators pay to join Backupshala — a single one-time fee, or a recurring subscription.
                 </p>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -439,63 +442,42 @@ const AdminCreatorPro = () => {
                   <Switch checked={proEnabled === 'true'} onCheckedChange={v => setProEnabled(v ? 'true' : 'false')} />
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Monthly Price</Label>
-                    <div className="relative">
-                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="number" value={proPrice} onChange={e => setProPrice(e.target.value)} className="pl-9" min={0} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Charged monthly to Pro creators.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Annual Price</Label>
-                    <div className="relative">
-                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="number" value={annualPrice} onChange={e => setAnnualPrice(e.target.value)} className="pl-9" min={0} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Discounted yearly plan.</p>
-                  </div>
-                </div>
-
+                {/* Billing model selector */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Free Trial Duration (days)</Label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input type="number" value={trialDays} onChange={e => setTrialDays(e.target.value)} className="pl-9" min={0} max={90} />
+                  <Label className="text-sm font-medium">Billing model</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBillingModel('one_time')}
+                      className={`rounded-lg border p-3 text-left transition-colors ${
+                        billingModel === 'one_time'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <CreditCard className="h-4 w-4" /> One-time payment
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Single signup fee. No recurring charges.</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBillingModel('subscription')}
+                      className={`rounded-lg border p-3 text-left transition-colors ${
+                        billingModel === 'subscription'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Clock className="h-4 w-4" /> Subscription
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Recurring monthly or annual plan.</p>
+                    </button>
                   </div>
-                  <p className="text-xs text-muted-foreground">0 = disable free trial for creators.</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Become-a-Creator Requirements */}
-            <Card className="bg-card border-border max-w-2xl">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <UserCheck className="h-4 w-4 text-primary" /> Become-a-Creator Requirements
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Control what users must do to become a creator on Backupshala.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-3">
-                  <div>
-                    <Label className="text-sm font-medium flex items-center gap-1.5">
-                      <CreditCard className="h-3.5 w-3.5" /> Require signup payment
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      If on, users must pay a one-time fee to become a creator. If off, signup is free after KYC.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={signupPaymentRequired === 'true'}
-                    onCheckedChange={v => setSignupPaymentRequired(v ? 'true' : 'false')}
-                  />
                 </div>
 
-                {signupPaymentRequired === 'true' && (
+                {billingModel === 'one_time' ? (
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Creator Signup Fee</Label>
                     <div className="relative">
@@ -504,6 +486,36 @@ const AdminCreatorPro = () => {
                     </div>
                     <p className="text-xs text-muted-foreground">One-time amount charged when a user upgrades to creator.</p>
                   </div>
+                ) : (
+                  <>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Monthly Price</Label>
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input type="number" value={proPrice} onChange={e => setProPrice(e.target.value)} className="pl-9" min={0} />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Charged monthly to Pro creators.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Annual Price</Label>
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input type="number" value={annualPrice} onChange={e => setAnnualPrice(e.target.value)} className="pl-9" min={0} />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Discounted yearly plan.</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Free Trial Duration (days)</Label>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input type="number" value={trialDays} onChange={e => setTrialDays(e.target.value)} className="pl-9" min={0} max={90} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">0 = disable free trial for creators.</p>
+                    </div>
+                  </>
                 )}
 
                 <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-3">
