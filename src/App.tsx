@@ -114,6 +114,7 @@ const AdminRevenue = lazy(adminLoaders.AdminRevenue);
 const AdminFeaturedListings = lazy(adminLoaders.AdminFeaturedListings);
 const AdminAuditLog = lazy(adminLoaders.AdminAuditLog);
 const AdminWebhookLogs = lazy(adminLoaders.AdminWebhookLogs);
+const AdminUserDetail = lazy(adminLoaders.AdminUserDetail);
 
 const AdminFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
