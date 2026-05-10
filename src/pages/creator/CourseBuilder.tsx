@@ -19,8 +19,9 @@ import { formatPrice } from "@/lib/format";
 const STEPS: BuilderStep[] = [
   { id: 1, label: "Course Details", key: "details" },
   { id: 2, label: "Build Course", key: "content" },
-  { id: 3, label: "Set Price", key: "pricing" },
-  { id: 4, label: "Publish", key: "publish" },
+  { id: 3, label: "Video Settings", key: "video" },
+  { id: 4, label: "Set Price", key: "pricing" },
+  { id: 5, label: "Publish", key: "publish" },
 ];
 
 const generateSlug = (t: string) =>
