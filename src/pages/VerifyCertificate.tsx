@@ -71,6 +71,7 @@ const VerifyCertificate = () => {
               </p>
             </div>
           )
+        ) : (
           <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6">
             <XCircle className="mx-auto h-12 w-12 text-destructive mb-3" />
             <p className="font-heading text-lg font-700 text-destructive">Certificate not found</p>
