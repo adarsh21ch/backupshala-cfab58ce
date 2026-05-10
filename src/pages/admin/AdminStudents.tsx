@@ -66,6 +66,11 @@ const AdminStudents = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/admin/users/${s.id}`}>
+                                <Eye className="h-4 w-4 mr-2" /> View as user
+                              </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setGranting({ id: s.id, name: s.full_name || s.email })}>
                               <Gift className="h-4 w-4 mr-2" /> Grant Course Access
                             </DropdownMenuItem>
