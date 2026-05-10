@@ -54,6 +54,8 @@ const AdminWebhookLogs = () => {
     },
     onError: (err: any) => toast.error(err?.message || 'Retry failed'),
   });
+
+  const statusColor = (s: string) => {
     if (s === 'processed') return 'bg-primary/10 text-primary';
     if (s === 'verified') return 'bg-blue-500/10 text-blue-400';
     if (s === 'invalid_signature') return 'bg-destructive/10 text-destructive';
