@@ -89,7 +89,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   // Auto-expand groups whose child is active; user can still toggle.
   const initialOpen = useMemo(() => {
     const map: Record<string, boolean> = {};
-    groups.forEach(g => {
+    visibleGroups.forEach(g => {
       if (!g.collapsible) return;
       map[g.label] = g.items.some(i => isActive(i.to));
     });
