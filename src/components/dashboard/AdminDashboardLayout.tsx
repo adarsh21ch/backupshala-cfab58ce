@@ -54,6 +54,7 @@ const groups: Group[] = [
       { to: '/admin/settings', label: 'Settings', icon: Settings, allow: ['admin'] },
       { to: '/admin/audit-log', label: 'Audit Log', icon: ClipboardList },
       { to: '/admin/webhook-logs', label: 'Webhook Logs', icon: Webhook, allow: ['admin'] },
+      { to: '/admin/system-errors', label: 'System Errors', icon: AlertCircle, allow: ['admin'] },
     ],
   },
 ];
