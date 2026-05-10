@@ -291,8 +291,9 @@ const CourseBuilder = () => {
   const completedSteps: number[] = [];
   if (checks[0].ok) completedSteps.push(1);
   if (moduleCount > 0) completedSteps.push(2);
-  if (!priceErr) completedSteps.push(3);
-  if (status === "published" || status === "pending_review") completedSteps.push(4);
+  completedSteps.push(3); // Video settings always have safe defaults
+  if (!priceErr) completedSteps.push(4);
+  if (status === "published" || status === "pending_review") completedSteps.push(5);
 
   const enrollmentUrl = `${window.location.origin}/c/${profile?.creator_slug}/${details.slug}`;
 
