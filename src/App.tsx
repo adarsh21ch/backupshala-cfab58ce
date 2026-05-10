@@ -52,6 +52,7 @@ import CreatorAgreement from "./pages/CreatorAgreement";
 import ContentPolicy from "./pages/ContentPolicy";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import CancellationPolicy from "./pages/CancellationPolicy";
+import ShippingPolicy from "./pages/ShippingPolicy";
 import OrderHistory from "./pages/OrderHistory";
 import CookieConsent from "./components/CookieConsent";
 import InstallPrompt from "./components/InstallPrompt";
@@ -84,6 +85,7 @@ const adminLoaders = {
   AdminAuditLog: () => import("./pages/admin/AdminAuditLog"),
   AdminWebhookLogs: () => import("./pages/admin/AdminWebhookLogs"),
   AdminUserDetail: () => import("./pages/admin/AdminUserDetail"),
+  AdminSystemErrors: () => import("./pages/admin/AdminSystemErrors"),
 };
 
 let adminPrefetched = false;
@@ -115,6 +117,7 @@ const AdminFeaturedListings = lazy(adminLoaders.AdminFeaturedListings);
 const AdminAuditLog = lazy(adminLoaders.AdminAuditLog);
 const AdminWebhookLogs = lazy(adminLoaders.AdminWebhookLogs);
 const AdminUserDetail = lazy(adminLoaders.AdminUserDetail);
+const AdminSystemErrors = lazy(adminLoaders.AdminSystemErrors);
 
 const AdminFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -164,6 +167,7 @@ const App = () => (
             <Route path="/content-policy" element={<ContentPolicy />} />
             <Route path="/community-guidelines" element={<CommunityGuidelines />} />
             <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+            <Route path="/shipping-policy" element={<ShippingPolicy />} />
 
             {/* Student dashboard */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -221,6 +225,7 @@ const App = () => (
             <Route path="/admin/featured" element={<AdminRoute allow={['admin']}><AdminFeaturedListings /></AdminRoute>} />
             <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
             <Route path="/admin/webhook-logs" element={<AdminRoute allow={['admin']}><AdminWebhookLogs /></AdminRoute>} />
+            <Route path="/admin/system-errors" element={<AdminRoute allow={['admin']}><AdminSystemErrors /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
