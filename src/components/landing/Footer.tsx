@@ -45,6 +45,7 @@ const Footer = () => (
             <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
             <Link to="/refund-policy" className="text-sm text-muted-foreground hover:text-foreground">Refund Policy</Link>
             <Link to="/cancellation-policy" className="text-sm text-muted-foreground hover:text-foreground">Cancellation Policy</Link>
+            <Link to="/shipping-policy" className="text-sm text-muted-foreground hover:text-foreground">Shipping &amp; Delivery</Link>
           </div>
         </div>
       </div>
