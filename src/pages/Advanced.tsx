@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import Logo from '@/components/Logo';
+import LandingNavbar from '@/components/landing/Navbar';
 import AdvancedHero from '@/components/advanced/AdvancedHero';
 import AdvancedCurriculum from '@/components/advanced/AdvancedCurriculum';
 import AdvancedComparison from '@/components/advanced/AdvancedComparison';
@@ -56,23 +56,7 @@ const Advanced = () => {
         <link rel="canonical" href="https://backupshala.com/advanced" />
       </Helmet>
 
-      {/* Top bar */}
-      <header className="border-b border-white/10 bg-[#0b1020]/80 backdrop-blur sticky top-0 z-30">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Logo iconSize={28} iconOnly />
-            <span className="font-semibold">Backupshala</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link to="/login" className="text-sm text-slate-300 hover:text-white">Sign in</Link>
-            <Link to={enrollHref}>
-              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold">
-                Enroll
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <LandingNavbar />
 
       <AdvancedHero
         enrollHref={enrollHref}

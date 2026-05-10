@@ -26,7 +26,7 @@ const Logo = ({
       width={iconSize}
       height={iconSize}
       draggable={false}
-      className="shrink-0 select-none object-contain"
+      className="shrink-0 select-none object-contain rounded-md dark:bg-white dark:p-0.5 dark:ring-1 dark:ring-white/20"
       style={{ width: iconSize, height: iconSize }}
     />
     {!iconOnly && (
