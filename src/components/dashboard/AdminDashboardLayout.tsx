@@ -8,7 +8,8 @@ import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 import DashboardFooter from '@/components/dashboard/DashboardFooter';
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
+type StaffRole = 'admin' | 'support' | 'finance';
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; allow?: StaffRole[] };
 type Group = { label: string; items: NavItem[]; collapsible?: boolean };
 
 const groups: Group[] = [
@@ -16,43 +17,43 @@ const groups: Group[] = [
     label: 'OVERVIEW',
     items: [
       { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
-      { to: '/admin/revenue', label: 'Revenue', icon: TrendingUp },
+      { to: '/admin/revenue', label: 'Revenue', icon: TrendingUp, allow: ['admin', 'finance'] },
     ],
   },
   {
     label: 'MANAGE',
     collapsible: true,
     items: [
-      { to: '/admin/creators', label: 'Creators', icon: UserCheck },
-      { to: '/admin/courses', label: 'Creator Courses', icon: BookOpen },
-      { to: '/admin/videos', label: 'Videos', icon: Film },
-      { to: '/admin/students', label: 'Students', icon: Users },
+      { to: '/admin/creators', label: 'Creators', icon: UserCheck, allow: ['admin'] },
+      { to: '/admin/courses', label: 'Creator Courses', icon: BookOpen, allow: ['admin', 'support'] },
+      { to: '/admin/videos', label: 'Videos', icon: Film, allow: ['admin'] },
+      { to: '/admin/students', label: 'Students', icon: Users, allow: ['admin', 'support'] },
     ],
   },
   {
     label: 'FINANCE',
     collapsible: true,
     items: [
-      { to: '/admin/payments', label: 'Payments', icon: CreditCard },
-      { to: '/admin/commissions', label: 'Commissions', icon: IndianRupee },
-      { to: '/admin/payouts', label: 'Payouts', icon: Wallet },
+      { to: '/admin/payments', label: 'Payments', icon: CreditCard, allow: ['admin', 'finance'] },
+      { to: '/admin/commissions', label: 'Commissions', icon: IndianRupee, allow: ['admin', 'finance'] },
+      { to: '/admin/payouts', label: 'Payouts', icon: Wallet, allow: ['admin', 'finance'] },
     ],
   },
   {
     label: 'PLATFORM',
     items: [
-      { to: '/admin/platform-courses', label: 'Platform Courses', icon: Trophy },
-      { to: '/admin/featured', label: 'Featured', icon: Sparkles },
-      { to: '/admin/creator-pro', label: 'Creator Pro', icon: Star },
-      { to: '/admin/support', label: 'Support', icon: MessageSquare },
+      { to: '/admin/platform-courses', label: 'Platform Courses', icon: Trophy, allow: ['admin'] },
+      { to: '/admin/featured', label: 'Featured', icon: Sparkles, allow: ['admin'] },
+      { to: '/admin/creator-pro', label: 'Creator Pro', icon: Star, allow: ['admin'] },
+      { to: '/admin/support', label: 'Support', icon: MessageSquare, allow: ['admin', 'support'] },
     ],
   },
   {
     label: 'SETTINGS',
     items: [
-      { to: '/admin/settings', label: 'Settings', icon: Settings },
+      { to: '/admin/settings', label: 'Settings', icon: Settings, allow: ['admin'] },
       { to: '/admin/audit-log', label: 'Audit Log', icon: ClipboardList },
-      { to: '/admin/webhook-logs', label: 'Webhook Logs', icon: Webhook },
+      { to: '/admin/webhook-logs', label: 'Webhook Logs', icon: Webhook, allow: ['admin'] },
     ],
   },
 ];
