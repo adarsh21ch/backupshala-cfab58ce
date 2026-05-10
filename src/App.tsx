@@ -208,6 +208,7 @@ const App = () => (
             <Route path="/admin/courses/new-platform" element={<AdminRoute allow={['admin']}><AdminPlatformCourseNew /></AdminRoute>} />
             <Route path="/admin/platform-courses" element={<AdminRoute allow={['admin']}><AdminPlatformCourses /></AdminRoute>} />
             <Route path="/admin/students" element={<AdminRoute allow={['admin', 'support']}><AdminStudents /></AdminRoute>} />
+            <Route path="/admin/users/:id" element={<AdminRoute allow={['admin', 'support']}><AdminUserDetail /></AdminRoute>} />
             <Route path="/admin/payments" element={<AdminRoute allow={['admin', 'finance']}><AdminPayments /></AdminRoute>} />
             <Route path="/admin/commissions" element={<AdminRoute allow={['admin', 'finance']}><AdminCommissions /></AdminRoute>} />
             <Route path="/admin/payouts" element={<AdminRoute allow={['admin', 'finance']}><AdminPayouts /></AdminRoute>} />
