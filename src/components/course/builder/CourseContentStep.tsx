@@ -692,7 +692,7 @@ const ModuleEditor = ({
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          onBlur={save}
+          onBlur={() => save()}
           placeholder="e.g. Canva Basics"
         />
         <p className="text-xs text-muted-foreground">
@@ -708,7 +708,7 @@ const ModuleEditor = ({
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          onBlur={save}
+          onBlur={() => save()}
           placeholder="What will students learn in this module?"
           rows={3}
         />
@@ -757,7 +757,7 @@ const ModuleEditor = ({
         </Button>
       </div>
 
-      <Button onClick={save} disabled={saving}>
+      <Button onClick={() => save()} disabled={saving}>
         {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
         Save Module
       </Button>
