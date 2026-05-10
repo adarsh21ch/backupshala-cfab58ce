@@ -28,6 +28,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import ChapterEditor, { ChapterRow } from "./ChapterEditor";
+import CourseVideoSettings from "./CourseVideoSettings";
 import { cn } from "@/lib/utils";
 
 interface ModuleRow {
@@ -219,7 +220,9 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
   const totalChapters = modules.reduce((a, m) => a + (m.chapters?.length || 0), 0);
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="space-y-4">
+      <CourseVideoSettings courseId={courseId} />
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Mobile view toggle */}
       <div className="flex md:hidden items-center gap-2 p-3 border-b border-border">
         <button
@@ -482,6 +485,7 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
             />
           )}
         </div>
+      </div>
       </div>
     </div>
   );
