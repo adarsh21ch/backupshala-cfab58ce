@@ -9,9 +9,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback, memo } from 'react';
-import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info } from 'lucide-react';
+import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info, Award, Upload, Eye } from 'lucide-react';
 import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { downloadCertificatePdf } from '@/lib/certificatePdf';
 
 // ============================================================
 // IMPORTANT: Field components are defined OUTSIDE the parent.
