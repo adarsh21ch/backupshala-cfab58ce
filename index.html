@@ -9,6 +9,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#F97316" />
+
+    <!-- Security headers (defense-in-depth; CDN should also send equivalents) -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(self)" />
+
     <title>Backupshala — The school for your backup plan</title>
     <meta name="description" content="Learn. Earn. Grow. Backupshala is India’s most affordable digital skills academy — video editing, content creation, personal branding, sales, and freelancing.">
     <meta name="author" content="Backupshala" />
