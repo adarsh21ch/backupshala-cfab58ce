@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminDashboardLayout from '@/components/dashboard/AdminDashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,7 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatINR } from '@/lib/format';
 import { format } from 'date-fns';
-import { MoreHorizontal, Gift } from 'lucide-react';
+import { MoreHorizontal, Gift, Eye } from 'lucide-react';
 import GrantAccessModal from '@/components/admin/GrantAccessModal';
 
 const AdminStudents = () => {
