@@ -148,8 +148,18 @@ const Payouts = () => {
           )}
         </div>
 
+        {/* Pending payout banner (cooldown) */}
+        {hasPendingPayout && (
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm">
+            <p className="font-semibold text-accent">A payout request is already in progress</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              You can submit a new request once your current one is processed (typically 3-5 business days).
+            </p>
+          </div>
+        )}
+
         {/* Payout Form */}
-        {canRequest && (
+        {canRequest && !hasPendingPayout && (
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h2 className="font-heading text-base font-600">Request Payout</h2>
 
@@ -165,6 +175,27 @@ const Payouts = () => {
                 className="mt-1 rounded-lg"
               />
             </div>
+
+            {/* PAN — one-time KYC capture */}
+            {needsPan ? (
+              <div>
+                <Label>PAN Number <span className="text-accent">(one-time KYC, required by Indian tax law)</span></Label>
+                <Input
+                  value={panNumber}
+                  onChange={e => setPanNumber(e.target.value.toUpperCase())}
+                  placeholder="ABCDE1234F"
+                  maxLength={10}
+                  className="mt-1 rounded-lg font-mono"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Stored securely. Used only for TDS / Form 16A reporting.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                ✓ KYC verified · PAN: <span className="font-mono">{savedPan.slice(0, 5)}XXXX{savedPan.slice(-1)}</span>
+              </div>
+            )}
 
             <div>
               <Label>Payment Method</Label>
@@ -217,7 +248,9 @@ const Payouts = () => {
             >
               {submitPayout.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Payout Request'}
             </Button>
-            <p className="text-xs text-muted-foreground text-center">Payouts processed within 3-5 business days.</p>
+            <p className="text-xs text-muted-foreground text-center">
+              Min ₹500 · Processed within 3-5 business days · One pending request at a time
+            </p>
           </div>
         )}
 
