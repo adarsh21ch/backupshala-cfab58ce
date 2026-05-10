@@ -162,6 +162,13 @@ export type Database = {
             foreignKeyName: "commissions_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
+            referencedRelation: "commissions_audit_v"
+            referencedColumns: ["payment_id"]
+          },
+          {
+            foreignKeyName: "commissions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
@@ -730,6 +737,13 @@ export type Database = {
             foreignKeyName: "creator_payouts_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
+            referencedRelation: "commissions_audit_v"
+            referencedColumns: ["payment_id"]
+          },
+          {
+            foreignKeyName: "creator_payouts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
@@ -857,8 +871,10 @@ export type Database = {
           granted_by_admin: boolean
           id: string
           is_completed: boolean
+          is_refunded: boolean
           payment_id: string | null
           referrer_email: string
+          refunded_at: string | null
           student_id: string
           tier: string
         }
@@ -872,8 +888,10 @@ export type Database = {
           granted_by_admin?: boolean
           id?: string
           is_completed?: boolean
+          is_refunded?: boolean
           payment_id?: string | null
           referrer_email?: string
+          refunded_at?: string | null
           student_id: string
           tier?: string
         }
@@ -887,8 +905,10 @@ export type Database = {
           granted_by_admin?: boolean
           id?: string
           is_completed?: boolean
+          is_refunded?: boolean
           payment_id?: string | null
           referrer_email?: string
+          refunded_at?: string | null
           student_id?: string
           tier?: string
         }
@@ -899,6 +919,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "commissions_audit_v"
+            referencedColumns: ["payment_id"]
           },
           {
             foreignKeyName: "enrollments_payment_id_fkey"
@@ -1517,6 +1544,11 @@ export type Database = {
           platform_fee_amount: number
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
+          razorpay_refund_id: string | null
+          refund_amount: number | null
+          refund_reason: string | null
+          refund_status: string | null
+          refunded_at: string | null
           status: string
           student_id: string
         }
@@ -1543,6 +1575,11 @@ export type Database = {
           platform_fee_amount: number
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          razorpay_refund_id?: string | null
+          refund_amount?: number | null
+          refund_reason?: string | null
+          refund_status?: string | null
+          refunded_at?: string | null
           status?: string
           student_id: string
         }
@@ -1569,6 +1606,11 @@ export type Database = {
           platform_fee_amount?: number
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          razorpay_refund_id?: string | null
+          refund_amount?: number | null
+          refund_reason?: string | null
+          refund_status?: string | null
+          refunded_at?: string | null
           status?: string
           student_id?: string
         }
@@ -1619,7 +1661,9 @@ export type Database = {
           bank_name: string | null
           id: string
           ifsc_code: string | null
+          pan_number: string | null
           processed_at: string | null
+          rejection_reason: string | null
           request_type: string
           requested_at: string
           status: string
@@ -1634,7 +1678,9 @@ export type Database = {
           bank_name?: string | null
           id?: string
           ifsc_code?: string | null
+          pan_number?: string | null
           processed_at?: string | null
+          rejection_reason?: string | null
           request_type: string
           requested_at?: string
           status?: string
@@ -1649,7 +1695,9 @@ export type Database = {
           bank_name?: string | null
           id?: string
           ifsc_code?: string | null
+          pan_number?: string | null
           processed_at?: string | null
+          rejection_reason?: string | null
           request_type?: string
           requested_at?: string
           status?: string
@@ -1738,6 +1786,8 @@ export type Database = {
           is_creator: boolean
           is_creator_pro: boolean | null
           is_verified: boolean
+          kyc_verified: boolean
+          pan_number: string | null
           phone: string | null
           referrer_email: string
           total_earned: number
@@ -1766,6 +1816,8 @@ export type Database = {
           is_creator?: boolean
           is_creator_pro?: boolean | null
           is_verified?: boolean
+          kyc_verified?: boolean
+          pan_number?: string | null
           phone?: string | null
           referrer_email?: string
           total_earned?: number
@@ -1794,6 +1846,8 @@ export type Database = {
           is_creator?: boolean
           is_creator_pro?: boolean | null
           is_verified?: boolean
+          kyc_verified?: boolean
+          pan_number?: string | null
           phone?: string | null
           referrer_email?: string
           total_earned?: number
@@ -2561,6 +2615,26 @@ export type Database = {
       }
     }
     Views: {
+      commissions_audit_v: {
+        Row: {
+          affiliate_commission_amount: number | null
+          amount_total: number | null
+          commission_amount: number | null
+          course_title: string | null
+          created_at: string | null
+          creator_name: string | null
+          creator_payout_amount: number | null
+          gateway_fee_amount: number | null
+          gst_amount: number | null
+          payment_id: string | null
+          platform_fee_amount: number | null
+          refund_status: string | null
+          status: string | null
+          student_name: string | null
+          total_distributed: number | null
+        }
+        Relationships: []
+      }
       public_creator_profiles: {
         Row: {
           avatar_url: string | null
@@ -2629,6 +2703,8 @@ export type Database = {
           is_creator: boolean
           is_creator_pro: boolean | null
           is_verified: boolean
+          kyc_verified: boolean
+          pan_number: string | null
           phone: string | null
           referrer_email: string
           total_earned: number
@@ -2652,6 +2728,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      next_invoice_number: { Args: never; Returns: string }
       verify_certificate: {
         Args: { _code: string }
         Returns: {
