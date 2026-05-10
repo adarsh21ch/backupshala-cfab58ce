@@ -120,7 +120,7 @@ const CourseEnrollment = () => {
       const { getStoredRef } = await import('@/lib/referralTracking');
       const refUsername = getStoredRef();
       const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { course_id: course.id, coupon_id: appliedCoupon?.coupon_id || undefined, ref_username: refUsername || undefined },
+        body: { course_id: course.id, coupon_code: appliedCoupon?.code || undefined, ref_username: refUsername || undefined },
       });
 
       if (orderError || orderData?.error) {
