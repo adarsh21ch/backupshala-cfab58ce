@@ -580,14 +580,22 @@ const ModuleEditor = ({
   const [description, setDescription] = useState(module.description || "");
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showVideoOverrides, setShowVideoOverrides] = useState(false);
+
+  // Per-module video override state. `null` = inherit from course/creator default.
+  const [allowSeek, setAllowSeek] = useState<boolean | null>(module.allow_seek ?? null);
+  const [allowSpeed, setAllowSpeed] = useState<boolean | null>(module.allow_speed_change ?? null);
+  const [showWatermark, setShowWatermark] = useState<boolean | null>(module.show_watermark ?? null);
+  const [minWatchPercent, setMinWatchPercent] = useState<number | null>(module.min_watch_percent ?? null);
 
   const chapters = module.chapters || [];
 
-  const save = async () => {
+  const save = async (overrides: Partial<ModuleRow> = {}) => {
     setSaving(true);
+    const payload: any = { title, description, ...overrides };
     const { error } = await supabase
       .from("modules")
-      .update({ title, description })
+      .update(payload)
       .eq("id", module.id);
     setSaving(false);
     if (error) {
@@ -595,6 +603,59 @@ const ModuleEditor = ({
       return;
     }
     onSaved();
+  };
+
+  // Tri-state pill: Inherit / On / Off. Writing immediately keeps the UX
+  // snappy and matches the existing onBlur autosave pattern.
+  const TriState = ({
+    label,
+    hint,
+    value,
+    onChange,
+  }: {
+    label: string;
+    hint: string;
+    value: boolean | null;
+    onChange: (v: boolean | null) => void;
+  }) => {
+    const opts: { v: boolean | null; label: string }[] = [
+      { v: null, label: "Inherit" },
+      { v: true, label: "Allow" },
+      { v: false, label: "Block" },
+    ];
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <Label className="text-sm">{label}</Label>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[240px] text-xs">{hint}</TooltipContent>
+          </Tooltip>
+        </div>
+        <div className="inline-flex rounded-lg border border-border bg-secondary/50 p-0.5">
+          {opts.map((o) => {
+            const active = value === o.v;
+            return (
+              <button
+                key={String(o.v)}
+                type="button"
+                onClick={() => onChange(o.v)}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                  active
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
