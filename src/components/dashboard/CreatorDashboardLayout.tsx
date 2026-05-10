@@ -41,6 +41,21 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
     staleTime: 5 * 60 * 1000,
   });
 
+  // Platform-wide kill switch — when admin disables Creator Pro, hide all
+  // upgrade entry points from the creator UI.
+  const { data: proFeatureEnabled } = useQuery({
+    queryKey: ['creator-pro-enabled-flag'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'creator_pro_enabled')
+        .maybeSingle();
+      return data?.value === 'true';
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: walletBalance } = useQuery({
     queryKey: ['creator-wallet-balance', user?.id],
     queryFn: async () => {
@@ -85,8 +100,8 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
       label: 'TOOLS',
       items: [
         { to: '/creator/coupons', label: 'Coupons', icon: Tag },
-        ...(isPro ? [{ to: '/creator/unlock-requests', label: 'Unlock Requests', icon: Unlock }] : []),
-        ...(!isPro ? [{ to: '/creator/upgrade', label: 'Upgrade to Pro', icon: Star }] : []),
+        ...(isPro && proFeatureEnabled ? [{ to: '/creator/unlock-requests', label: 'Unlock Requests', icon: Unlock }] : []),
+        ...(!isPro && proFeatureEnabled ? [{ to: '/creator/upgrade', label: 'Upgrade to Pro', icon: Star }] : []),
         { to: '/creator/settings', label: 'Settings', icon: Settings },
         { to: '/creator/profile', label: 'Creator Profile', icon: PenTool },
       ],

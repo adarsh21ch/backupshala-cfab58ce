@@ -29,8 +29,26 @@ export const useCreatorPro = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Platform-wide kill switch: when admin disables Creator Pro, Pro UI is
+  // hidden for every creator regardless of their subscription state.
+  const { data: proEnabled } = useQuery({
+    queryKey: ['creator-pro-enabled-flag'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'creator_pro_enabled')
+        .maybeSingle();
+      // Default OFF — Pro is opt-in for the platform.
+      return data?.value === 'true';
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const isAdmin = profile?.is_admin ?? false;
-  const isActiveSub = subscription &&
+  const featureEnabled = proEnabled ?? false;
+
+  const isActiveSub = featureEnabled && subscription &&
     ['pro', 'trial'].includes(subscription.plan) &&
     subscription.status === 'active';
 
@@ -39,11 +57,13 @@ export const useCreatorPro = () => {
     ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
+  // Admins keep Pro powers; otherwise Pro requires both feature flag + active sub.
   const isPro = isAdmin || !!isActiveSub;
 
   return {
     isPro,
     isAdmin,
+    featureEnabled,
     plan: subscription?.plan || null,
     status: subscription?.status || null,
     expiresAt,
@@ -51,5 +71,5 @@ export const useCreatorPro = () => {
     isExpiringSoon: daysRemaining !== null && daysRemaining <= 7,
     subscription,
     isLoading,
-  } as CreatorProStatus & { isAdmin: boolean; isLoading: boolean };
+  } as CreatorProStatus & { isAdmin: boolean; isLoading: boolean; featureEnabled: boolean };
 };

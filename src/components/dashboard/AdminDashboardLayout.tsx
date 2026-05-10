@@ -73,15 +73,9 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Warm every admin route chunk in the background once the admin layout is
-  // mounted. This makes subsequent tab clicks instant (no Suspense fallback).
+  // mounted. Fire immediately so the very first tab click is instant.
   useEffect(() => {
-    const id = window.requestIdleCallback
-      ? window.requestIdleCallback(() => prefetchAdminRoutes())
-      : window.setTimeout(() => prefetchAdminRoutes(), 200);
-    return () => {
-      if (window.cancelIdleCallback && typeof id === 'number') window.cancelIdleCallback(id);
-      else clearTimeout(id as number);
-    };
+    prefetchAdminRoutes();
   }, []);
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
@@ -184,12 +178,12 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[220px] border-r border-border bg-sidebar lg:flex lg:flex-col">
-        <div className="flex h-[60px] items-center px-5">
-          <Link to="/" className="flex items-center">
+        <div className="flex h-[60px] items-center px-4 overflow-hidden">
+          <Link to="/" className="flex items-center min-w-0">
             <Logo
-              iconSize={28}
-              textClassName="text-lg"
-              badge={<span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">Admin</span>}
+              iconSize={26}
+              textClassName="text-base"
+              badge={<span className="ml-1.5 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-destructive shrink-0">Admin</span>}
             />
           </Link>
         </div>
