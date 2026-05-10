@@ -58,8 +58,15 @@ const groups: Group[] = [
   },
 ];
 
+import { useUserRoles } from '@/hooks/useUserRoles';
+
 const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut } = useAuth();
+  const { roles, isAdmin } = useUserRoles();
+  const visibleGroups = useMemo(() => groups.map(g => ({
+    ...g,
+    items: g.items.filter(i => !i.allow || isAdmin || i.allow.some(r => roles.includes(r))),
+  })).filter(g => g.items.length > 0), [roles, isAdmin]);
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
