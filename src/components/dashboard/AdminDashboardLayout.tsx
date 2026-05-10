@@ -73,15 +73,9 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Warm every admin route chunk in the background once the admin layout is
-  // mounted. This makes subsequent tab clicks instant (no Suspense fallback).
+  // mounted. Fire immediately so the very first tab click is instant.
   useEffect(() => {
-    const id = window.requestIdleCallback
-      ? window.requestIdleCallback(() => prefetchAdminRoutes())
-      : window.setTimeout(() => prefetchAdminRoutes(), 200);
-    return () => {
-      if (window.cancelIdleCallback && typeof id === 'number') window.cancelIdleCallback(id);
-      else clearTimeout(id as number);
-    };
+    prefetchAdminRoutes();
   }, []);
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
