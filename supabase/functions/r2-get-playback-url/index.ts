@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
     const R2_SECRET_ACCESS_KEY = Deno.env.get("R2_SECRET_ACCESS_KEY")!;
     const R2_BUCKET_NAME = Deno.env.get("R2_BUCKET_NAME") || "backupshala";
     const R2_PUBLIC_URL = Deno.env.get("R2_PUBLIC_URL") || "";
-    const expiry = 14400;
+    // Short-lived signed URL: 1 hour. Client should request a fresh URL on resume.
+    const expiry = 3600;
 
     const r2 = new S3Client({
       region: "auto",
