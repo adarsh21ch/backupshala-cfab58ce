@@ -1,18 +1,27 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Check, Sparkles, ShieldCheck, Award, Zap } from 'lucide-react';
+import { Check, Award, Users, GraduationCap, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import Logo from '@/components/Logo';
+import AdvancedHero from '@/components/advanced/AdvancedHero';
+import AdvancedCurriculum from '@/components/advanced/AdvancedCurriculum';
+import AdvancedComparison from '@/components/advanced/AdvancedComparison';
+import AdvancedTestimonials from '@/components/advanced/AdvancedTestimonials';
+import AdvancedFAQ from '@/components/advanced/AdvancedFAQ';
+import AdvancedStickyBar from '@/components/advanced/AdvancedStickyBar';
 
 const Advanced = () => {
   const { data: parsed, isLoading } = usePlatformSettings();
   const advancedLabel = isLoading ? '—' : `₹${parsed.advanced_price.toLocaleString('en-IN')}`;
   const basicLabel = isLoading ? '—' : `₹${parsed.basic_price.toLocaleString('en-IN')}`;
+  // Suggested value = ~2x advanced for crossed-out anchor pricing
+  const suggestedValue = isLoading
+    ? ''
+    : `₹${(parsed.advanced_price * 2).toLocaleString('en-IN')}`;
 
-  // Resolve advanced course id from settings
   const { data: advancedCourseId } = useQuery({
     queryKey: ['advanced-course-id'],
     queryFn: async () => {
@@ -28,16 +37,16 @@ const Advanced = () => {
   const enrollHref = advancedCourseId ? `/courses/${advancedCourseId}` : '/login';
 
   const features = [
-    'Everything in Standard Bundle (Basic) — included free',
-    'Advanced earning frameworks & deep playbooks',
-    'Live mentor sessions + private community',
-    'Priority support & 1:1 guidance slots',
-    'Advanced certification on completion',
-    'Lifetime access to all course updates',
+    { icon: Award, title: 'Standard Bundle included', desc: 'Get the ₹449 Basic course free with Advanced enrolment.' },
+    { icon: GraduationCap, title: 'Advanced playbooks', desc: 'Deep frameworks proven to convert students into earners.' },
+    { icon: Users, title: 'Live mentor sessions', desc: 'Weekly live calls + private community access.' },
+    { icon: Star, title: '1:1 priority support', desc: 'Dedicated guidance slots when you need help.' },
+    { icon: Check, title: 'Verified certificate', desc: 'Public verify URL — share on LinkedIn & resumes.' },
+    { icon: Award, title: 'Lifetime updates', desc: 'Every future module added to your account, free.' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0b1020] text-slate-100">
+    <div className="min-h-screen bg-[#0b1020] text-slate-100 pb-20 md:pb-16">
       <Helmet>
         <title>Advanced Course — Backupshala | Master Digital Skills</title>
         <meta
@@ -65,100 +74,104 @@ const Advanced = () => {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="container mx-auto px-4 pt-16 pb-12">
-        <div className="max-w-3xl mx-auto text-center space-y-5">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-300">
-            <Sparkles className="h-3.5 w-3.5" /> Advanced Program
-          </span>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-display">
-            Go from learner to <span className="text-amber-400">earner</span>
-          </h1>
-          <p className="text-lg text-slate-300">
-            The complete advanced course. Frameworks, mentorship, and certification — built for serious students who want results.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-            <Link to={enrollHref}>
-              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold w-full sm:w-auto">
-                Enroll for {advancedLabel}
-              </Button>
-            </Link>
-            <Link to="/">
-              <Button size="lg" variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10 text-white w-full sm:w-auto">
-                Back to home
-              </Button>
-            </Link>
-          </div>
-          <p className="text-xs text-slate-400">One-time payment · Inclusive of GST · Lifetime access</p>
-        </div>
-      </section>
-
-      {/* Includes Basic callout */}
-      <section className="container mx-auto px-4 py-6">
-        <div className="max-w-3xl mx-auto rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 to-transparent p-6 flex items-start gap-4">
-          <div className="rounded-xl bg-amber-500/20 p-2.5">
-            <Award className="h-5 w-5 text-amber-300" />
-          </div>
-          <div>
-            <p className="font-semibold text-white">Includes everything in the Standard Bundle</p>
-            <p className="text-sm text-slate-300 mt-1">
-              The Basic course ({basicLabel} value) is added to your account automatically — free — when you enroll in Advanced.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6">What you get</h2>
-          <ul className="grid sm:grid-cols-2 gap-3">
-            {features.map((f) => (
-              <li key={f} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
-                <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                <span className="text-sm text-slate-200">{f}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <AdvancedHero
+        enrollHref={enrollHref}
+        advancedLabel={advancedLabel}
+        basicLabel={basicLabel}
+        suggestedValueLabel={suggestedValue}
+      />
 
       {/* Trust strip */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <ShieldCheck className="h-5 w-5 text-amber-400 mx-auto mb-2" />
-            <p className="text-xs text-slate-300">Secure Razorpay payment</p>
+      <section className="container mx-auto px-4 -mt-2">
+        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-3 text-center rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div>
+            <p className="font-heading text-2xl md:text-3xl font-extrabold text-amber-400">1,200+</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Students enrolled</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <Zap className="h-5 w-5 text-amber-400 mx-auto mb-2" />
-            <p className="text-xs text-slate-300">Instant access after payment</p>
+          <div className="border-x border-white/10">
+            <p className="font-heading text-2xl md:text-3xl font-extrabold text-amber-400">4.8★</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Average rating</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <Award className="h-5 w-5 text-amber-400 mx-auto mb-2" />
-            <p className="text-xs text-slate-300">Verified certificate</p>
+          <div>
+            <p className="font-heading text-2xl md:text-3xl font-extrabold text-amber-400">800+</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Certificates issued</p>
           </div>
         </div>
       </section>
+
+      <AdvancedCurriculum courseId={advancedCourseId} />
+
+      {/* What you get */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="inline-block text-xs uppercase tracking-widest text-amber-400 font-bold mb-3">
+              Inside the program
+            </span>
+            <h2 className="font-heading text-3xl md:text-4xl font-bold mb-3">What you get</h2>
+            <p className="text-slate-400">Everything you need to turn skills into income.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="group rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent p-6 hover:border-amber-400/40 hover:-translate-y-0.5 transition-all"
+              >
+                <div className="h-10 w-10 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center mb-4 group-hover:bg-amber-400/25 transition-colors">
+                  <f.icon className="h-5 w-5 text-amber-400" />
+                </div>
+                <p className="font-semibold text-white mb-1.5">{f.title}</p>
+                <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <AdvancedComparison
+        basicLabel={basicLabel}
+        advancedLabel={advancedLabel}
+        enrollHref={enrollHref}
+      />
+
+      <AdvancedTestimonials />
+
+      <AdvancedFAQ basicLabel={basicLabel} advancedLabel={advancedLabel} />
 
       {/* Final CTA */}
       <section className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto text-center rounded-3xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 p-8 md:p-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">Ready to go Advanced?</h2>
-          <p className="text-slate-300 mb-6">Join the program and get the Standard Bundle free.</p>
-          <Link to={enrollHref}>
-            <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold">
-              Enroll for {advancedLabel}
-            </Button>
-          </Link>
-          <p className="text-xs text-slate-400 mt-3">Inclusive of GST · One-time payment</p>
+        <div className="max-w-3xl mx-auto text-center relative overflow-hidden rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-500/15 via-transparent to-orange-500/10 p-10 md:p-14">
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 h-40 w-[120%] bg-amber-400/20 blur-3xl rounded-full" />
+          <div className="relative">
+            <span className="inline-block text-xs uppercase tracking-widest text-amber-400 font-bold mb-3">
+              Limited spots
+            </span>
+            <h2 className="font-heading text-3xl md:text-5xl font-extrabold mb-4">
+              Ready to go Advanced?
+            </h2>
+            <p className="text-slate-300 mb-8 max-w-lg mx-auto">
+              Join 1,200+ students already learning and earning. Standard Bundle included free.
+            </p>
+            <Link to={enrollHref}>
+              <Button
+                size="lg"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-base shadow-[0_10px_40px_-10px_rgba(245,158,11,0.6)]"
+              >
+                Enroll for {advancedLabel} →
+              </Button>
+            </Link>
+            <p className="text-xs text-slate-400 mt-4">
+              Inclusive of GST · One-time payment · 7-day money-back guarantee
+            </p>
+          </div>
         </div>
       </section>
 
       <footer className="border-t border-white/10 py-8 text-center text-xs text-slate-400">
         © {new Date().getFullYear()} Backupshala. All rights reserved.
       </footer>
+
+      <AdvancedStickyBar enrollHref={enrollHref} advancedLabel={advancedLabel} />
     </div>
   );
 };
