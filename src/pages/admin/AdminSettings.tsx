@@ -9,9 +9,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback, memo } from 'react';
-import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info } from 'lucide-react';
+import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info, Award, Upload, Eye } from 'lucide-react';
 import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { downloadCertificatePdf } from '@/lib/certificatePdf';
 
 // ============================================================
 // IMPORTANT: Field components are defined OUTSIDE the parent.
@@ -182,8 +183,49 @@ const AdminSettings = () => {
     { value: 'commission', label: 'Commission', icon: Percent },
     { value: 'referral', label: 'Referral', icon: Gift },
     { value: 'pro', label: 'Creator Pro', icon: Star },
+    { value: 'certificate', label: 'Certificate', icon: Award },
     { value: 'general', label: 'General', icon: Cog },
   ];
+
+  // ---- Certificate signature upload ----
+  const [uploadingSig, setUploadingSig] = useState(false);
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      toast.error('Signature must be under 1 MB');
+      return;
+    }
+    setUploadingSig(true);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `platform/signature-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('course-resources')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('course-resources').getPublicUrl(path);
+      setVal('certificate_signature_url', pub.publicUrl);
+      toast.success('Signature uploaded — click Save to apply.');
+    } catch (err: any) {
+      toast.error(err.message || 'Upload failed');
+    } finally {
+      setUploadingSig(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePreviewCert = async () => {
+    await downloadCertificatePdf({
+      studentName: 'Aarav Sharma',
+      courseTitle: 'Sample Course Title',
+      creatorName: 'Sample Creator',
+      issuedAt: new Date(),
+      certificateCode: 'BS-PREVIEW',
+      bodyLine: values.certificate_body_line || 'has successfully completed',
+      signatureUrl: values.certificate_signature_url || null,
+    });
+  };
 
   return (
     <AdminDashboardLayout>
@@ -333,6 +375,65 @@ const AdminSettings = () => {
                   <NumberField k="creator_pro_monthly_price" label="Monthly Price" value={values.creator_pro_monthly_price} onChange={v => setVal('creator_pro_monthly_price', v)} error={errors.creator_pro_monthly_price} prefix="₹" hint="Charged monthly to creators who upgrade." />
                   <NumberField k="creator_pro_annual_price" label="Annual Price" value={values.creator_pro_annual_price} onChange={v => setVal('creator_pro_annual_price', v)} error={errors.creator_pro_annual_price} prefix="₹" hint="Discounted yearly plan." />
                   <NumberField k="creator_pro_trial_days" label="Trial Days" value={values.creator_pro_trial_days} onChange={v => setVal('creator_pro_trial_days', v)} error={errors.creator_pro_trial_days} suffix="days" hint="Free trial length. Set to 0 to disable trials." />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="certificate" className="mt-5">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Award className="h-4 w-4 text-accent" /> Certificate
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Universal template used for every course completion certificate. Students receive the PDF in their dashboard and (once email is set up) by email when they finish a course.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <TextField
+                  k="certificate_body_line"
+                  label="Body line"
+                  value={values.certificate_body_line}
+                  onChange={v => setVal('certificate_body_line', v)}
+                  hint='Printed between the student name and the course title. Default: "has successfully completed".'
+                />
+                <TextField
+                  k="certificate_email_subject"
+                  label="Email subject"
+                  value={values.certificate_email_subject}
+                  onChange={v => setVal('certificate_email_subject', v)}
+                  hint="Subject line for the certificate-ready email sent to the student."
+                />
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Platform signature image</Label>
+                  <p className="text-xs text-muted-foreground">PNG with transparent background works best. Max 1 MB. Shown on the right-hand signature line of every certificate.</p>
+                  {values.certificate_signature_url ? (
+                    <div className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-3">
+                      <img src={values.certificate_signature_url} alt="Signature" className="h-14 w-auto bg-white rounded p-1" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">Current signature</p>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => setVal('certificate_signature_url', '')}>Remove</Button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No signature uploaded — a typed "Backupshala" line will be used.</p>
+                  )}
+                  <label className="inline-flex">
+                    <input type="file" accept="image/png,image/jpeg" onChange={handleSignatureUpload} className="hidden" />
+                    <span className={`inline-flex items-center gap-2 cursor-pointer rounded-md border border-border bg-secondary hover:bg-secondary/80 px-3 py-1.5 text-sm ${uploadingSig ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <Upload className="h-3.5 w-3.5" />
+                      {uploadingSig ? 'Uploading…' : 'Upload signature'}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="pt-2 border-t border-border">
+                  <Button onClick={handlePreviewCert} variant="outline" size="sm" className="rounded-md">
+                    <Eye className="h-4 w-4 mr-2" /> Download sample PDF
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">Generates a sample certificate using the current settings (uses unsaved changes too).</p>
                 </div>
               </CardContent>
             </Card>

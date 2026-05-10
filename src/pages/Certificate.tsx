@@ -8,9 +8,12 @@ import { Award, Download, Share2, ExternalLink } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import BackButton from '@/components/BackButton';
+import { downloadCertificatePdf } from '@/lib/certificatePdf';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const Certificate = () => {
   const { user, profile } = useAuth();
+  const { getSetting } = usePlatformSettings();
 
   const { data: certificates, isLoading } = useQuery({
     queryKey: ['my-certificates', user?.id],
@@ -59,17 +62,18 @@ const Certificate = () => {
 
   const handleDownload = async (cert: any) => {
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const el = document.getElementById(`cert-render-${cert.id}`);
-      if (!el) return;
-      el.style.display = 'block';
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', width: 1200, height: 850 });
-      el.style.display = 'none';
-      const link = document.createElement('a');
-      link.download = `Backupshala-Certificate-${cert.certificate_code}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch {}
+      await downloadCertificatePdf({
+        studentName: profile?.full_name || 'Student',
+        courseTitle: cert.courses?.title || 'Course',
+        creatorName: cert.creator?.creator_display_name || cert.creator?.full_name || 'Creator',
+        issuedAt: cert.issued_at,
+        certificateCode: cert.certificate_code,
+        bodyLine: getSetting('certificate_body_line', 'has successfully completed'),
+        signatureUrl: getSetting('certificate_signature_url', '') || null,
+      });
+    } catch (e) {
+      console.error('Cert PDF error', e);
+    }
   };
 
   const handleShare = (cert: any) => {
@@ -123,39 +127,6 @@ const Certificate = () => {
                   </Link>
                 </div>
 
-                {/* Hidden certificate render for download */}
-                <div id={`cert-render-${cert.id}`} style={{ display: 'none', width: 1200, height: 850, position: 'fixed', top: -9999, left: -9999, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-                  <div style={{ width: '100%', height: '100%', background: '#fff', padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '3px solid #e7e5e4', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: 20, left: 20, right: 20, bottom: 20, border: '1px solid #d4d4d4', borderRadius: 4 }} />
-                    <p style={{ fontSize: 16, fontWeight: 700, letterSpacing: 4, color: '#16a34a' }}>BACKUPSHALA</p>
-                    <div style={{ width: 100, height: 2, background: 'linear-gradient(to right, #f97316, #16a34a)', margin: '16px 0' }} />
-                    <p style={{ fontSize: 32, fontWeight: 700, color: '#1c1917', marginTop: 8 }}>Certificate of Completion</p>
-                    <p style={{ fontSize: 14, color: '#78716c', marginTop: 20 }}>This is to certify that</p>
-                    <p style={{ fontSize: 36, fontWeight: 800, color: '#16a34a', marginTop: 8 }}>{profile?.full_name}</p>
-                    <p style={{ fontSize: 14, color: '#78716c', marginTop: 12 }}>has successfully completed</p>
-                    <p style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginTop: 8, textAlign: 'center', maxWidth: 600 }}>{cert.courses?.title}</p>
-                    <p style={{ fontSize: 14, color: '#78716c', marginTop: 8 }}>
-                      offered by {cert.creator?.creator_display_name || cert.creator?.full_name} on Backupshala
-                    </p>
-                    <div style={{ display: 'flex', gap: 40, marginTop: 40, fontSize: 12, color: '#78716c' }}>
-                      <span>{new Date(cert.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                      <span style={{ fontFamily: 'monospace', color: '#16a34a' }}>{cert.certificate_code}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 120, marginTop: 40 }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ width: 120, borderBottom: '1px solid #d4d4d4', marginBottom: 4 }} />
-                        <p style={{ fontSize: 11, color: '#78716c' }}>{cert.creator?.creator_display_name || cert.creator?.full_name}</p>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ width: 120, borderBottom: '1px solid #d4d4d4', marginBottom: 4 }} />
-                        <p style={{ fontSize: 11, color: '#78716c' }}>Backupshala</p>
-                      </div>
-                    </div>
-                    <p style={{ position: 'absolute', bottom: 30, right: 40, fontSize: 10, color: '#a3a3a3' }}>
-                      Verify at {window.location.origin}/verify/{cert.certificate_code}
-                    </p>
-                  </div>
-                </div>
               </div>
             ))}
           </div>
