@@ -215,6 +215,33 @@ export async function processPaymentSuccess({ supabase, payment, razorpayPayment
     return { alreadyProcessed: true, invoiceNumber: existing?.invoice_number, paymentId: payment.id };
   }
 
+  // 4b. Coupon usage — atomic increment, only the claiming caller reaches this.
+  // Re-checks max_uses with a conditional update so concurrent orders cannot
+  // push uses_count past max_uses.
+  if (payment.coupon_id) {
+    try {
+      const { data: c } = await supabase
+        .from("coupon_codes")
+        .select("id, uses_count, max_uses")
+        .eq("id", payment.coupon_id)
+        .maybeSingle();
+      if (c) {
+        const next = Number(c.uses_count || 0) + 1;
+        let q = supabase.from("coupon_codes")
+          .update({ uses_count: next })
+          .eq("id", c.id)
+          .eq("uses_count", c.uses_count); // optimistic lock
+        if (c.max_uses != null) q = q.lt("uses_count", c.max_uses);
+        const { error: incErr } = await q;
+        if (incErr) console.error("coupon uses_count increment failed", incErr);
+      }
+    } catch (e) {
+      console.error("coupon increment error", e);
+    }
+  }
+  // TODO: per-user redemption limits require a `coupon_redemptions(coupon_id, user_id)`
+  // table with a UNIQUE(coupon_id, user_id) index. Schema doesn't have one yet, so
+  // a coupon can currently be re-used by the same student across multiple courses.
   const { data: student } = await supabase
     .from("profiles").select("full_name, email, referrer_email").eq("id", studentId).single();
 
