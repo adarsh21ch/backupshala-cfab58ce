@@ -233,46 +233,7 @@ const AdminSettings = () => {
           </div>
         )}
 
-        <Tabs defaultValue="defaults" className="max-w-4xl">
-          <div className="sticky top-[68px] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-background/85 backdrop-blur-md border-b border-border overflow-x-auto">
-            <TabsList className="inline-flex h-auto bg-secondary/60 p-1 gap-1 w-max">
-              {TABS.map(t => {
-                const Icon = t.icon;
-                return (
-                  <TabsTrigger
-                    key={t.value}
-                    value={t.value}
-                    className="gap-1.5 px-3 py-2 text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {t.label}
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </div>
-
-          <TabsContent value="defaults" className="mt-5">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <IndianRupee className="h-4 w-4" /> Platform Course Defaults
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  These are default prices for Backupshala's <strong>own</strong> courses (Standard Bundle etc.).
-                  Creator courses use creator-set pricing — these values do not affect them.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <NumberField k="basic_price" label="Standard course default price" value={values.basic_price} onChange={v => setVal('basic_price', v)} error={errors.basic_price} prefix="₹" hint="Default ₹249" />
-                  <NumberField k="advanced_price" label="Premium course default price" value={values.advanced_price} onChange={v => setVal('advanced_price', v)} error={errors.advanced_price} prefix="₹" hint="Optional second default" />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="commission" className="mt-5">
+        <Tabs defaultValue="commission" className="max-w-4xl">
             <CommissionStructureCard values={values} setVal={setVal} errors={errors} />
           </TabsContent>
 
