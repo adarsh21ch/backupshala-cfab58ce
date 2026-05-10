@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles, ChevronDown, Webhook } from 'lucide-react';
+import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles, ChevronDown, Webhook, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useMemo, useEffect } from 'react';
 import { prefetchAdminRoutes } from '@/App';
