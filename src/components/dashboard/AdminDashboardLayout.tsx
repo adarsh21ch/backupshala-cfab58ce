@@ -166,7 +166,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   const renderSidebarNav = (onNavigate?: () => void) => (
     <>
-      {groups.map((g, i) => renderGroup(g, i, onNavigate))}
+      {visibleGroups.map((g, i) => renderGroup(g, i, onNavigate))}
       <div className="px-3 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">SWITCH</div>
       <div className="space-y-0.5 px-2">
         <Link
