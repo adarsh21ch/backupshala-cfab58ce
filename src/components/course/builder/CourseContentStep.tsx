@@ -31,6 +31,12 @@ interface ModuleRow {
   description?: string | null;
   order_index: number;
   course_id: string;
+  // Per-module video player overrides. NULL on any field = inherit from
+  // course → creator → platform default. A boolean / number = override.
+  allow_seek?: boolean | null;
+  allow_speed_change?: boolean | null;
+  show_watermark?: boolean | null;
+  min_watch_percent?: number | null;
   chapters?: ChapterRow[];
 }
 
