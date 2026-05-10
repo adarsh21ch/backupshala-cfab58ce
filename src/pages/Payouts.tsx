@@ -25,6 +25,7 @@ const Payouts = () => {
   const [accountHolder, setAccountHolder] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
+  const [panNumber, setPanNumber] = useState('');
 
   const { data: payouts, isLoading } = useQuery({
     queryKey: ['my-payouts', user?.id],
@@ -40,16 +41,49 @@ const Payouts = () => {
     enabled: !!user,
   });
 
+  // Check for KYC saved on profile (one-time PAN capture)
+  const { data: kycProfile } = useQuery({
+    queryKey: ['kyc-profile', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles')
+        .select('pan_number, kyc_verified').eq('id', user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const hasPendingPayout = (payouts || []).some(p =>
+    ['pending', 'approved', 'processing'].includes(p.status)
+  );
+  const savedPan = kycProfile?.pan_number || '';
+  const needsPan = !savedPan;
+
   const submitPayout = useMutation({
     mutationFn: async () => {
       const amt = Number(amount);
       if (!amt || amt < 500) throw new Error('Minimum payout is ₹500');
       if (amt > walletBalance) throw new Error('Amount exceeds wallet balance');
+      if (hasPendingPayout) throw new Error('You already have a pending payout request');
+
+      // Validate PAN if not saved
+      const panToUse = (savedPan || panNumber).trim().toUpperCase();
+      if (!panToUse) throw new Error('PAN number is required (one-time KYC)');
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panToUse)) {
+        throw new Error('Invalid PAN format (e.g. ABCDE1234F)');
+      }
+
+      // Save PAN to profile (one-time KYC)
+      if (!savedPan) {
+        const { error: profErr } = await supabase.from('profiles')
+          .update({ pan_number: panToUse }).eq('id', user!.id);
+        if (profErr) throw profErr;
+      }
 
       const record: any = {
         user_id: user!.id,
         request_type: 'student_commission',
         amount: amt,
+        pan_number: panToUse,
       };
 
       if (paymentMethod === 'upi') {
@@ -69,18 +103,20 @@ const Payouts = () => {
       }
 
       const { error } = await supabase.from('payout_requests').insert(record);
-      if (error) throw error;
+      if (error) {
+        if ((error as any).code === '23505') {
+          throw new Error('You already have a pending payout request');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({ title: 'Payout request submitted! 🎉' });
       queryClient.invalidateQueries({ queryKey: ['my-payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['kyc-profile'] });
       refreshProfile();
-      setAmount('');
-      setUpiId('');
-      setBankName('');
-      setAccountHolder('');
-      setAccountNumber('');
-      setIfscCode('');
+      setAmount(''); setUpiId(''); setBankName(''); setAccountHolder('');
+      setAccountNumber(''); setIfscCode(''); setPanNumber('');
     },
     onError: (err: any) => {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });
@@ -112,8 +148,18 @@ const Payouts = () => {
           )}
         </div>
 
+        {/* Pending payout banner (cooldown) */}
+        {hasPendingPayout && (
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm">
+            <p className="font-semibold text-accent">A payout request is already in progress</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              You can submit a new request once your current one is processed (typically 3-5 business days).
+            </p>
+          </div>
+        )}
+
         {/* Payout Form */}
-        {canRequest && (
+        {canRequest && !hasPendingPayout && (
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h2 className="font-heading text-base font-600">Request Payout</h2>
 
@@ -129,6 +175,27 @@ const Payouts = () => {
                 className="mt-1 rounded-lg"
               />
             </div>
+
+            {/* PAN — one-time KYC capture */}
+            {needsPan ? (
+              <div>
+                <Label>PAN Number <span className="text-accent">(one-time KYC, required by Indian tax law)</span></Label>
+                <Input
+                  value={panNumber}
+                  onChange={e => setPanNumber(e.target.value.toUpperCase())}
+                  placeholder="ABCDE1234F"
+                  maxLength={10}
+                  className="mt-1 rounded-lg font-mono"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Stored securely. Used only for TDS / Form 16A reporting.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                ✓ KYC verified · PAN: <span className="font-mono">{savedPan.slice(0, 5)}XXXX{savedPan.slice(-1)}</span>
+              </div>
+            )}
 
             <div>
               <Label>Payment Method</Label>
@@ -181,7 +248,9 @@ const Payouts = () => {
             >
               {submitPayout.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Payout Request'}
             </Button>
-            <p className="text-xs text-muted-foreground text-center">Payouts processed within 3-5 business days.</p>
+            <p className="text-xs text-muted-foreground text-center">
+              Min ₹500 · Processed within 3-5 business days · One pending request at a time
+            </p>
           </div>
         )}
 

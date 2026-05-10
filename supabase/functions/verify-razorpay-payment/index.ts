@@ -120,8 +120,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate invoice number
-    const invoice_number = "INV-" + new Date().getFullYear() + "-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+    // Generate sequential GST invoice number via DB sequence
+    let invoice_number: string;
+    try {
+      const { data: invNum, error: invErr } = await supabase.rpc("next_invoice_number");
+      if (invErr || !invNum) throw invErr || new Error("no invoice number");
+      invoice_number = invNum as string;
+    } catch (e) {
+      console.error("next_invoice_number RPC failed, falling back:", (e as Error)?.message);
+      invoice_number = "BKS-" + new Date().getFullYear() + "-" + Date.now().toString().slice(-6);
+    }
 
     // ====== SERVER-SIDE COMMISSION CALCULATION (CANONICAL) ======
     // Platform course: platform 25% / affiliate 75% (or platform 100% if no referral)
