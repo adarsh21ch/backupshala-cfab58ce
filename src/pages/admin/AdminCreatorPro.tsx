@@ -36,8 +36,8 @@ const AdminCreatorPro = () => {
   const [annualPrice, setAnnualPrice] = useState('3999');
   const [trialDays, setTrialDays] = useState('14');
   const [proEnabled, setProEnabled] = useState('true');
-  // Creator signup requirements
-  const [signupPaymentRequired, setSignupPaymentRequired] = useState('false');
+  // Unified billing model: 'one_time' (single signup fee) or 'subscription' (monthly/annual)
+  const [billingModel, setBillingModel] = useState<'one_time' | 'subscription'>('subscription');
   const [signupFee, setSignupFee] = useState('0');
   const [signupKycRequired, setSignupKycRequired] = useState('true');
 
@@ -47,7 +47,8 @@ const AdminCreatorPro = () => {
       setAnnualPrice(getSetting('creator_pro_annual_price', '3999'));
       setTrialDays(getSetting('creator_pro_trial_days', '14'));
       setProEnabled(getSetting('creator_pro_enabled', 'true'));
-      setSignupPaymentRequired(getSetting('creator_signup_payment_required', 'false'));
+      const model = getSetting('creator_pro_billing_model', 'subscription');
+      setBillingModel(model === 'one_time' ? 'one_time' : 'subscription');
       setSignupFee(getSetting('creator_signup_fee', '0'));
       setSignupKycRequired(getSetting('creator_signup_kyc_required', 'true'));
     }
@@ -60,7 +61,9 @@ const AdminCreatorPro = () => {
         { key: 'creator_pro_annual_price', value: annualPrice },
         { key: 'creator_pro_trial_days', value: trialDays },
         { key: 'creator_pro_enabled', value: proEnabled },
-        { key: 'creator_signup_payment_required', value: signupPaymentRequired },
+        { key: 'creator_pro_billing_model', value: billingModel },
+        // Derived: signup payment is required only when one-time model is selected
+        { key: 'creator_signup_payment_required', value: billingModel === 'one_time' ? 'true' : 'false' },
         { key: 'creator_signup_fee', value: signupFee },
         { key: 'creator_signup_kyc_required', value: signupKycRequired },
       ];
