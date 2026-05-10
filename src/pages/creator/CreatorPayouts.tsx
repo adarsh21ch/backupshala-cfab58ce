@@ -44,20 +44,30 @@ const CreatorPayouts = () => {
       const amt = Number(amount);
       if (!amt || amt < 500) throw new Error('Minimum payout is ₹500');
       if (amt > walletBalance) throw new Error('Amount exceeds balance');
-      const record: any = { user_id: user!.id, request_type: 'creator_earnings', amount: amt };
+
+      const reqBody: any = {
+        request_type: 'creator_earnings',
+        amount: amt,
+        method: paymentMethod,
+      };
+
       if (paymentMethod === 'upi') {
         if (!upiId.trim()) throw new Error('UPI ID required');
         if (!/^[a-zA-Z0-9._-]+@[a-zA-Z]{2,}$/.test(upiId.trim())) throw new Error('Invalid UPI ID format (e.g. name@bank)');
-        record.upi_id = upiId.trim();
+        reqBody.upi_id = upiId.trim();
       } else {
         if (!bankName.trim() || !accountHolder.trim() || !accountNumber.trim() || !ifscCode.trim()) throw new Error('All bank details required');
         if (!/^\d{9,18}$/.test(accountNumber.trim())) throw new Error('Account number must be 9-18 digits');
         if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.trim())) throw new Error('Invalid IFSC code format (e.g. SBIN0001234)');
-        record.bank_name = bankName.trim(); record.account_holder_name = accountHolder.trim();
-        record.account_number = accountNumber.trim(); record.ifsc_code = ifscCode.trim();
+        reqBody.bank_name = bankName.trim();
+        reqBody.account_holder_name = accountHolder.trim();
+        reqBody.account_number = accountNumber.trim();
+        reqBody.ifsc_code = ifscCode.trim().toUpperCase();
       }
-      const { error } = await supabase.from('payout_requests').insert(record);
-      if (error) throw error;
+
+      const { data, error } = await supabase.functions.invoke('create-payout-request', { body: reqBody });
+      if (error) throw new Error(error.message || 'Failed to create payout request');
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
       toast({ title: 'Payout request submitted! 🎉' });
