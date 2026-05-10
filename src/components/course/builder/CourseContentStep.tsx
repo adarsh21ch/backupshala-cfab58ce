@@ -241,7 +241,6 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
 
   return (
     <div className="space-y-4">
-      <CourseVideoSettings courseId={courseId} />
       <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Mobile view toggle */}
       <div className="flex md:hidden items-center gap-2 p-3 border-b border-border">

@@ -9,6 +9,7 @@ import CreatorDashboardLayout from "@/components/dashboard/CreatorDashboardLayou
 import BuilderSidebar, { BuilderStep } from "@/components/course/builder/BuilderSidebar";
 import CourseDetailsStep, { DetailsForm } from "@/components/course/builder/CourseDetailsStep";
 import CourseContentStep from "@/components/course/builder/CourseContentStep";
+import CourseVideoSettings from "@/components/course/builder/CourseVideoSettings";
 import CoursePricingStep from "@/components/course/builder/CoursePricingStep";
 import CoursePublishStep, { PublishCheck } from "@/components/course/builder/CoursePublishStep";
 import { validatePrice, MIN_PRICE } from "@/components/course/PriceInput";
@@ -19,8 +20,9 @@ import { formatPrice } from "@/lib/format";
 const STEPS: BuilderStep[] = [
   { id: 1, label: "Course Details", key: "details" },
   { id: 2, label: "Build Course", key: "content" },
-  { id: 3, label: "Set Price", key: "pricing" },
-  { id: 4, label: "Publish", key: "publish" },
+  { id: 3, label: "Video Settings", key: "video" },
+  { id: 4, label: "Set Price", key: "pricing" },
+  { id: 5, label: "Publish", key: "publish" },
 ];
 
 const generateSlug = (t: string) =>
@@ -290,8 +292,9 @@ const CourseBuilder = () => {
   const completedSteps: number[] = [];
   if (checks[0].ok) completedSteps.push(1);
   if (moduleCount > 0) completedSteps.push(2);
-  if (!priceErr) completedSteps.push(3);
-  if (status === "published" || status === "pending_review") completedSteps.push(4);
+  completedSteps.push(3); // Video settings always have safe defaults
+  if (!priceErr) completedSteps.push(4);
+  if (status === "published" || status === "pending_review") completedSteps.push(5);
 
   const enrollmentUrl = `${window.location.origin}/c/${profile?.creator_slug}/${details.slug}`;
 
@@ -371,6 +374,9 @@ const CourseBuilder = () => {
               />
             )}
             {activeStep === 3 && (
+              <CourseVideoSettings courseId={id || ""} />
+            )}
+            {activeStep === 4 && (
               <CoursePricingStep
                 price={price}
                 setPrice={setPrice}
@@ -383,11 +389,11 @@ const CourseBuilder = () => {
                 saving={saving}
                 onSave={async () => {
                   const ok = await saveCourse();
-                  if (ok) setActiveStep(4);
+                  if (ok) setActiveStep(5);
                 }}
               />
             )}
-            {activeStep === 4 && (
+            {activeStep === 5 && (
               <CoursePublishStep
                 status={status}
                 checks={checks}
