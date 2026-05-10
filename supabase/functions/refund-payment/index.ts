@@ -198,7 +198,6 @@ Deno.serve(async (req) => {
           type: "warning",
         });
       }
-      });
     }
 
     // Notify student
