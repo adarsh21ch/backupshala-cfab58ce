@@ -38,56 +38,37 @@ const AdminPayouts = () => {
     },
   });
 
-  const completeMutation = useMutation({
-    mutationFn: async ({ id, userId, amount }: { id: string; userId: string; amount: number }) => {
-      if (!utrNumber.trim()) throw new Error('UTR number is required');
-      
-      await supabase.from('payout_requests').update({
-        status: 'paid',
-        processed_at: new Date().toISOString(),
-        admin_note: `UTR: ${utrNumber.trim()}${adminNote ? ` | ${adminNote}` : ''}`,
-      }).eq('id', id);
-
-      // Update wallet total_withdrawn
-      const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', userId).maybeSingle();
-      if (wallet) {
-        await supabase.from('wallets').update({
-          total_withdrawn: Number(wallet.total_withdrawn) + amount,
-        }).eq('id', wallet.id);
-
-        // Mark pending wallet transaction as completed
-        await supabase.from('wallet_transactions').update({ status: 'completed' })
-          .eq('user_id', userId)
-          .eq('type', 'debit')
-          .eq('status', 'pending')
-          .eq('amount', amount);
-      }
-
-      // Audit log
-      await supabase.from('admin_audit_log').insert({
-        admin_id: user!.id,
-        action: 'payout_completed',
-        target_type: 'payout_request',
-        target_id: id,
-        details: { amount, user_id: userId, utr_number: utrNumber.trim(), admin_note: adminNote },
-      });
-
-      // Notification
-      await supabase.from('notifications').insert({
-        user_id: userId,
-        title: `Withdrawal of ₹${amount} processed ✅`,
-        message: `Your withdrawal has been processed. Please allow 1 business day for it to reflect.`,
-        type: 'payout',
-      });
-
-      // Email
+  // All admin payout transitions go through the secure edge function:
+  //   - server-side admin role check
+  //   - atomic state transition via RPC (only flips from allowed previous status)
+  //   - prevents double-click / two-admin races (second caller gets 409)
+  //   - wallet update + audit log happen inside the same RPC/transaction
+  const invokeAction = async (
+    action: 'set_processing' | 'complete' | 'reject',
+    payload: Record<string, unknown>,
+  ) => {
+    const { data, error } = await supabase.functions.invoke('admin-payout-action', {
+      body: { action, ...payload },
+    });
+    if (error) {
+      // Edge functions return non-2xx as error.context.body
+      let msg = error.message;
       try {
-        const { emailTpl, sendEmail } = await import('@/lib/emailTemplates');
-        const prof = (requests || []).find((r: any) => r.user_id === userId);
-        const email = prof?.profiles?.email;
-        const name = prof?.profiles?.full_name;
-        if (email) await sendEmail(supabase, email, emailTpl.payoutApproved(name, amount, utrNumber.trim()));
+        const parsed = JSON.parse((error as any).context?.body || '{}');
+        if (parsed?.error) msg = parsed.error;
       } catch {}
+      throw new Error(msg || 'Action failed');
+    }
+    if ((data as any)?.error) throw new Error((data as any).error);
+    return data;
+  };
+
+  const completeMutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      if (!utrNumber.trim()) throw new Error('UTR number is required');
+      return invokeAction('complete', {
+        payout_id: id, utr: utrNumber.trim(), admin_note: adminNote.trim() || undefined,
+      });
     },
     onSuccess: () => {
       toast.success('Payout marked as completed');
@@ -100,58 +81,9 @@ const AdminPayouts = () => {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async ({ id, userId, amount }: { id: string; userId: string; amount: number }) => {
+    mutationFn: async ({ id }: { id: string }) => {
       if (!rejectReason.trim()) throw new Error('Rejection reason is required');
-
-      await supabase.from('payout_requests').update({
-        status: 'rejected',
-        processed_at: new Date().toISOString(),
-        admin_note: rejectReason.trim(),
-      }).eq('id', id);
-
-      // Reverse wallet deduction
-      const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', userId).maybeSingle();
-      if (wallet) {
-        await supabase.from('wallets').update({
-          balance: Number(wallet.balance) + amount,
-        }).eq('id', wallet.id);
-
-        await supabase.from('wallet_transactions').insert({
-          wallet_id: wallet.id,
-          user_id: userId,
-          type: 'credit',
-          amount,
-          source: 'withdrawal_reversed',
-          description: `Withdrawal rejected: ${rejectReason.trim()}`,
-          status: 'completed',
-        });
-      }
-
-      // Audit log
-      await supabase.from('admin_audit_log').insert({
-        admin_id: user!.id,
-        action: 'payout_rejected',
-        target_type: 'payout_request',
-        target_id: id,
-        details: { amount, user_id: userId, reason: rejectReason.trim() },
-      });
-
-      // Notification
-      await supabase.from('notifications').insert({
-        user_id: userId,
-        title: `Withdrawal of ₹${amount} rejected`,
-        message: `Reason: ${rejectReason.trim()}. The amount has been returned to your wallet.`,
-        type: 'payout',
-      });
-
-      // Email
-      try {
-        const { emailTpl, sendEmail } = await import('@/lib/emailTemplates');
-        const prof = (requests || []).find((r: any) => r.user_id === userId);
-        const email = prof?.profiles?.email;
-        const name = prof?.profiles?.full_name;
-        if (email) await sendEmail(supabase, email, emailTpl.payoutRejected(name, amount, rejectReason.trim()));
-      } catch {}
+      return invokeAction('reject', { payout_id: id, reason: rejectReason.trim() });
     },
     onSuccess: () => {
       toast.success('Payout rejected and amount reversed');
@@ -164,15 +96,18 @@ const AdminPayouts = () => {
 
   const bulkProcess = useMutation({
     mutationFn: async () => {
-      for (const id of selected) {
-        await supabase.from('payout_requests').update({ status: 'processing' }).eq('id', id);
-      }
+      const results = await Promise.allSettled(
+        Array.from(selected).map((id) => invokeAction('set_processing', { payout_id: id })),
+      );
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed) throw new Error(`${failed} of ${selected.size} could not be marked as processing`);
     },
     onSuccess: () => {
       toast.success(`${selected.size} requests marked as processing`);
       setSelected(new Set());
       qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
     },
+    onError: (err: any) => toast.error(err.message),
   });
 
   const filterByStatus = (status: string) => (requests || []).filter((r: any) => {
@@ -288,9 +223,11 @@ const AdminPayouts = () => {
                               <div className="flex gap-2 justify-end">
                                 {r.status === 'pending' && (
                                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={async () => {
-                                    await supabase.from('payout_requests').update({ status: 'processing' }).eq('id', r.id);
-                                    qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
-                                    toast.success('Marked as processing');
+                                    try {
+                                      await invokeAction('set_processing', { payout_id: r.id });
+                                      qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
+                                      toast.success('Marked as processing');
+                                    } catch (e: any) { toast.error(e.message); }
                                   }}>
                                     <Clock className="h-3 w-3 mr-1" /> Processing
                                   </Button>
@@ -335,7 +272,7 @@ const AdminPayouts = () => {
                 <Input value={adminNote} onChange={e => setAdminNote(e.target.value)} placeholder="Optional note" className="mt-1" />
               </div>
               <Button
-                onClick={() => completeMutation.mutate({ id: completeModal.id, userId: completeModal.user_id, amount: completeModal.amount })}
+                onClick={() => completeMutation.mutate({ id: completeModal.id })}
                 disabled={completeMutation.isPending || !utrNumber.trim()}
                 className="w-full bg-primary hover:bg-primary/90"
               >
@@ -364,7 +301,7 @@ const AdminPayouts = () => {
                 <p className="text-xs text-muted-foreground">The full amount will be returned to the user's wallet.</p>
               </div>
               <Button
-                onClick={() => rejectMutation.mutate({ id: rejectModal.id, userId: rejectModal.user_id, amount: rejectModal.amount })}
+                onClick={() => rejectMutation.mutate({ id: rejectModal.id })}
                 disabled={rejectMutation.isPending || !rejectReason.trim()}
                 variant="destructive"
                 className="w-full"

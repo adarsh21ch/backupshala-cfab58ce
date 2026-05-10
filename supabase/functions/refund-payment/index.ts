@@ -120,32 +120,46 @@ Deno.serve(async (req) => {
     }).eq("id", payment.id);
 
     // Mark enrollment refunded (loses access via RLS is_refunded checks)
-    await supabase.from("enrollments").update({
-      is_refunded: true,
-      refunded_at: new Date().toISOString(),
-    }).eq("payment_id", payment.id);
+    const { data: refundedEnrollments } = await supabase.from("enrollments")
+      .update({ is_refunded: true, refunded_at: new Date().toISOString() })
+      .eq("payment_id", payment.id)
+      .select("id, course_id, student_id");
 
-    // Cancel any pending creator payouts tied to this payment so admin doesn't pay them out
-    await supabase.from("creator_payouts").update({
-      status: "cancelled",
-    }).eq("payment_id", payment.id).eq("status", "pending");
+    // Cancel any pending creator payouts tied to this payment
+    await supabase.from("creator_payouts").update({ status: "cancelled" })
+      .eq("payment_id", payment.id).eq("status", "pending");
 
     // Mark referral commissions as reversed so they cannot be paid out
-    await supabase.from("commissions").update({
-      status: "reversed",
-    }).eq("payment_id", payment.id);
+    await supabase.from("commissions").update({ status: "reversed" })
+      .eq("payment_id", payment.id);
 
-    // TODO: certificates issued for this enrollment are NOT revoked here.
-    // If the student already received a certificate, it remains valid until a separate
-    // revocation flow is added (verify_certificate currently has no revoked flag).
+    // Revoke any certificates issued for the refunded enrollments. Certificates
+    // are scoped to (course_id, student_id) so we revoke for those pairs.
+    const revokedCerts: string[] = [];
+    for (const enr of refundedEnrollments ?? []) {
+      const { data: revoked, error: revokeErr } = await supabase
+        .from("certificates")
+        .update({
+          revoked: true,
+          revoked_at: new Date().toISOString(),
+          revoked_reason: `Refunded: ${refundReason}`,
+        })
+        .eq("course_id", (enr as any).course_id)
+        .eq("student_id", (enr as any).student_id)
+        .eq("revoked", false)
+        .select("certificate_code");
+      if (revokeErr) console.error("certificate revoke failed", revokeErr);
+      for (const c of revoked ?? []) revokedCerts.push((c as any).certificate_code);
+    }
 
-    // Reverse wallet credits — creator + affiliate
-    const reversals: Array<{ user_id: string; amount: number; source: string; description: string }> = [];
+    // Reverse wallet credits — creator + affiliate. Atomic via RPC. If the
+    // user has already withdrawn the money, the RPC debits whatever is left
+    // and records the remainder in `wallet_adjustments` for admin follow-up.
+    const reversals: Array<{ user_id: string; amount: number; description: string }> = [];
     if (payment.creator_id && Number(payment.creator_payout_amount) > 0) {
       reversals.push({
         user_id: payment.creator_id,
         amount: Number(payment.creator_payout_amount),
-        source: "refund_reversal",
         description: `Refund reversal for payment ${payment.id}`,
       });
     }
@@ -153,32 +167,37 @@ Deno.serve(async (req) => {
       reversals.push({
         user_id: payment.affiliate_user_id,
         amount: Number(payment.affiliate_commission_amount),
-        source: "refund_reversal",
         description: `Refund reversal for payment ${payment.id}`,
       });
     }
 
+    const shortfalls: Array<{ user_id: string; owed: number; adjustment_id: string }> = [];
     for (const r of reversals) {
-      const { data: wallet } = await supabase.from("wallets")
-        .select("id, balance, total_earned")
-        .eq("user_id", r.user_id).maybeSingle();
-      if (!wallet) continue;
-      const newBalance = Math.max(0, Number(wallet.balance) - r.amount);
-      const newEarned = Math.max(0, Number(wallet.total_earned) - r.amount);
-      await supabase.from("wallets").update({
-        balance: newBalance, total_earned: newEarned,
-      }).eq("id", wallet.id);
-
-      await supabase.from("wallet_transactions").insert({
-        wallet_id: wallet.id,
-        user_id: r.user_id,
-        type: "debit",
-        amount: r.amount,
-        source: r.source,
-        reference_id: payment.id,
-        description: r.description,
-        status: "completed",
+      const { data: res, error: revErr } = await supabase.rpc("wallet_apply_refund_reversal", {
+        _user_id: r.user_id,
+        _amount: r.amount,
+        _payment_id: payment.id,
+        _source: "refund_reversal",
+        _description: r.description,
       });
+      if (revErr) {
+        console.error("wallet_apply_refund_reversal failed", revErr);
+        continue;
+      }
+      const row = Array.isArray(res) ? res[0] : res;
+      const short = Number(row?.shortfall ?? 0);
+      if (short > 0) {
+        shortfalls.push({
+          user_id: r.user_id, owed: short, adjustment_id: row?.adjustment_id,
+        });
+        // Notify the user that they owe money back
+        await supabase.from("notifications").insert({
+          user_id: r.user_id,
+          title: "Refund recovery owed",
+          message: `A refund was issued for a sale you earned commission on. ₹${short.toFixed(2)} could not be deducted (already withdrawn) and is owed back. Admin will reach out.`,
+          type: "warning",
+        });
+      }
     }
 
     // Notify student
@@ -211,6 +230,8 @@ Deno.serve(async (req) => {
         razorpay_refund_id: rzpJson.id,
         amount: payment.amount_total,
         reason: refundReason,
+        revoked_certificates: revokedCerts,
+        wallet_shortfalls: shortfalls,
       },
     });
     if (auditErr) console.error("admin_audit_log insert failed:", auditErr);

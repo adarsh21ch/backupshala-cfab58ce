@@ -41,22 +41,36 @@ const VerifyCertificate = () => {
         {isLoading ? (
           <div className="h-8 w-8 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent" />
         ) : certificate ? (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-6">
-            <CheckCircle className="mx-auto h-12 w-12 text-primary mb-3" />
-            <p className="font-heading text-lg font-700 text-primary">✓ Authentic Certificate</p>
-            <p className="mt-2 text-sm">
-              Issued to: <span className="font-semibold">{certificate.student_name}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Course: <span className="font-medium">{(certificate as any).courses?.title}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              By: {certificate.creator_name}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Completed on {new Date(certificate.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-          </div>
+          (certificate as any).revoked ? (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6">
+              <XCircle className="mx-auto h-12 w-12 text-destructive mb-3" />
+              <p className="font-heading text-lg font-700 text-destructive">Certificate revoked</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                This certificate was revoked on{' '}
+                {new Date((certificate as any).revoked_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}.
+              </p>
+              {(certificate as any).revoked_reason && (
+                <p className="mt-1 text-xs text-muted-foreground">Reason: {(certificate as any).revoked_reason}</p>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-6">
+              <CheckCircle className="mx-auto h-12 w-12 text-primary mb-3" />
+              <p className="font-heading text-lg font-700 text-primary">✓ Authentic Certificate</p>
+              <p className="mt-2 text-sm">
+                Issued to: <span className="font-semibold">{certificate.student_name}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Course: <span className="font-medium">{(certificate as any).courses?.title}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                By: {certificate.creator_name}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Completed on {new Date(certificate.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          )
         ) : (
           <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6">
             <XCircle className="mx-auto h-12 w-12 text-destructive mb-3" />

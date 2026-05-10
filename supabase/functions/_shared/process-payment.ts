@@ -30,17 +30,10 @@ type ProcessResult = {
 
 const isDup = (err: any) => err && (err.code === "23505" || /duplicate key/i.test(err.message || ""));
 
-async function ensureWallet(supabase: any, userId: string) {
-  const { data } = await supabase.from("wallets").select("id, balance, total_earned").eq("user_id", userId).maybeSingle();
-  if (data) return data;
-  const { data: nw } = await supabase.from("wallets").insert({ user_id: userId }).select("id, balance, total_earned").single();
-  return nw;
-}
-
-// Idempotent wallet credit.
-// Inserts the wallet_transactions row first (protected by UNIQUE(reference_id, source, user_id)).
-// Only on a successful insert do we bump wallets.balance — so duplicate webhook + verify
-// cannot double-credit the same payment.
+// Idempotent wallet credit — performed atomically inside Postgres via the
+// `wallet_credit_idempotent` RPC. The RPC inserts the wallet_transactions row
+// (protected by UNIQUE(reference_id, source, user_id)) and bumps wallets in a
+// single transaction, so duplicate webhook + verify cannot double-credit.
 async function creditWalletIdempotent(
   supabase: any,
   userId: string,
@@ -50,31 +43,19 @@ async function creditWalletIdempotent(
   referenceId: string,
   holdDays: number,
 ) {
-  const wallet = await ensureWallet(supabase, userId);
-  if (!wallet) return false;
-  const availableAfter = holdDays > 0 ? new Date(Date.now() + holdDays * 86400000).toISOString() : null;
-
-  const { error } = await supabase.from("wallet_transactions").insert({
-    wallet_id: wallet.id,
-    user_id: userId,
-    type: "credit",
-    amount,
-    source,
-    reference_id: referenceId,
-    description,
-    status: "completed",
-    available_after: availableAfter,
+  const { data, error } = await supabase.rpc("wallet_credit_idempotent", {
+    _user_id: userId,
+    _amount: amount,
+    _source: source,
+    _description: description,
+    _reference_id: referenceId,
+    _hold_days: holdDays,
   });
   if (error) {
-    if (isDup(error)) return false;
-    console.error("wallet_transactions insert failed", error);
+    console.error("wallet_credit_idempotent failed", error);
     return false;
   }
-  await supabase.from("wallets").update({
-    balance: Number(wallet.balance) + amount,
-    total_earned: Number(wallet.total_earned) + amount,
-  }).eq("id", wallet.id);
-  return true;
+  return data === true;
 }
 
 export async function processPaymentSuccess({ supabase, payment, razorpayPaymentId, razorpayOrderId }: ProcessArgs): Promise<ProcessResult> {

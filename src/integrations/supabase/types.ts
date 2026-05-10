@@ -51,6 +51,9 @@ export type Database = {
           creator_id: string
           id: string
           issued_at: string
+          revoked: boolean
+          revoked_at: string | null
+          revoked_reason: string | null
           student_id: string
         }
         Insert: {
@@ -59,6 +62,9 @@ export type Database = {
           creator_id: string
           id?: string
           issued_at?: string
+          revoked?: boolean
+          revoked_at?: string | null
+          revoked_reason?: string | null
           student_id: string
         }
         Update: {
@@ -67,6 +73,9 @@ export type Database = {
           creator_id?: string
           id?: string
           issued_at?: string
+          revoked?: boolean
+          revoked_at?: string | null
+          revoked_reason?: string | null
           student_id?: string
         }
         Relationships: [
@@ -2545,6 +2554,48 @@ export type Database = {
           },
         ]
       }
+      wallet_adjustments: {
+        Row: {
+          amount_owed: number
+          created_at: string
+          id: string
+          payment_id: string | null
+          reason: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          source: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_owed: number
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          reason: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_owed?: number
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          reason?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wallet_transactions: {
         Row: {
           amount: number
@@ -2724,6 +2775,23 @@ export type Database = {
       }
     }
     Functions: {
+      admin_payout_complete: {
+        Args: {
+          _admin_id: string
+          _admin_note?: string
+          _payout_id: string
+          _utr: string
+        }
+        Returns: boolean
+      }
+      admin_payout_reject: {
+        Args: { _admin_id: string; _payout_id: string; _reason: string }
+        Returns: boolean
+      }
+      admin_payout_set_processing: {
+        Args: { _admin_id: string; _payout_id: string }
+        Returns: boolean
+      }
       get_my_profile: {
         Args: never
         Returns: {
@@ -2780,8 +2848,36 @@ export type Database = {
           course_id: string
           creator_id: string
           issued_at: string
+          revoked: boolean
+          revoked_at: string
+          revoked_reason: string
           student_id: string
         }[]
+      }
+      wallet_apply_refund_reversal: {
+        Args: {
+          _amount: number
+          _description: string
+          _payment_id: string
+          _source: string
+          _user_id: string
+        }
+        Returns: {
+          adjustment_id: string
+          debited: number
+          shortfall: number
+        }[]
+      }
+      wallet_credit_idempotent: {
+        Args: {
+          _amount: number
+          _description: string
+          _hold_days?: number
+          _reference_id: string
+          _source: string
+          _user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
