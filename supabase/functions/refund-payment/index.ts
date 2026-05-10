@@ -230,6 +230,8 @@ Deno.serve(async (req) => {
         razorpay_refund_id: rzpJson.id,
         amount: payment.amount_total,
         reason: refundReason,
+        revoked_certificates: revokedCerts,
+        wallet_shortfalls: shortfalls,
       },
     });
     if (auditErr) console.error("admin_audit_log insert failed:", auditErr);
