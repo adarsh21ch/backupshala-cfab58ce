@@ -182,7 +182,6 @@ const AdminSettings = () => {
   const TABS = [
     { value: 'commission', label: 'Commission', icon: Percent },
     { value: 'referral', label: 'Referral', icon: Gift },
-    { value: 'pro', label: 'Creator Pro', icon: Star },
     { value: 'certificate', label: 'Certificate', icon: Award },
     { value: 'general', label: 'General', icon: Cog },
   ];
@@ -343,39 +342,6 @@ const AdminSettings = () => {
                   onChange={v => setVal('allow_non_student_affiliates', v ? 'true' : 'false')}
                   hint="If off, only enrolled students can earn referral commission."
                 />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pro" className="mt-5">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Star className="h-4 w-4 text-accent" /> Creator Pro
-                </CardTitle>
-                <div className="mt-2 rounded-lg border border-info/20 bg-info/5 p-3 text-xs text-muted-foreground space-y-2">
-                  <p className="flex items-start gap-2">
-                    <Info className="h-3.5 w-3.5 text-info shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">What is Creator Pro?</strong> A paid upgrade for creators on your platform. Pro creators unlock advanced tools (custom coupons, priority support, advanced analytics, higher upload limits, featured placement). It's an extra revenue stream for Backupshala on top of commission — creators pay you monthly/annually for the upgrade.
-                    </span>
-                  </p>
-                  <p className="pl-5"><strong className="text-foreground">Who uses it?</strong> Creators who want more visibility and better tools. If you don't plan to offer this yet, just turn off "Creator Pro Enabled" below — the section will stay hidden from creators.</p>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ToggleField
-                  k="creator_pro_enabled"
-                  label="Creator Pro Enabled"
-                  checked={values.creator_pro_enabled === 'true'}
-                  onChange={v => setVal('creator_pro_enabled', v ? 'true' : 'false')}
-                  hint="When off, creators won't see the Pro upgrade option anywhere in the app."
-                />
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <NumberField k="creator_pro_monthly_price" label="Monthly Price" value={values.creator_pro_monthly_price} onChange={v => setVal('creator_pro_monthly_price', v)} error={errors.creator_pro_monthly_price} prefix="₹" hint="Charged monthly to creators who upgrade." />
-                  <NumberField k="creator_pro_annual_price" label="Annual Price" value={values.creator_pro_annual_price} onChange={v => setVal('creator_pro_annual_price', v)} error={errors.creator_pro_annual_price} prefix="₹" hint="Discounted yearly plan." />
-                  <NumberField k="creator_pro_trial_days" label="Trial Days" value={values.creator_pro_trial_days} onChange={v => setVal('creator_pro_trial_days', v)} error={errors.creator_pro_trial_days} suffix="days" hint="Free trial length. Set to 0 to disable trials." />
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

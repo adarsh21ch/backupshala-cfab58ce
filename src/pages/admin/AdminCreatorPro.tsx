@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Star, Settings, Users, UserPlus, Crown, Check, X, Search, IndianRupee, Clock, Shield } from 'lucide-react';
+import { Star, Settings, Users, UserPlus, Crown, Check, X, Search, IndianRupee, Clock, Shield, UserCheck, CreditCard } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useState, useEffect } from 'react';
 
 const AdminCreatorPro = () => {
@@ -31,24 +32,37 @@ const AdminCreatorPro = () => {
     return s ? s.value : fallback;
   };
 
-  const [proPrice, setProPrice] = useState('999');
+  const [proPrice, setProPrice] = useState('499');
+  const [annualPrice, setAnnualPrice] = useState('3999');
   const [trialDays, setTrialDays] = useState('14');
   const [proEnabled, setProEnabled] = useState('true');
+  // Creator signup requirements
+  const [signupPaymentRequired, setSignupPaymentRequired] = useState('false');
+  const [signupFee, setSignupFee] = useState('0');
+  const [signupKycRequired, setSignupKycRequired] = useState('true');
 
   useEffect(() => {
     if (settings.length > 0) {
-      setProPrice(getSetting('creator_pro_price', '999'));
+      setProPrice(getSetting('creator_pro_monthly_price', '499'));
+      setAnnualPrice(getSetting('creator_pro_annual_price', '3999'));
       setTrialDays(getSetting('creator_pro_trial_days', '14'));
       setProEnabled(getSetting('creator_pro_enabled', 'true'));
+      setSignupPaymentRequired(getSetting('creator_signup_payment_required', 'false'));
+      setSignupFee(getSetting('creator_signup_fee', '0'));
+      setSignupKycRequired(getSetting('creator_signup_kyc_required', 'true'));
     }
   }, [settings]);
 
   const saveSettings = useMutation({
     mutationFn: async () => {
       const entries = [
-        { key: 'creator_pro_price', value: proPrice },
+        { key: 'creator_pro_monthly_price', value: proPrice },
+        { key: 'creator_pro_annual_price', value: annualPrice },
         { key: 'creator_pro_trial_days', value: trialDays },
         { key: 'creator_pro_enabled', value: proEnabled },
+        { key: 'creator_signup_payment_required', value: signupPaymentRequired },
+        { key: 'creator_signup_fee', value: signupFee },
+        { key: 'creator_signup_kyc_required', value: signupKycRequired },
       ];
       for (const { key, value } of entries) {
         const existing = settings.find((s: any) => s.key === key);
@@ -405,70 +419,116 @@ const AdminCreatorPro = () => {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings">
-            <Card className="bg-card border-border max-w-lg">
+          <TabsContent value="settings" className="space-y-4">
+            {/* Creator Pro Plan */}
+            <Card className="bg-card border-border max-w-2xl">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Settings className="h-4 w-4" /> Creator Pro Plan Settings
+                  <Star className="h-4 w-4 text-amber-500" /> Creator Pro Plan
                 </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Paid upgrade for creators. Unlocks custom coupons, advanced analytics, featured placement.
+                </p>
               </CardHeader>
               <CardContent className="space-y-5">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Monthly Price (₹)</Label>
-                  <div className="relative">
-                    <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={proPrice}
-                      onChange={e => setProPrice(e.target.value)}
-                      className="pl-9"
-                      min={0}
-                    />
+                <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-3">
+                  <div>
+                    <Label className="text-sm font-medium">Creator Pro Enabled</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">When off, creators won't see the Pro upgrade option anywhere.</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">This price is shown on the Creator Pro upgrade page</p>
+                  <Switch checked={proEnabled === 'true'} onCheckedChange={v => setProEnabled(v ? 'true' : 'false')} />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Monthly Price</Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input type="number" value={proPrice} onChange={e => setProPrice(e.target.value)} className="pl-9" min={0} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Charged monthly to Pro creators.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Annual Price</Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input type="number" value={annualPrice} onChange={e => setAnnualPrice(e.target.value)} className="pl-9" min={0} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Discounted yearly plan.</p>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Free Trial Duration (days)</Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={trialDays}
-                      onChange={e => setTrialDays(e.target.value)}
-                      className="pl-9"
-                      min={0}
-                      max={90}
-                    />
+                    <Input type="number" value={trialDays} onChange={e => setTrialDays(e.target.value)} className="pl-9" min={0} max={90} />
                   </div>
-                  <p className="text-xs text-muted-foreground">0 = disable free trial for creators</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Creator Pro Feature</Label>
-                  <Select value={proEnabled} onValueChange={setProEnabled}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Enabled — creators can see & request Pro</SelectItem>
-                      <SelectItem value="false">Disabled — hide Pro from creators</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="border-t border-border pt-4">
-                  <Button
-                    onClick={() => saveSettings.mutate()}
-                    disabled={saveSettings.isPending}
-                    className="w-full gap-2"
-                  >
-                    <Shield className="h-4 w-4" />
-                    {saveSettings.isPending ? 'Saving...' : 'Save Pro Settings'}
-                  </Button>
+                  <p className="text-xs text-muted-foreground">0 = disable free trial for creators.</p>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Become-a-Creator Requirements */}
+            <Card className="bg-card border-border max-w-2xl">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-primary" /> Become-a-Creator Requirements
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Control what users must do to become a creator on Backupshala.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-3">
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-1.5">
+                      <CreditCard className="h-3.5 w-3.5" /> Require signup payment
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      If on, users must pay a one-time fee to become a creator. If off, signup is free after KYC.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={signupPaymentRequired === 'true'}
+                    onCheckedChange={v => setSignupPaymentRequired(v ? 'true' : 'false')}
+                  />
+                </div>
+
+                {signupPaymentRequired === 'true' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Creator Signup Fee</Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input type="number" value={signupFee} onChange={e => setSignupFee(e.target.value)} className="pl-9" min={0} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">One-time amount charged when a user upgrades to creator.</p>
+                  </div>
+                )}
+
+                <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-3">
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" /> Require KYC
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      If on, users must complete KYC (PAN + bank/UPI) before they can publish courses. If off, KYC is optional.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={signupKycRequired === 'true'}
+                    onCheckedChange={v => setSignupKycRequired(v ? 'true' : 'false')}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="max-w-2xl">
+              <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending} className="w-full gap-2">
+                <Shield className="h-4 w-4" />
+                {saveSettings.isPending ? 'Saving...' : 'Save All Settings'}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
