@@ -380,6 +380,65 @@ const AdminSettings = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="certificate" className="mt-5">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Award className="h-4 w-4 text-accent" /> Certificate
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Universal template used for every course completion certificate. Students receive the PDF in their dashboard and (once email is set up) by email when they finish a course.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <TextField
+                  k="certificate_body_line"
+                  label="Body line"
+                  value={values.certificate_body_line}
+                  onChange={v => setVal('certificate_body_line', v)}
+                  hint='Printed between the student name and the course title. Default: "has successfully completed".'
+                />
+                <TextField
+                  k="certificate_email_subject"
+                  label="Email subject"
+                  value={values.certificate_email_subject}
+                  onChange={v => setVal('certificate_email_subject', v)}
+                  hint="Subject line for the certificate-ready email sent to the student."
+                />
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Platform signature image</Label>
+                  <p className="text-xs text-muted-foreground">PNG with transparent background works best. Max 1 MB. Shown on the right-hand signature line of every certificate.</p>
+                  {values.certificate_signature_url ? (
+                    <div className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-3">
+                      <img src={values.certificate_signature_url} alt="Signature" className="h-14 w-auto bg-white rounded p-1" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">Current signature</p>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => setVal('certificate_signature_url', '')}>Remove</Button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No signature uploaded — a typed "Backupshala" line will be used.</p>
+                  )}
+                  <label className="inline-flex">
+                    <input type="file" accept="image/png,image/jpeg" onChange={handleSignatureUpload} className="hidden" />
+                    <span className={`inline-flex items-center gap-2 cursor-pointer rounded-md border border-border bg-secondary hover:bg-secondary/80 px-3 py-1.5 text-sm ${uploadingSig ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <Upload className="h-3.5 w-3.5" />
+                      {uploadingSig ? 'Uploading…' : 'Upload signature'}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="pt-2 border-t border-border">
+                  <Button onClick={handlePreviewCert} variant="outline" size="sm" className="rounded-md">
+                    <Eye className="h-4 w-4 mr-2" /> Download sample PDF
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">Generates a sample certificate using the current settings (uses unsaved changes too).</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="general" className="mt-5">
             <Card className="bg-card border-border">
               <CardHeader><CardTitle className="text-base">General</CardTitle></CardHeader>
