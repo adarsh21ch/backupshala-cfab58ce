@@ -137,11 +137,13 @@ const AdminWebhookLogs = () => {
                   <th className="px-4 py-3 font-medium text-muted-foreground">Event Type</th>
                   <th className="px-4 py-3 font-medium text-muted-foreground">Status</th>
                   <th className="px-4 py-3 font-medium text-muted-foreground">Created</th>
+                  <th className="px-4 py-3 font-medium text-muted-foreground w-24 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {logs.map((log: any) => {
                   const isOpen = !!expanded[log.id];
+                  const canRetry = log.event_type === 'payment.captured' || log.event_type === 'payment.failed';
                   return (
                     <Fragment key={log.id}>
                       <tr className="hover:bg-secondary/30 cursor-pointer" onClick={() => setExpanded(p => ({ ...p, [log.id]: !p[log.id] }))}>
@@ -157,11 +159,22 @@ const AdminWebhookLogs = () => {
                         <td className="px-4 py-3 text-xs text-muted-foreground">
                           {new Date(log.created_at).toLocaleString('en-IN')}
                         </td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!canRetry || retryMutation.isPending}
+                            onClick={() => retryMutation.mutate(log.id)}
+                            title={canRetry ? 'Re-process this webhook' : 'Retry not supported for this event type'}
+                          >
+                            <RefreshCw className={`h-3 w-3 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </td>
                       </tr>
                       {isOpen && (
                         <tr className="bg-secondary/20">
                           <td></td>
-                          <td colSpan={3} className="px-4 py-3">
+                          <td colSpan={4} className="px-4 py-3">
                             <pre className="text-[10px] font-mono whitespace-pre-wrap break-all max-h-96 overflow-auto rounded-md bg-background p-3 border border-border">
                               {JSON.stringify(log.payload, null, 2)}
                             </pre>
