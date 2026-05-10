@@ -61,6 +61,7 @@ import CreatorAnnouncements from "./pages/creator/CreatorAnnouncements";
 import CreatorDiscussions from "./pages/creator/CreatorDiscussions";
 import { ThemeProvider } from "next-themes";
 import { Loader2 } from "lucide-react";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Lazy-loaded admin routes — kept as factories so we can prefetch them all
 // the first time any admin route mounts. After prefetch, tab navigation is
@@ -144,6 +145,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ScrollToTop />
           <Suspense fallback={<AdminFallback />}>
           <Routes>
             {/* Public pages */}
