@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { AlertCircle } from "lucide-react";
+import AdminDashboardLayout from "@/components/dashboard/AdminDashboardLayout";
 
 export default function AdminSystemErrors() {
   const [funcFilter, setFuncFilter] = useState("");
