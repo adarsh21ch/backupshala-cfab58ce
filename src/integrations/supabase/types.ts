@@ -2632,6 +2632,7 @@ export type Database = {
           id: string
           payload: Json
           processed_at: string | null
+          razorpay_event_id: string | null
           status: string
         }
         Insert: {
@@ -2640,6 +2641,7 @@ export type Database = {
           id?: string
           payload?: Json
           processed_at?: string | null
+          razorpay_event_id?: string | null
           status?: string
         }
         Update: {
@@ -2648,6 +2650,7 @@ export type Database = {
           id?: string
           payload?: Json
           processed_at?: string | null
+          razorpay_event_id?: string | null
           status?: string
         }
         Relationships: []
