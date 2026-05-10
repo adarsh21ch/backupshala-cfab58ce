@@ -9,6 +9,7 @@ import CreatorDashboardLayout from "@/components/dashboard/CreatorDashboardLayou
 import BuilderSidebar, { BuilderStep } from "@/components/course/builder/BuilderSidebar";
 import CourseDetailsStep, { DetailsForm } from "@/components/course/builder/CourseDetailsStep";
 import CourseContentStep from "@/components/course/builder/CourseContentStep";
+import CourseVideoSettings from "@/components/course/builder/CourseVideoSettings";
 import CoursePricingStep from "@/components/course/builder/CoursePricingStep";
 import CoursePublishStep, { PublishCheck } from "@/components/course/builder/CoursePublishStep";
 import { validatePrice, MIN_PRICE } from "@/components/course/PriceInput";
