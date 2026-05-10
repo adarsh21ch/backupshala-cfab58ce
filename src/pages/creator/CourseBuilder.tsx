@@ -373,6 +373,9 @@ const CourseBuilder = () => {
               />
             )}
             {activeStep === 3 && (
+              <CourseVideoSettings courseId={id || ""} />
+            )}
+            {activeStep === 4 && (
               <CoursePricingStep
                 price={price}
                 setPrice={setPrice}
@@ -385,11 +388,11 @@ const CourseBuilder = () => {
                 saving={saving}
                 onSave={async () => {
                   const ok = await saveCourse();
-                  if (ok) setActiveStep(4);
+                  if (ok) setActiveStep(5);
                 }}
               />
             )}
-            {activeStep === 4 && (
+            {activeStep === 5 && (
               <CoursePublishStep
                 status={status}
                 checks={checks}
