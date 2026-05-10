@@ -146,26 +146,45 @@ export async function processPaymentSuccess({ supabase, payment, razorpayPayment
       if (refEnroll) referralEligible = true;
     }
   }
+
+  // BUSINESS RULE: A creator promoting their own course must NOT receive an
+  // affiliate/referral commission payout — they already earn their normal
+  // creator share on every valid sale. We still record the self-referral as a
+  // zero-amount `commissions` row (status='self_sale_no_payout',
+  // commission_type='self_referral') purely for analytics / dashboards.
+  // Examples:
+  //  - Creator A owns Course A. User B refers → B gets affiliate commission, A gets creator share.
+  //  - Creator A owns Course A. A refers their own course → A gets ONLY creator share
+  //    (creatorBase + affiliateBase rolls back into the creator), no affiliate payout.
+  //  - User C (not creator) refers Course A → C gets affiliate commission, A gets creator share.
   const isOwnCourseReferral =
-    !!resolvedReferrerId && referralEligible && resolvedReferrerId === courseCreatorId && !isPlatformCourse;
+    !!resolvedReferrerId && referralEligible && resolvedReferrerId === courseCreatorId;
+
+  // After detecting self-referral, suppress the affiliate side entirely so
+  // splits and wallet credits behave exactly like "no referrer" sale.
+  const payoutReferrerId = isOwnCourseReferral ? null : resolvedReferrerId;
+  const payoutReferralEligible = referralEligible && !isOwnCourseReferral;
 
   let finalPlatformAmount = platformBase;
   let finalCreatorAmount = 0;
   let finalAffiliateAmount = 0;
   let affiliateUserId: string | null = null;
   if (isPlatformCourse) {
-    if (resolvedReferrerId && referralEligible) {
+    if (payoutReferrerId && payoutReferralEligible) {
       finalAffiliateAmount = affiliateBase;
-      affiliateUserId = resolvedReferrerId;
+      affiliateUserId = payoutReferrerId;
     } else {
+      // No payable affiliate (incl. self-referral) — platform absorbs the affiliate slice.
       finalPlatformAmount = netAmount;
     }
   } else {
     finalCreatorAmount = creatorBase;
-    if (resolvedReferrerId && referralEligible) {
+    if (payoutReferrerId && payoutReferralEligible) {
       finalAffiliateAmount = affiliateBase;
-      affiliateUserId = resolvedReferrerId;
+      affiliateUserId = payoutReferrerId;
     } else {
+      // No payable affiliate (incl. self-referral) — creator gets the affiliate slice
+      // as part of their normal creator earning. NO separate affiliate wallet credit.
       finalCreatorAmount = creatorBase + affiliateBase;
     }
   }
