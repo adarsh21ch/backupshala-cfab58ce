@@ -393,9 +393,6 @@ const AdminSettings = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="video" className="mt-5">
-            <VideoSettingsSection values={values} setVal={setVal} />
-          </TabsContent>
         </Tabs>
       </div>
     </AdminDashboardLayout>
