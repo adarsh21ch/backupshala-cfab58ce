@@ -300,9 +300,30 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
                     )}
                     onClick={() => selectAndShow({ type: "module", id: mod.id })}
                   >
-                    <span title="Drag to reorder" className="shrink-0 cursor-grab">
-                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40" />
-                    </span>
+                    <div className="flex flex-col shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          reorderModule.mutate({ index: modIdx, dir: -1 });
+                        }}
+                        disabled={modIdx === 0 || reorderModule.isPending}
+                        className="p-0.5 rounded hover:bg-background disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move up"
+                      >
+                        <ArrowUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          reorderModule.mutate({ index: modIdx, dir: 1 });
+                        }}
+                        disabled={modIdx === modules.length - 1 || reorderModule.isPending}
+                        className="p-0.5 rounded hover:bg-background disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move down"
+                      >
+                        <ArrowDown className="h-3 w-3" />
+                      </button>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
