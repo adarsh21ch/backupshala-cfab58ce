@@ -65,50 +65,38 @@ const Payouts = () => {
       if (amt > walletBalance) throw new Error('Amount exceeds wallet balance');
       if (hasPendingPayout) throw new Error('You already have a pending payout request');
 
-      // Validate PAN if not saved
       const panToUse = (savedPan || panNumber).trim().toUpperCase();
       if (!panToUse) throw new Error('PAN number is required (one-time KYC)');
       if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panToUse)) {
         throw new Error('Invalid PAN format (e.g. ABCDE1234F)');
       }
 
-      // Save PAN to profile (one-time KYC)
-      if (!savedPan) {
-        const { error: profErr } = await supabase.from('profiles')
-          .update({ pan_number: panToUse }).eq('id', user!.id);
-        if (profErr) throw profErr;
-      }
-
-      const record: any = {
-        user_id: user!.id,
+      const reqBody: any = {
         request_type: 'student_commission',
         amount: amt,
+        method: paymentMethod,
         pan_number: panToUse,
       };
 
       if (paymentMethod === 'upi') {
         if (!upiId.trim()) throw new Error('UPI ID is required');
         if (!/^[a-zA-Z0-9._-]+@[a-zA-Z]{2,}$/.test(upiId.trim())) throw new Error('Invalid UPI ID format (e.g. name@bank)');
-        record.upi_id = upiId.trim();
+        reqBody.upi_id = upiId.trim();
       } else {
         if (!bankName.trim() || !accountHolder.trim() || !accountNumber.trim() || !ifscCode.trim()) {
           throw new Error('All bank details are required');
         }
         if (!/^\d{9,18}$/.test(accountNumber.trim())) throw new Error('Account number must be 9-18 digits');
         if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.trim())) throw new Error('Invalid IFSC code format (e.g. SBIN0001234)');
-        record.bank_name = bankName.trim();
-        record.account_holder_name = accountHolder.trim();
-        record.account_number = accountNumber.trim();
-        record.ifsc_code = ifscCode.trim();
+        reqBody.bank_name = bankName.trim();
+        reqBody.account_holder_name = accountHolder.trim();
+        reqBody.account_number = accountNumber.trim();
+        reqBody.ifsc_code = ifscCode.trim().toUpperCase();
       }
 
-      const { error } = await supabase.from('payout_requests').insert(record);
-      if (error) {
-        if ((error as any).code === '23505') {
-          throw new Error('You already have a pending payout request');
-        }
-        throw error;
-      }
+      const { data, error } = await supabase.functions.invoke('create-payout-request', { body: reqBody });
+      if (error) throw new Error(error.message || 'Failed to create payout request');
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
       toast({ title: 'Payout request submitted! 🎉' });
