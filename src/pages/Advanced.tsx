@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import Logo from '@/components/Logo';
+import LandingNavbar from '@/components/landing/Navbar';
 import AdvancedHero from '@/components/advanced/AdvancedHero';
 import AdvancedCurriculum from '@/components/advanced/AdvancedCurriculum';
 import AdvancedComparison from '@/components/advanced/AdvancedComparison';
