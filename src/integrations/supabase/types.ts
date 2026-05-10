@@ -531,6 +531,7 @@ export type Database = {
           course_tier: string | null
           created_at: string
           creator_id: string
+          deleted_at: string | null
           display_price: number | null
           full_description: string | null
           id: string
@@ -574,6 +575,7 @@ export type Database = {
           course_tier?: string | null
           created_at?: string
           creator_id: string
+          deleted_at?: string | null
           display_price?: number | null
           full_description?: string | null
           id?: string
@@ -617,6 +619,7 @@ export type Database = {
           course_tier?: string | null
           created_at?: string
           creator_id?: string
+          deleted_at?: string | null
           display_price?: number | null
           full_description?: string | null
           id?: string
@@ -1779,6 +1782,7 @@ export type Database = {
           creator_website: string | null
           creator_youtube: string | null
           custom_platform_fee: number | null
+          deleted_at: string | null
           email: string
           full_name: string
           id: string
@@ -1809,6 +1813,7 @@ export type Database = {
           creator_website?: string | null
           creator_youtube?: string | null
           custom_platform_fee?: number | null
+          deleted_at?: string | null
           email: string
           full_name: string
           id: string
@@ -1839,6 +1844,7 @@ export type Database = {
           creator_website?: string | null
           creator_youtube?: string | null
           custom_platform_fee?: number | null
+          deleted_at?: string | null
           email?: string
           full_name?: string
           id?: string
@@ -2696,6 +2702,7 @@ export type Database = {
           creator_website: string | null
           creator_youtube: string | null
           custom_platform_fee: number | null
+          deleted_at: string | null
           email: string
           full_name: string
           id: string
@@ -2741,7 +2748,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "support" | "finance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2869,7 +2876,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "support", "finance"],
     },
   },
 } as const
