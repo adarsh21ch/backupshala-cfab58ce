@@ -41,7 +41,19 @@ const AdminWebhookLogs = () => {
     },
   });
 
-  const statusColor = (s: string) => {
+  const qc = useQueryClient();
+  const retryMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      const { data, error } = await supabase.functions.invoke('webhook-retry', { body: { log_id: logId } });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(data?.handled ? `Replayed: ${data.action}` : (data?.reason || 'Skipped'));
+      qc.invalidateQueries({ queryKey: ['admin-webhook-logs'] });
+    },
+    onError: (err: any) => toast.error(err?.message || 'Retry failed'),
+  });
     if (s === 'processed') return 'bg-primary/10 text-primary';
     if (s === 'verified') return 'bg-blue-500/10 text-blue-400';
     if (s === 'invalid_signature') return 'bg-destructive/10 text-destructive';
