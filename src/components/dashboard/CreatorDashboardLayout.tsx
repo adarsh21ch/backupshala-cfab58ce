@@ -100,8 +100,8 @@ const CreatorDashboardLayout = ({ children }: { children: React.ReactNode }) => 
       label: 'TOOLS',
       items: [
         { to: '/creator/coupons', label: 'Coupons', icon: Tag },
-        ...(isPro ? [{ to: '/creator/unlock-requests', label: 'Unlock Requests', icon: Unlock }] : []),
-        ...(!isPro ? [{ to: '/creator/upgrade', label: 'Upgrade to Pro', icon: Star }] : []),
+        ...(isPro && proFeatureEnabled ? [{ to: '/creator/unlock-requests', label: 'Unlock Requests', icon: Unlock }] : []),
+        ...(!isPro && proFeatureEnabled ? [{ to: '/creator/upgrade', label: 'Upgrade to Pro', icon: Star }] : []),
         { to: '/creator/settings', label: 'Settings', icon: Settings },
         { to: '/creator/profile', label: 'Creator Profile', icon: PenTool },
       ],
