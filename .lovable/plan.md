@@ -1,79 +1,57 @@
-# Certificate System — Production Plan
+## Premium redesign of `/advanced`
 
-## How students get the certificate
+Goal: turn the current functional dark page into a high-conversion premium sales page that justifies the ₹4,449 price and feels distinctly more premium than the Standard Bundle page.
 
-1. **Trigger** — already in place. The instant a student completes the last module, `check-and-issue-certificate` fires and creates the row in the `certificates` table with a unique code (e.g. `BS-A7K3M9`).
-2. **Auto email** — new. The same edge function will then enqueue a transactional email ("🎓 Your Backupshala Certificate is ready") with the student's name, course title, certificate code, a **Download PDF** button (links back to dashboard), and a **Verify** link.
-3. **Dashboard** — `/dashboard/certificates` keeps the list. Each card gets two buttons: **Download PDF** and **Share on WhatsApp** (PNG preview removed).
-4. **Verification** — `/verify/{code}` page already works publicly.
+### Visual direction
 
-## What's printed on the certificate
+- Keep dark base (`#0b1020`) but layer in depth: radial amber glow behind hero, subtle grid/noise texture, gradient borders on cards.
+- Amber (`#f59e0b`) as the single hero accent — used sparingly for impact, not on every element.
+- Display font (Space Grotesk) for huge hero number + section headers; DM Sans for body.
+- Animations: fade-in on scroll for each section, scale-in for the hero CTA, subtle glow pulse on the price badge.
 
-Universal template, identical for every course:
+### New page structure (top → bottom)
 
-```text
-┌─────────────────────────────────────────────────┐
-│            [Backupshala logo, top center]        │
-│                                                  │
-│           Certificate of Completion              │
-│           ───── gradient divider ─────           │
-│                                                  │
-│              This is to certify that             │
-│                                                  │
-│              {Student Full Name}                 │   ← from profiles
-│                                                  │
-│            has successfully completed            │   ← admin-editable line
-│                                                  │
-│                {Course Title}                    │   ← from courses
-│                                                  │
-│        offered by {Creator Name} on Backupshala  │
-│                                                  │
-│   {Issue Date}              {Certificate Code}   │
-│                                                  │
-│   ─────────────          ─────────────           │
-│   {Creator Name}         [Admin sig image]       │
-│      Creator              Backupshala            │
-│                                                  │
-│         Verify at backupshala.com/verify/...     │
-└─────────────────────────────────────────────────┘
-```
+1. **Sticky top nav** — keep existing, add scroll-aware shadow.
+2. **Hero (revamped)**
+   - Animated "Advanced Program" badge with amber glow ring.
+   - Headline: "Go from learner to earner" (kept).
+   - Subheadline + dual CTA (Enroll / See curriculum — anchor link).
+   - Right-side floating price card (instead of centered buttons): ₹4,449 with strike-through "₹X" suggested value, "Includes ₹449 Standard Bundle FREE" pill, trust row (Razorpay · Lifetime · GST invoice).
+3. **Trust strip** — student count, average rating, certificates issued (pull from real data if available, else static).
+4. **"Includes Standard Bundle free" callout** — keep, polish with gradient border.
+5. **Curriculum preview** — accordion of modules/chapters fetched from the advanced course (resolved via `advanced_course_id` setting → `courses` + `chapters` tables). Show module title, lesson count, duration. First module expanded by default.
+6. **What you get** — keep 6 feature cards but upgrade with icons, hover lift, and gradient borders.
+7. **Basic vs Advanced comparison table** — two columns side by side, checkmarks/crosses, Advanced column highlighted with amber border + "Recommended" tag.
+8. **Testimonials** — 3-card grid (avatar, name, role, quote, star rating). Static seed data for now; later wire to a `testimonials` table.
+9. **Instructor / Mentor strip** — short "Taught by Backupshala mentors" block with avatars.
+10. **FAQ** — accordion with 6–8 common questions (refund, access duration, certificate, mentor sessions, payment, GST).
+11. **Money-back guarantee badge** — 7-day refund seal with shield icon.
+12. **Final CTA section** — keep, upgrade with bigger gradient panel and countdown-style urgency text ("Join 1,200+ students").
+13. **Footer** — keep minimal.
+14. **Sticky bottom enroll bar** — appears after scrolling past the hero on all viewports. Shows: course name, price, "Enroll for ₹4,449" button. Hidden on the hero, fades in on scroll, dismissible on mobile.
 
-Data sources are automatic — creators and students never fill anything in. No per-course customization for now (matches your "keep it simple" preference).
+### Files to create / edit
 
-## Admin controls (Settings → new "Certificate" tab)
+- **Edit** `src/pages/Advanced.tsx` — full restructure using new section components.
+- **Create** `src/components/advanced/` folder:
+  - `AdvancedHero.tsx`
+  - `AdvancedCurriculum.tsx` (queries advanced course + chapters)
+  - `AdvancedComparison.tsx`
+  - `AdvancedTestimonials.tsx`
+  - `AdvancedFAQ.tsx`
+  - `AdvancedStickyBar.tsx` (uses scroll listener + IntersectionObserver on hero)
+- **No DB changes** — reuses existing `courses`, `chapters`, `platform_settings`. Testimonials hardcoded in component (clear `// TODO: move to DB later` comment).
 
-A small, focused section, sitting alongside Creator Pro / Referral Commission etc.:
+### Out of scope (can be follow-ups)
 
-- **Platform signature image** — upload PNG/JPG (stored in `course-resources` bucket, key saved in `platform_settings`). Shown on every certificate.
-- **Body line** — editable text input. Default: `"has successfully completed"`. Stored in `platform_settings` so you can tweak wording later without a deploy.
-- **Email subject** — editable. Default: `"🎓 Your Backupshala Certificate is ready"`.
-- **Live preview** — small thumbnail rendering with sample data so admin sees what the cert looks like before saving.
+- Real testimonials table + admin UI.
+- Real-time student counter.
+- Video preview embed in hero.
+- A/B testing variants.
 
-Nothing for creators to configure — keeps the creator UX clean.
+### Acceptance
 
-## Technical details
-
-- **PDF library**: `jspdf` + `jspdf-autotable` (lightweight, browser-side, no server roundtrip). Replaces `html2canvas` PNG approach.
-- **Logo**: bundled as imported asset (`src/assets/certificate-logo.png`) — already-existing Backupshala wordmark, no extra upload.
-- **Signature storage**: 3 new keys in `platform_settings`:
-  - `certificate_signature_url`
-  - `certificate_body_line`
-  - `certificate_email_subject`
-- **Email**: requires Lovable Emails infrastructure. If your email domain isn't set up yet, I'll prompt that first; otherwise I scaffold a transactional email function `send-certificate-email` and call it from `check-and-issue-certificate` after the cert row is inserted.
-- **Edge function update**: `check-and-issue-certificate` gets a final step — invoke `send-certificate-email` (fire-and-forget, won't block cert issuance if email fails).
-- **Files touched**:
-  - `src/pages/Certificate.tsx` — swap PNG download for PDF generator
-  - `src/lib/certificatePdf.ts` (new) — single function `generateCertificatePdf({...})`
-  - `src/pages/admin/AdminSettings.tsx` — new Certificate section
-  - `supabase/functions/check-and-issue-certificate/index.ts` — add email trigger
-  - `supabase/functions/send-certificate-email/index.ts` (new, scaffolded by transactional email tool)
-  - 1 small migration to seed the 3 new `platform_settings` keys
-
-## Out of scope (can add later if you want)
-
-- Per-creator or per-course custom signatures
-- QR code on cert face
-- Course duration line
-- Multi-language certificate text
-
-Ready to build this when you approve.
+- Page feels visually distinct from Standard Bundle page (premium vs friendly).
+- All sections render with real course data where applicable.
+- Sticky bar behaves correctly on mobile + desktop, doesn't overlap footer.
+- Lighthouse SEO/performance not regressed; meta tags preserved.
