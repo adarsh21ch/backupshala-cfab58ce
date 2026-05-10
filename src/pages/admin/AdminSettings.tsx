@@ -181,12 +181,10 @@ const AdminSettings = () => {
   };
 
   const TABS = [
-    { value: 'defaults', label: 'Course Defaults', icon: IndianRupee },
     { value: 'commission', label: 'Commission', icon: Percent },
     { value: 'referral', label: 'Referral', icon: Gift },
     { value: 'pro', label: 'Creator Pro', icon: Star },
     { value: 'general', label: 'General', icon: Cog },
-    { value: 'video', label: 'Video & Player', icon: Film },
   ];
 
   return (
