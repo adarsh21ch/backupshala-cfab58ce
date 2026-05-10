@@ -1892,6 +1892,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_errors: {
+        Row: {
+          context: Json
+          created_at: string
+          error_message: string
+          error_stack: string | null
+          function_name: string
+          id: string
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          error_message: string
+          error_stack?: string | null
+          function_name: string
+          id?: string
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          error_message?: string
+          error_stack?: string | null
+          function_name?: string
+          id?: string
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_module_notes: {
         Row: {
           content: string
