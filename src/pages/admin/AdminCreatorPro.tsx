@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Star, Settings, Users, UserPlus, Crown, Check, X, Search, IndianRupee, Clock, Shield } from 'lucide-react';
+import { Star, Settings, Users, UserPlus, Crown, Check, X, Search, IndianRupee, Clock, Shield, UserCheck, CreditCard } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useState, useEffect } from 'react';
 
 const AdminCreatorPro = () => {
