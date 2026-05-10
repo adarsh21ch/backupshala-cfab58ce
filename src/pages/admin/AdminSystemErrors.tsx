@@ -94,5 +94,6 @@ export default function AdminSystemErrors() {
         </div>
       )}
     </div>
+    </AdminDashboardLayout>
   );
 }
