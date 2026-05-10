@@ -486,6 +486,7 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
           )}
         </div>
       </div>
+      </div>
     </div>
   );
 };
