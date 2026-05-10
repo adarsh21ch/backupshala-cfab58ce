@@ -450,6 +450,22 @@ Deno.serve(async (req) => {
       action_url: `/receipt/${payment.id}`,
     });
 
+    // ──── EMAILS ────
+    try {
+      if (student?.email) {
+        await sendEmail(supabase, student.email,
+          emailTpl.enrollmentConfirmed(student.full_name, course?.title || "your course"));
+      }
+      if (finalAffiliateAmount > 0 && affiliateUserId) {
+        const { data: refProf } = await supabase.from("profiles")
+          .select("email, full_name").eq("id", affiliateUserId).maybeSingle();
+        if (refProf?.email) {
+          await sendEmail(supabase, refProf.email,
+            emailTpl.commissionEarned(refProf.full_name, finalAffiliateAmount, course?.title || "a course"));
+        }
+      }
+    } catch (e) { console.error("enrollment emails failed", e); }
+
     // Update student total_enrolled
     const { data: studentProfile } = await supabase
       .from("profiles")
