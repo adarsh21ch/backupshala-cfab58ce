@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus,
-  GripVertical,
   Trash2,
   ChevronRight,
   ChevronDown,
@@ -16,17 +15,14 @@ import {
   Upload,
   CheckCircle2,
   AlertCircle,
-  Film,
-  ChevronUp,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
 import ChapterEditor, { ChapterRow } from "./ChapterEditor";
 import CourseVideoSettings from "./CourseVideoSettings";
 import { cn } from "@/lib/utils";
@@ -191,6 +187,30 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const reorderModule = useMutation({
+    mutationFn: async ({ index, dir }: { index: number; dir: -1 | 1 }) => {
+      const target = index + dir;
+      if (target < 0 || target >= modules.length) return;
+      const a = modules[index];
+      const b = modules[target];
+      // Swap order_index of two modules
+      const { error: e1 } = await supabase
+        .from("modules")
+        .update({ order_index: b.order_index })
+        .eq("id", a.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase
+        .from("modules")
+        .update({ order_index: a.order_index })
+        .eq("id", b.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["builder-modules", courseId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const selectedModule =
     selected?.type === "module" ? modules.find((m) => m.id === selected.id) : null;
   const selectedChapter =
@@ -280,9 +300,30 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
                     )}
                     onClick={() => selectAndShow({ type: "module", id: mod.id })}
                   >
-                    <span title="Drag to reorder" className="shrink-0 cursor-grab">
-                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40" />
-                    </span>
+                    <div className="flex flex-col shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          reorderModule.mutate({ index: modIdx, dir: -1 });
+                        }}
+                        disabled={modIdx === 0 || reorderModule.isPending}
+                        className="p-0.5 rounded hover:bg-background disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move up"
+                      >
+                        <ArrowUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          reorderModule.mutate({ index: modIdx, dir: 1 });
+                        }}
+                        disabled={modIdx === modules.length - 1 || reorderModule.isPending}
+                        className="p-0.5 rounded hover:bg-background disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move down"
+                      >
+                        <ArrowDown className="h-3 w-3" />
+                      </button>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -584,13 +625,6 @@ const ModuleEditor = ({
   const [description, setDescription] = useState(module.description || "");
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showVideoOverrides, setShowVideoOverrides] = useState(false);
-
-  // Per-module video override state. `null` = inherit from course/creator default.
-  const [allowSeek, setAllowSeek] = useState<boolean | null>(module.allow_seek ?? null);
-  const [allowSpeed, setAllowSpeed] = useState<boolean | null>(module.allow_speed_change ?? null);
-  const [showWatermark, setShowWatermark] = useState<boolean | null>(module.show_watermark ?? null);
-  const [minWatchPercent, setMinWatchPercent] = useState<number | null>(module.min_watch_percent ?? null);
 
   const chapters = module.chapters || [];
 
@@ -607,59 +641,6 @@ const ModuleEditor = ({
       return;
     }
     onSaved();
-  };
-
-  // Tri-state pill: Inherit / On / Off. Writing immediately keeps the UX
-  // snappy and matches the existing onBlur autosave pattern.
-  const TriState = ({
-    label,
-    hint,
-    value,
-    onChange,
-  }: {
-    label: string;
-    hint: string;
-    value: boolean | null;
-    onChange: (v: boolean | null) => void;
-  }) => {
-    const opts: { v: boolean | null; label: string }[] = [
-      { v: null, label: "Inherit" },
-      { v: true, label: "Allow" },
-      { v: false, label: "Block" },
-    ];
-    return (
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5">
-          <Label className="text-sm">{label}</Label>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-[240px] text-xs">{hint}</TooltipContent>
-          </Tooltip>
-        </div>
-        <div className="inline-flex rounded-lg border border-border bg-secondary/50 p-0.5">
-          {opts.map((o) => {
-            const active = value === o.v;
-            return (
-              <button
-                key={String(o.v)}
-                type="button"
-                onClick={() => onChange(o.v)}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium rounded-md transition-colors",
-                  active
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {o.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -716,92 +697,6 @@ const ModuleEditor = ({
           placeholder="What will students learn in this module?"
           rows={3}
         />
-      </div>
-
-      {/* Per-module video player overrides */}
-      <div className="rounded-lg border border-border overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setShowVideoOverrides((v) => !v)}
-          className="w-full flex items-center justify-between p-3 text-sm font-medium hover:bg-muted/50 transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <Film className="h-4 w-4 text-primary" />
-            Video Player Overrides
-            <Badge variant="outline" className="h-4 px-1.5 text-[9px] text-muted-foreground">
-              Per-module
-            </Badge>
-          </span>
-          {showVideoOverrides ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
-        {showVideoOverrides && (
-          <div className="border-t border-border p-4 space-y-4">
-            <p className="text-xs text-muted-foreground">
-              These settings only affect this module. Leave on <strong>Inherit</strong> to use
-              the course / creator defaults from your <em>Settings</em> page.
-            </p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <TriState
-                label="Forward Seeking"
-                hint="Allow students to skip ahead in this module's video. Block = students must watch from start without skipping."
-                value={allowSeek}
-                onChange={(v) => { setAllowSeek(v); save({ allow_seek: v }); }}
-              />
-              <TriState
-                label="Speed Control"
-                hint="Allow students to change playback speed (0.5x – 2x) on this module."
-                value={allowSpeed}
-                onChange={(v) => { setAllowSpeed(v); save({ allow_speed_change: v }); }}
-              />
-              <TriState
-                label="Watermark"
-                hint="Show student name + Backupshala watermark over this module's video."
-                value={showWatermark}
-                onChange={(v) => { setShowWatermark(v); save({ show_watermark: v }); }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm flex items-center gap-1.5">
-                  Completion Threshold
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[240px] text-xs">
-                      How much of the video a student must watch before this module is marked complete.
-                      Leave inherit to use the course default.
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
-                <span className="text-xs text-muted-foreground">
-                  {minWatchPercent === null ? "Inherit" : `${minWatchPercent}%`}
-                </span>
-              </div>
-              <Slider
-                value={[minWatchPercent ?? 80]}
-                min={50}
-                max={100}
-                step={5}
-                onValueChange={([v]) => setMinWatchPercent(v)}
-                onValueCommit={([v]) => save({ min_watch_percent: v })}
-                disabled={minWatchPercent === null}
-              />
-              <button
-                type="button"
-                onClick={() => { setMinWatchPercent(null); save({ min_watch_percent: null }); }}
-                className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-              >
-                {minWatchPercent === null ? "Click slider to override" : "Reset to inherit"}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Chapters list */}
