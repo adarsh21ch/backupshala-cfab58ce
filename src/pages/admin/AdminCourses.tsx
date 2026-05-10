@@ -55,6 +55,7 @@ const AdminCourses = () => {
       const { data } = await supabase.from('courses')
         .select('*, profiles!courses_creator_id_fkey(full_name, creator_display_name)')
         .eq('is_platform_course', false)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       return data || [];
     },
@@ -90,20 +91,27 @@ const AdminCourses = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (course: any) => {
-      // Block delete if any students enrolled
+      // Block hard-delete if any students enrolled — soft-delete instead.
       const { count } = await supabase
         .from('enrollments')
         .select('id', { count: 'exact', head: true })
         .eq('course_id', course.id);
       if ((count || 0) > 0) {
-        throw new Error(`Course has ${count} enrolled student${count === 1 ? '' : 's'} — cannot delete. Suspend it instead.`);
+        // Soft-delete: keep record + enrollment history, hide from listings.
+        const { error } = await supabase
+          .from('courses')
+          .update({ deleted_at: new Date().toISOString(), status: 'archived' })
+          .eq('id', course.id);
+        if (error) throw error;
+        return { soft: true, count };
       }
       await supabase.from('modules').delete().eq('course_id', course.id);
       const { error } = await supabase.from('courses').delete().eq('id', course.id);
       if (error) throw error;
+      return { soft: false };
     },
-    onSuccess: () => {
-      toast.success('Course deleted');
+    onSuccess: (res: any) => {
+      toast.success(res?.soft ? `Course archived (${res.count} enrolled students retained)` : 'Course deleted');
       qc.invalidateQueries({ queryKey: ['admin-creator-courses'] });
       setDeleteTarget(null);
     },

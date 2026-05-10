@@ -27,14 +27,25 @@ export const CreatorRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+type StaffRole = 'admin' | 'support' | 'finance';
+
+export const AdminRoute = ({
+  children,
+  allow = ['admin', 'support', 'finance'],
+}: {
+  children: React.ReactNode;
+  allow?: StaffRole[];
+}) => {
   const { user, loading } = useAuth();
 
-  const { data: hasAdminRole, isLoading: roleLoading } = useQuery({
-    queryKey: ['admin-role', user?.id],
+  const { data: roles, isLoading: roleLoading } = useQuery({
+    queryKey: ['user-roles', user?.id],
     queryFn: async () => {
-      const { data } = await supabase.rpc('has_role', { _user_id: user!.id, _role: 'admin' });
-      return !!data;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user!.id);
+      return ((data ?? []).map((r: any) => r.role)) as StaffRole[];
     },
     enabled: !!user,
   });
@@ -45,7 +56,8 @@ export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
-  if (!hasAdminRole) return <Navigate to="/dashboard" replace />;
+  const allowed = (roles ?? []).some((r) => allow.includes(r));
+  if (!allowed) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 

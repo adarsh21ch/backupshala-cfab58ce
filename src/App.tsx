@@ -83,6 +83,7 @@ const adminLoaders = {
   AdminFeaturedListings: () => import("./pages/admin/AdminFeaturedListings"),
   AdminAuditLog: () => import("./pages/admin/AdminAuditLog"),
   AdminWebhookLogs: () => import("./pages/admin/AdminWebhookLogs"),
+  AdminUserDetail: () => import("./pages/admin/AdminUserDetail"),
 };
 
 let adminPrefetched = false;
@@ -113,6 +114,7 @@ const AdminRevenue = lazy(adminLoaders.AdminRevenue);
 const AdminFeaturedListings = lazy(adminLoaders.AdminFeaturedListings);
 const AdminAuditLog = lazy(adminLoaders.AdminAuditLog);
 const AdminWebhookLogs = lazy(adminLoaders.AdminWebhookLogs);
+const AdminUserDetail = lazy(adminLoaders.AdminUserDetail);
 
 const AdminFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -199,25 +201,26 @@ const App = () => (
             <Route path="/creator/announcements" element={<CreatorRoute><CreatorAnnouncements /></CreatorRoute>} />
             <Route path="/creator/discussions" element={<CreatorRoute><CreatorDiscussions /></CreatorRoute>} />
 
-            {/* Admin panel (lazy-loaded) */}
+            {/* Admin panel — admin: full; support: students/support/courses; finance: payments/commissions/payouts/revenue */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardHome /></AdminRoute>} />
-            <Route path="/admin/creators" element={<AdminRoute><AdminCreators /></AdminRoute>} />
-            <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
-            <Route path="/admin/courses/new-platform" element={<AdminRoute><AdminPlatformCourseNew /></AdminRoute>} />
-            <Route path="/admin/platform-courses" element={<AdminRoute><AdminPlatformCourses /></AdminRoute>} />
-            <Route path="/admin/students" element={<AdminRoute><AdminStudents /></AdminRoute>} />
-            <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
-            <Route path="/admin/commissions" element={<AdminRoute><AdminCommissions /></AdminRoute>} />
-            <Route path="/admin/payouts" element={<AdminRoute><AdminPayouts /></AdminRoute>} />
-            <Route path="/admin/standard-bundle" element={<AdminRoute><AdminStandardBundle /></AdminRoute>} />
-            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-            <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
-            <Route path="/admin/videos" element={<AdminRoute><AdminVideos /></AdminRoute>} />
-            <Route path="/admin/creator-pro" element={<AdminRoute><AdminCreatorPro /></AdminRoute>} />
-            <Route path="/admin/revenue" element={<AdminRoute><AdminRevenue /></AdminRoute>} />
-            <Route path="/admin/featured" element={<AdminRoute><AdminFeaturedListings /></AdminRoute>} />
+            <Route path="/admin/creators" element={<AdminRoute allow={['admin']}><AdminCreators /></AdminRoute>} />
+            <Route path="/admin/courses" element={<AdminRoute allow={['admin', 'support']}><AdminCourses /></AdminRoute>} />
+            <Route path="/admin/courses/new-platform" element={<AdminRoute allow={['admin']}><AdminPlatformCourseNew /></AdminRoute>} />
+            <Route path="/admin/platform-courses" element={<AdminRoute allow={['admin']}><AdminPlatformCourses /></AdminRoute>} />
+            <Route path="/admin/students" element={<AdminRoute allow={['admin', 'support']}><AdminStudents /></AdminRoute>} />
+            <Route path="/admin/users/:id" element={<AdminRoute allow={['admin', 'support']}><AdminUserDetail /></AdminRoute>} />
+            <Route path="/admin/payments" element={<AdminRoute allow={['admin', 'finance']}><AdminPayments /></AdminRoute>} />
+            <Route path="/admin/commissions" element={<AdminRoute allow={['admin', 'finance']}><AdminCommissions /></AdminRoute>} />
+            <Route path="/admin/payouts" element={<AdminRoute allow={['admin', 'finance']}><AdminPayouts /></AdminRoute>} />
+            <Route path="/admin/standard-bundle" element={<AdminRoute allow={['admin']}><AdminStandardBundle /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute allow={['admin']}><AdminSettings /></AdminRoute>} />
+            <Route path="/admin/support" element={<AdminRoute allow={['admin', 'support']}><AdminSupport /></AdminRoute>} />
+            <Route path="/admin/videos" element={<AdminRoute allow={['admin']}><AdminVideos /></AdminRoute>} />
+            <Route path="/admin/creator-pro" element={<AdminRoute allow={['admin']}><AdminCreatorPro /></AdminRoute>} />
+            <Route path="/admin/revenue" element={<AdminRoute allow={['admin', 'finance']}><AdminRevenue /></AdminRoute>} />
+            <Route path="/admin/featured" element={<AdminRoute allow={['admin']}><AdminFeaturedListings /></AdminRoute>} />
             <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
-            <Route path="/admin/webhook-logs" element={<AdminRoute><AdminWebhookLogs /></AdminRoute>} />
+            <Route path="/admin/webhook-logs" element={<AdminRoute allow={['admin']}><AdminWebhookLogs /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
