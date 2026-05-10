@@ -95,20 +95,22 @@ const HowItWorks = () => (
 
       <div className="mt-10">
         <Tabs defaultValue="students" className="w-full">
-          <TabsList className="mx-auto h-11 rounded-full bg-card p-1 shadow-soft">
-            <TabsTrigger
-              value="students"
-              className="rounded-full px-6 text-sm font-semibold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm"
-            >
-              For Learners
-            </TabsTrigger>
-            <TabsTrigger
-              value="creators"
-              className="rounded-full px-6 text-sm font-semibold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm"
-            >
-              For Creators
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex justify-center">
+            <TabsList className="h-11 rounded-full bg-card p-1 shadow-soft">
+              <TabsTrigger
+                value="students"
+                className="rounded-full px-6 text-sm font-semibold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm"
+              >
+                For Learners
+              </TabsTrigger>
+              <TabsTrigger
+                value="creators"
+                className="rounded-full px-6 text-sm font-semibold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm"
+              >
+                For Creators
+              </TabsTrigger>
+            </TabsList>
+          </div>
           <TabsContent value="students">
             <StepCards steps={studentSteps} />
           </TabsContent>

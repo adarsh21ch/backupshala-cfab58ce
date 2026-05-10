@@ -35,10 +35,10 @@ const LandingNavbar = () => {
 
         <div className="hidden items-center gap-5 xl:gap-7 lg:flex whitespace-nowrap">
           <Link to="/explore" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Explore Courses</Link>
-          <a href="/#standard-bundle" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Standard Bundle</a>
+          <Link to="/#standard-bundle" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Standard Bundle</Link>
           <Link to="/advanced" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">Advanced</Link>
-          <a href="/#for-creators" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">For Creators</a>
-          <a href="/#how-it-works" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">How It Works</a>
+          <Link to="/#for-creators" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">For Creators</Link>
+          <Link to="/#how-it-works" className="nav-underline text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">How It Works</Link>
 
           <ThemeToggle />
 
@@ -111,10 +111,10 @@ const LandingNavbar = () => {
             </SheetHeader>
             <div className="flex-1 overflow-y-auto p-4 space-y-1">
               <Link to="/explore" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Explore Courses</Link>
-              <a href="/#standard-bundle" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Standard Bundle</a>
+              <Link to="/#standard-bundle" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Standard Bundle</Link>
               <Link to="/advanced" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">Advanced</Link>
-              <a href="/#for-creators" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">For Creators</a>
-              <a href="/#how-it-works" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">How It Works</a>
+              <Link to="/#for-creators" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">For Creators</Link>
+              <Link to="/#how-it-works" onClick={closeAnd()} className="block rounded-lg px-3 py-3 text-sm font-medium hover:bg-secondary">How It Works</Link>
               {user && (
                 <>
                   <div className="my-2 h-px bg-border" />
