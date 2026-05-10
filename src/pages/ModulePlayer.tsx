@@ -482,7 +482,11 @@ const ModulePlayer = () => {
                   );
                 }
 
-                // Fallback: legacy iframe (YouTube/Vimeo embed) with watermark overlay
+                // Fallback: legacy iframe (YouTube/Vimeo embed) — only when there's a real URL
+                if (!m.video_url || typeof m.video_url !== 'string' || !m.video_url.startsWith('http')) {
+                  // No module-level video — chapters (rendered below) carry the content.
+                  return null;
+                }
                 return (
                   <div className="relative">
                     <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-card">
