@@ -44,6 +44,35 @@ export const emailTpl = {
        <p><strong>Reason:</strong> ${reason}</p>
        <p>It typically reflects within 5–7 business days.</p>`)
   }),
+  payoutApproved: (name: string, amount: number, method: string) => ({
+    subject: `Payout approved: ₹${amount.toFixed(0)} ✅`,
+    html: wrap('Your payout has been approved',
+      `<p>Hi ${name || 'there'}, your payout request of <strong>₹${amount.toFixed(0)}</strong> via <strong>${method}</strong> has been approved.</p>
+       <p>It typically reflects in your account within 1–3 business days.</p>`,
+      'View Wallet', `${SITE}/wallet`)
+  }),
+  payoutRejected: (name: string, amount: number, reason: string) => ({
+    subject: `Payout request needs attention`,
+    html: wrap('Payout could not be processed',
+      `<p>Hi ${name || 'there'}, your payout request of <strong>₹${amount.toFixed(0)}</strong> could not be processed.</p>
+       <p><strong>Reason:</strong> ${reason}</p>
+       <p>The amount remains in your wallet. Please update your details and try again.</p>`,
+      'View Wallet', `${SITE}/wallet`)
+  }),
+  mentorUnlockApproved: (name: string, courseTitle: string, moduleTitle: string) => ({
+    subject: `Module unlocked: ${moduleTitle} 🔓`,
+    html: wrap('Your mentor has unlocked the next module',
+      `<p>Hi ${name || 'there'}, your mentor has approved your unlock request for <strong>${moduleTitle}</strong> in <strong>${courseTitle}</strong>.</p>
+       <p>You can continue learning right away.</p>`,
+      'Continue Learning', `${SITE}/dashboard`)
+  }),
+  certificateIssued: (name: string, courseTitle: string, certCode: string) => ({
+    subject: `Congratulations! Your certificate is ready 🏆`,
+    html: wrap('You completed the course! 🏆',
+      `<p>Hi ${name || 'there'}, you've successfully completed <strong>${courseTitle}</strong>.</p>
+       <p>Your certificate code: <strong style="font-family:monospace">${certCode}</strong></p>`,
+      'View Certificate', `${SITE}/certificate/${certCode}`)
+  }),
 };
 
 export async function sendEmail(supabase: any, to: string | string[], tpl: { subject: string; html: string }) {
@@ -52,5 +81,27 @@ export async function sendEmail(supabase: any, to: string | string[], tpl: { sub
     if (error) console.error('sendEmail error:', error);
   } catch (e) {
     console.error('sendEmail exception', e);
+  }
+}
+
+// Log uncaught edge function errors to system_errors for admin visibility
+export async function logSystemError(
+  supabase: any,
+  functionName: string,
+  err: unknown,
+  context: Record<string, unknown> = {},
+  severity: 'error' | 'warning' | 'critical' = 'error',
+) {
+  try {
+    const e = err as Error;
+    await supabase.from('system_errors').insert({
+      function_name: functionName,
+      error_message: e?.message || String(err),
+      error_stack: e?.stack || null,
+      context,
+      severity,
+    });
+  } catch (logErr) {
+    console.error('logSystemError failed', logErr);
   }
 }
