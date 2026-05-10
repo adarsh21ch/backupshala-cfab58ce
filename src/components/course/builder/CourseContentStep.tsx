@@ -187,6 +187,30 @@ const CourseContentStep = ({ courseId, isNew, onSaveFirst }: Props) => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const reorderModule = useMutation({
+    mutationFn: async ({ index, dir }: { index: number; dir: -1 | 1 }) => {
+      const target = index + dir;
+      if (target < 0 || target >= modules.length) return;
+      const a = modules[index];
+      const b = modules[target];
+      // Swap order_index of two modules
+      const { error: e1 } = await supabase
+        .from("modules")
+        .update({ order_index: b.order_index })
+        .eq("id", a.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase
+        .from("modules")
+        .update({ order_index: a.order_index })
+        .eq("id", b.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["builder-modules", courseId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const selectedModule =
     selected?.type === "module" ? modules.find((m) => m.id === selected.id) : null;
   const selectedChapter =
