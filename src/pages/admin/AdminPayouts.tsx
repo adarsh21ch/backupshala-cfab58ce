@@ -223,9 +223,11 @@ const AdminPayouts = () => {
                               <div className="flex gap-2 justify-end">
                                 {r.status === 'pending' && (
                                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={async () => {
-                                    await supabase.from('payout_requests').update({ status: 'processing' }).eq('id', r.id);
-                                    qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
-                                    toast.success('Marked as processing');
+                                    try {
+                                      await invokeAction('set_processing', { payout_id: r.id });
+                                      qc.invalidateQueries({ queryKey: ['admin-payout-requests'] });
+                                      toast.success('Marked as processing');
+                                    } catch (e: any) { toast.error(e.message); }
                                   }}>
                                     <Clock className="h-3 w-3 mr-1" /> Processing
                                   </Button>
