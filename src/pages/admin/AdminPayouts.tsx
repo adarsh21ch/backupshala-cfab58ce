@@ -270,7 +270,7 @@ const AdminPayouts = () => {
                 <Input value={adminNote} onChange={e => setAdminNote(e.target.value)} placeholder="Optional note" className="mt-1" />
               </div>
               <Button
-                onClick={() => completeMutation.mutate({ id: completeModal.id, userId: completeModal.user_id, amount: completeModal.amount })}
+                onClick={() => completeMutation.mutate({ id: completeModal.id })}
                 disabled={completeMutation.isPending || !utrNumber.trim()}
                 className="w-full bg-primary hover:bg-primary/90"
               >
@@ -299,7 +299,7 @@ const AdminPayouts = () => {
                 <p className="text-xs text-muted-foreground">The full amount will be returned to the user's wallet.</p>
               </div>
               <Button
-                onClick={() => rejectMutation.mutate({ id: rejectModal.id, userId: rejectModal.user_id, amount: rejectModal.amount })}
+                onClick={() => rejectMutation.mutate({ id: rejectModal.id })}
                 disabled={rejectMutation.isPending || !rejectReason.trim()}
                 variant="destructive"
                 className="w-full"
