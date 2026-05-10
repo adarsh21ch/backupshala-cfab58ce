@@ -88,6 +88,11 @@ const Signup = () => {
         },
       });
       if (error) throw error;
+      // Welcome email (fire-and-forget)
+      try {
+        const { emailTpl, sendEmail } = await import('@/lib/emailTemplates');
+        await sendEmail(supabase, form.email.toLowerCase().trim(), emailTpl.welcome(form.fullName.trim()));
+      } catch {}
       toast({ title: 'Account created! 🎉', description: 'Please verify your email to get started.' });
       navigate(`/verify-email?email=${encodeURIComponent(form.email.toLowerCase().trim())}`);
     } catch (error: any) {

@@ -79,6 +79,15 @@ const AdminPayouts = () => {
         message: `Your withdrawal has been processed. Please allow 1 business day for it to reflect.`,
         type: 'payout',
       });
+
+      // Email
+      try {
+        const { emailTpl, sendEmail } = await import('@/lib/emailTemplates');
+        const prof = (requests || []).find((r: any) => r.user_id === userId);
+        const email = prof?.profiles?.email;
+        const name = prof?.profiles?.full_name;
+        if (email) await sendEmail(supabase, email, emailTpl.payoutApproved(name, amount, utrNumber.trim()));
+      } catch {}
     },
     onSuccess: () => {
       toast.success('Payout marked as completed');
@@ -134,6 +143,15 @@ const AdminPayouts = () => {
         message: `Reason: ${rejectReason.trim()}. The amount has been returned to your wallet.`,
         type: 'payout',
       });
+
+      // Email
+      try {
+        const { emailTpl, sendEmail } = await import('@/lib/emailTemplates');
+        const prof = (requests || []).find((r: any) => r.user_id === userId);
+        const email = prof?.profiles?.email;
+        const name = prof?.profiles?.full_name;
+        if (email) await sendEmail(supabase, email, emailTpl.payoutRejected(name, amount, rejectReason.trim()));
+      } catch {}
     },
     onSuccess: () => {
       toast.success('Payout rejected and amount reversed');

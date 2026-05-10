@@ -37,6 +37,13 @@ const Contact = () => {
     if (error) {
       toast.error('Failed to submit. Please try again.');
     } else {
+      // Fire-and-forget confirmation + admin alert emails
+      try {
+        const { emailTpl, sendEmail } = await import('@/lib/emailTemplates');
+        await sendEmail(supabase, form.email.trim(), emailTpl.contactReceived(form.name.trim(), form.subject));
+        await sendEmail(supabase, 'support@backupshala.com',
+          emailTpl.contactAdminAlert(form.name.trim(), form.email.trim(), form.subject, form.message.trim()));
+      } catch {}
       setSubmitted(true);
     }
     setLoading(false);
