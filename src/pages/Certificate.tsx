@@ -8,6 +8,8 @@ import { Award, Download, Share2, ExternalLink } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import BackButton from '@/components/BackButton';
+import { downloadCertificatePdf } from '@/lib/certificatePdf';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const Certificate = () => {
   const { user, profile } = useAuth();
