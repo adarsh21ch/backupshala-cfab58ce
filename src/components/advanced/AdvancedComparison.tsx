@@ -56,9 +56,8 @@ const AdvancedComparison = ({ basicLabel, advancedLabel, enrollHref }: Props) =>
 
             {/* Rows */}
             {rows.map((row, i) => (
-              <>
+              <Fragment key={i}>
                 <div
-                  key={`l-${i}`}
                   className={`px-5 py-4 text-slate-200 ${
                     i < rows.length - 1 ? 'border-b border-white/5' : ''
                   }`}
@@ -66,7 +65,6 @@ const AdvancedComparison = ({ basicLabel, advancedLabel, enrollHref }: Props) =>
                   {row.label}
                 </div>
                 <div
-                  key={`b-${i}`}
                   className={`flex items-center justify-center px-5 py-4 ${
                     i < rows.length - 1 ? 'border-b border-white/5' : ''
                   }`}
@@ -74,14 +72,13 @@ const AdvancedComparison = ({ basicLabel, advancedLabel, enrollHref }: Props) =>
                   <Cell value={row.basic} />
                 </div>
                 <div
-                  key={`a-${i}`}
                   className={`flex items-center justify-center bg-amber-400/[0.04] px-5 py-4 ${
                     i < rows.length - 1 ? 'border-b border-amber-400/10' : ''
                   }`}
                 >
                   <Cell value={row.advanced} />
                 </div>
-              </>
+              </Fragment>
             ))}
           </div>
 
