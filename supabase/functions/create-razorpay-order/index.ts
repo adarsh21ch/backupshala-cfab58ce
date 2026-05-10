@@ -209,6 +209,7 @@ Deno.serve(async (req) => {
         commission_amount,
         creator_payout_amount,
         status: "pending",
+        coupon_id: appliedCoupon?.id ?? null,
       })
       .select("id")
       .single();
