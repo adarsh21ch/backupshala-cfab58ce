@@ -76,6 +76,7 @@ const adminLoaders = {
   AdminPayments: () => import("./pages/admin/AdminPayments"),
   AdminCommissions: () => import("./pages/admin/AdminCommissions"),
   AdminPayouts: () => import("./pages/admin/AdminPayouts"),
+  AdminPayoutRuns: () => import("./pages/admin/AdminPayoutRuns"),
   AdminSettings: () => import("./pages/admin/AdminSettings"),
   AdminSupport: () => import("./pages/admin/AdminSupport"),
   AdminStandardBundle: () => import("./pages/admin/AdminStandardBundle"),
@@ -108,6 +109,7 @@ const AdminStudents = lazy(adminLoaders.AdminStudents);
 const AdminPayments = lazy(adminLoaders.AdminPayments);
 const AdminCommissions = lazy(adminLoaders.AdminCommissions);
 const AdminPayouts = lazy(adminLoaders.AdminPayouts);
+const AdminPayoutRuns = lazy(adminLoaders.AdminPayoutRuns);
 const AdminSettings = lazy(adminLoaders.AdminSettings);
 const AdminSupport = lazy(adminLoaders.AdminSupport);
 const AdminStandardBundle = lazy(adminLoaders.AdminStandardBundle);
@@ -218,6 +220,7 @@ const App = () => (
             <Route path="/admin/payments" element={<AdminRoute allow={['admin', 'finance']}><AdminPayments /></AdminRoute>} />
             <Route path="/admin/commissions" element={<AdminRoute allow={['admin', 'finance']}><AdminCommissions /></AdminRoute>} />
             <Route path="/admin/payouts" element={<AdminRoute allow={['admin', 'finance']}><AdminPayouts /></AdminRoute>} />
+            <Route path="/admin/payout-runs" element={<AdminRoute allow={['admin', 'finance']}><AdminPayoutRuns /></AdminRoute>} />
             <Route path="/admin/standard-bundle" element={<AdminRoute allow={['admin']}><AdminStandardBundle /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute allow={['admin']}><AdminSettings /></AdminRoute>} />
             <Route path="/admin/support" element={<AdminRoute allow={['admin', 'support']}><AdminSupport /></AdminRoute>} />
