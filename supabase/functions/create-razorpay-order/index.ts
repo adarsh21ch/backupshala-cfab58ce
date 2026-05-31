@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     // Fetch course
     const { data: course, error: courseError } = await supabase
       .from("courses")
-      .select("price, commission_percent, platform_fee_percent, creator_id, title")
+      .select("price, commission_percent, platform_fee_percent, creator_id, title, tier_slug")
       .eq("id", course_id)
       .eq("status", "published")
       .single();
@@ -90,9 +90,29 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ---- Resolve the real price (NEVER trust a client-sent price) ----
+    // Platform-bundle courses linked to a pricing tier derive their price from
+    // pricing_tiers (the single source of truth). Only "live" tiers are sellable.
+    let resolvedPrice = Number(course.price);
+    if (course.tier_slug) {
+      const { getTierBySlug } = await import("../_shared/tiers.ts");
+      const tier = await getTierBySlug(supabase, course.tier_slug as string);
+      if (!tier) {
+        return new Response(JSON.stringify({ error: "Pricing tier not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (tier.status !== "live") {
+        return new Response(JSON.stringify({ error: "This tier is not available for purchase yet" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      resolvedPrice = tier.price;
+    }
+
     // ---- Server-side coupon application (NEVER trust client price) ----
     let appliedCoupon: { id: string; code: string; discount: number } | null = null;
-    const originalPrice = Number(course.price);
+    const originalPrice = resolvedPrice;
     let amount_total = originalPrice;
 
     if (coupon_code && typeof coupon_code === "string") {
