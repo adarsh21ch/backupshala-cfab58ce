@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Check, Award, Users, GraduationCap, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { usePricingTiers } from '@/hooks/usePricingTiers';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import LandingNavbar from '@/components/landing/Navbar';
@@ -14,13 +14,16 @@ import AdvancedFAQ from '@/components/advanced/AdvancedFAQ';
 import AdvancedStickyBar from '@/components/advanced/AdvancedStickyBar';
 
 const Advanced = () => {
-  const { data: parsed, isLoading } = usePlatformSettings();
-  const advancedLabel = isLoading ? '—' : `₹${parsed.advanced_price.toLocaleString('en-IN')}`;
-  const basicLabel = isLoading ? '—' : `₹${parsed.basic_price.toLocaleString('en-IN')}`;
+  const { data: tiers, isLoading } = usePricingTiers();
+  const advancedTier = tiers?.find(t => t.slug === 'advanced');
+  const entryTier = (tiers || []).filter(t => t.status === 'live').sort((a, b) => a.price - b.price)[0];
+  const fmt = (n?: number) => (n == null ? '—' : `₹${n.toLocaleString('en-IN')}`);
+  const advancedLabel = isLoading ? '—' : fmt(advancedTier?.price);
+  const basicLabel = isLoading ? '—' : fmt(entryTier?.price);
   // Suggested value = ~2x advanced for crossed-out anchor pricing
-  const suggestedValue = isLoading
+  const suggestedValue = isLoading || !advancedTier
     ? ''
-    : `₹${(parsed.advanced_price * 2).toLocaleString('en-IN')}`;
+    : `₹${(advancedTier.price * 2).toLocaleString('en-IN')}`;
 
   const { data: advancedCourseId } = useQuery({
     queryKey: ['advanced-course-id'],
@@ -37,7 +40,7 @@ const Advanced = () => {
   const enrollHref = advancedCourseId ? `/courses/${advancedCourseId}` : '/login';
 
   const features = [
-    { icon: Award, title: 'Standard Bundle included', desc: 'Get the ₹449 Basic course free with Advanced enrolment.' },
+    { icon: Award, title: 'Standard Bundle included', desc: `Get the ${basicLabel} Starter course free with Advanced enrolment.` },
     { icon: GraduationCap, title: 'Advanced playbooks', desc: 'Deep frameworks proven to convert students into earners.' },
     { icon: Users, title: 'Live mentor sessions', desc: 'Weekly live calls + private community access.' },
     { icon: Star, title: '1:1 priority support', desc: 'Dedicated guidance slots when you need help.' },

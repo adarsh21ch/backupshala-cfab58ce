@@ -10,6 +10,7 @@ import ForCreators from '@/components/landing/ForCreators';
 import Testimonials from '@/components/landing/Testimonials';
 import CreatorCTA from '@/components/landing/CreatorCTA';
 import FAQ from '@/components/landing/FAQ';
+import PricingTiers from '@/components/pricing/PricingTiers';
 import Footer from '@/components/landing/Footer';
 import SEOHead from '@/components/SEOHead';
 
@@ -20,6 +21,7 @@ const Index = () => (
     <Hero />
     <StatsBar />
     <StandardBundleSpotlight />
+    <PricingTiers />
     <HowItWorks />
     <ForStudents />
     <CoursesSection />

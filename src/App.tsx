@@ -42,6 +42,7 @@ import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import Pricing from "./pages/Pricing";
 import CreatorVideos from "./pages/creator/CreatorVideos";
 import CreatorSettings from "./pages/creator/CreatorSettings";
 import CreatorUnlockRequests from "./pages/creator/CreatorUnlockRequests";
@@ -72,6 +73,7 @@ const adminLoaders = {
   AdminCourses: () => import("./pages/admin/AdminCourses"),
   AdminPlatformCourseNew: () => import("./pages/admin/AdminPlatformCourseNew"),
   AdminPlatformCourses: () => import("./pages/admin/AdminPlatformCourses"),
+  AdminPricingTiers: () => import("./pages/admin/AdminPricingTiers"),
   AdminStudents: () => import("./pages/admin/AdminStudents"),
   AdminPayments: () => import("./pages/admin/AdminPayments"),
   AdminCommissions: () => import("./pages/admin/AdminCommissions"),
@@ -105,6 +107,7 @@ const AdminCreators = lazy(adminLoaders.AdminCreators);
 const AdminCourses = lazy(adminLoaders.AdminCourses);
 const AdminPlatformCourseNew = lazy(adminLoaders.AdminPlatformCourseNew);
 const AdminPlatformCourses = lazy(adminLoaders.AdminPlatformCourses);
+const AdminPricingTiers = lazy(adminLoaders.AdminPricingTiers);
 const AdminStudents = lazy(adminLoaders.AdminStudents);
 const AdminPayments = lazy(adminLoaders.AdminPayments);
 const AdminCommissions = lazy(adminLoaders.AdminCommissions);
@@ -154,6 +157,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/advanced" element={<Advanced />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/c/:creatorSlug" element={<CreatorProfile />} />
             <Route path="/c/:creatorSlug/:courseSlug" element={<CourseEnrollment />} />
             <Route path="/login" element={<Login />} />
@@ -215,6 +219,7 @@ const App = () => (
             <Route path="/admin/courses" element={<AdminRoute allow={['admin', 'support']}><AdminCourses /></AdminRoute>} />
             <Route path="/admin/courses/new-platform" element={<AdminRoute allow={['admin']}><AdminPlatformCourseNew /></AdminRoute>} />
             <Route path="/admin/platform-courses" element={<AdminRoute allow={['admin']}><AdminPlatformCourses /></AdminRoute>} />
+            <Route path="/admin/pricing-tiers" element={<AdminRoute allow={['admin']}><AdminPricingTiers /></AdminRoute>} />
             <Route path="/admin/students" element={<AdminRoute allow={['admin', 'support']}><AdminStudents /></AdminRoute>} />
             <Route path="/admin/users/:id" element={<AdminRoute allow={['admin', 'support']}><AdminUserDetail /></AdminRoute>} />
             <Route path="/admin/payments" element={<AdminRoute allow={['admin', 'finance']}><AdminPayments /></AdminRoute>} />

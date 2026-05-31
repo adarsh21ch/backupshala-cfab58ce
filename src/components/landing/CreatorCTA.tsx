@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Rocket } from 'lucide-react';
-import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { useEntryLiveTier } from '@/hooks/usePricingTiers';
 
 const CreatorCTA = () => {
-  const { data: settings, isLoading } = usePlatformSettings();
-  const priceLabel = isLoading ? '—' : `₹${settings.basic_price}`;
+  const { priceLabel } = useEntryLiveTier();
   return (
   <section className="py-16 md:py-24">
     <div className="container mx-auto px-4">

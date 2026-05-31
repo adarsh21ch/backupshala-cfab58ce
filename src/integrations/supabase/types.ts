@@ -579,6 +579,7 @@ export type Database = {
           status: string
           tags: string[] | null
           thumbnail_url: string | null
+          tier_slug: string | null
           title: string
           total_duration_minutes: number | null
           total_modules: number | null
@@ -623,6 +624,7 @@ export type Database = {
           status?: string
           tags?: string[] | null
           thumbnail_url?: string | null
+          tier_slug?: string | null
           title: string
           total_duration_minutes?: number | null
           total_modules?: number | null
@@ -667,6 +669,7 @@ export type Database = {
           status?: string
           tags?: string[] | null
           thumbnail_url?: string | null
+          tier_slug?: string | null
           title?: string
           total_duration_minutes?: number | null
           total_modules?: number | null
@@ -690,6 +693,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_creator_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_tier_slug_fkey"
+            columns: ["tier_slug"]
+            isOneToOne: false
+            referencedRelation: "pricing_tiers"
+            referencedColumns: ["slug"]
           },
         ]
       }
@@ -1835,6 +1845,54 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_tiers: {
+        Row: {
+          badge: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          features: Json
+          highlight: boolean
+          id: string
+          name: string
+          price: number
+          slug: string
+          status: string
+          tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          features?: Json
+          highlight?: boolean
+          id?: string
+          name: string
+          price: number
+          slug: string
+          status?: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          features?: Json
+          highlight?: boolean
+          id?: string
+          name?: string
+          price?: number
+          slug?: string
+          status?: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           auto_payout_enabled: boolean
@@ -2008,6 +2066,30 @@ export type Database = {
           function_name?: string
           id?: string
           severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      tier_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          tier_slug: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          tier_slug: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          tier_slug?: string
           user_id?: string | null
         }
         Relationships: []

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Star } from 'lucide-react';
-import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { useEntryLiveTier } from '@/hooks/usePricingTiers';
 
 const avatars = [
   { initial: 'A', bg: 'bg-primary/80' },
@@ -11,8 +11,7 @@ const avatars = [
 ];
 
 const Hero = () => {
-  const { data: settings, isLoading } = usePlatformSettings();
-  const priceLabel = isLoading ? '—' : `₹${settings.basic_price}`;
+  const { priceLabel } = useEntryLiveTier();
   const features = [
     `${priceLabel} One-time access fee`,
     '5+ Digital skill courses',

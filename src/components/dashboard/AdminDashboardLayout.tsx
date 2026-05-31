@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles, ChevronDown, Webhook, AlertCircle, CalendarClock } from 'lucide-react';
+import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles, ChevronDown, Webhook, AlertCircle, CalendarClock, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useMemo, useEffect } from 'react';
 import { prefetchAdminRoutes } from '@/App';
@@ -44,6 +44,7 @@ const groups: Group[] = [
     label: 'PLATFORM',
     items: [
       { to: '/admin/platform-courses', label: 'Platform Courses', icon: Trophy, allow: ['admin'] },
+      { to: '/admin/pricing-tiers', label: 'Pricing Tiers', icon: Layers, allow: ['admin'] },
       { to: '/admin/featured', label: 'Featured', icon: Sparkles, allow: ['admin'] },
       { to: '/admin/creator-pro', label: 'Creator Pro', icon: Star, allow: ['admin'] },
       { to: '/admin/support', label: 'Support', icon: MessageSquare, allow: ['admin', 'support'] },
