@@ -80,6 +80,10 @@ const AdminPayoutRuns = () => {
           </Button>
         </div>
 
+        <PayoutSheet compact />
+
+
+
         <Card className="bg-card border-border">
           <CardContent className="p-0">
             <Table>
