@@ -56,18 +56,8 @@ const Signup = () => {
     return Object.keys(e).length === 0;
   };
 
-  const getPasswordStrength = () => {
-    const p = form.password;
-    if (!p) return { label: '', color: '', width: '0%' };
-    let score = 0;
-    if (p.length >= 8) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    if (score <= 1) return { label: 'Weak', color: 'bg-destructive', width: '25%' };
-    if (score === 2) return { label: 'Fair', color: 'bg-accent', width: '50%' };
-    if (score === 3) return { label: 'Good', color: 'bg-primary/70', width: '75%' };
-    return { label: 'Strong', color: 'bg-primary', width: '100%' };
+  const isPasswordValid = () => {
+    return form.password.length >= 8;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
