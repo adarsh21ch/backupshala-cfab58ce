@@ -55,29 +55,40 @@ const AutoPayoutCard = () => {
 
   const save = async () => {
     if (!user) return;
-    const update: Record<string, unknown> = { auto_payout_enabled: enabled, payout_method: method };
+
+    let payoutFields: {
+      payout_upi_id?: string | null;
+      payout_bank_name?: string | null;
+      payout_account_holder?: string | null;
+      payout_account_number?: string | null;
+      payout_ifsc_code?: string | null;
+    } = {};
 
     if (method === 'upi') {
       if (!/^[a-zA-Z0-9._-]+@[a-zA-Z]{2,}$/.test(upiId.trim())) {
         toast({ title: 'Invalid UPI ID (e.g. name@bank)', variant: 'destructive' }); return;
       }
-      update.payout_upi_id = upiId.trim();
+      payoutFields = { payout_upi_id: upiId.trim() };
     } else {
       if (!bankName.trim() || !accountHolder.trim()) { toast({ title: 'Bank name & holder required', variant: 'destructive' }); return; }
       if (!/^\d{9,18}$/.test(accountNumber.trim())) { toast({ title: 'Account number must be 9-18 digits', variant: 'destructive' }); return; }
       if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.trim().toUpperCase())) { toast({ title: 'Invalid IFSC code', variant: 'destructive' }); return; }
-      update.payout_bank_name = bankName.trim();
-      update.payout_account_holder = accountHolder.trim();
-      update.payout_account_number = accountNumber.trim();
-      update.payout_ifsc_code = ifscCode.trim().toUpperCase();
+      payoutFields = {
+        payout_bank_name: bankName.trim(),
+        payout_account_holder: accountHolder.trim(),
+        payout_account_number: accountNumber.trim(),
+        payout_ifsc_code: ifscCode.trim().toUpperCase(),
+      };
     }
 
     const panUp = pan.trim().toUpperCase();
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panUp)) { toast({ title: 'Valid PAN required (e.g. ABCDE1234F)', variant: 'destructive' }); return; }
-    update.pan_number = panUp;
 
     setSaving(true);
-    const { error } = await supabase.from('profiles').update(update).eq('id', user.id);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ auto_payout_enabled: enabled, payout_method: method, pan_number: panUp, ...payoutFields })
+      .eq('id', user.id);
     setSaving(false);
     if (error) { toast({ title: 'Failed to save', description: error.message, variant: 'destructive' }); return; }
     toast({ title: 'Auto-payout details saved ✓' });
