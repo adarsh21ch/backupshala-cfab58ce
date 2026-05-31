@@ -204,7 +204,14 @@ const AdminPayouts = () => {
                               <p className="text-xs text-muted-foreground">{r.profiles?.email}</p>
                             </div>
                           </TableCell>
-                          <TableCell><Badge variant="secondary" className="border-0">{getUserType(r)}</Badge></TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="secondary" className="border-0 w-fit">{getUserType(r)}</Badge>
+                              {r.source === 'auto_weekly' && (
+                                <Badge variant="secondary" className="border-0 w-fit bg-blue-100 text-blue-700 text-[10px]">Auto (weekly)</Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell className="font-semibold">{formatINR(r.amount)}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {r.upi_id ? `UPI: ${r.upi_id}` : `Bank: ${r.bank_name} / ${maskAccount(r.account_number || '')}`}
