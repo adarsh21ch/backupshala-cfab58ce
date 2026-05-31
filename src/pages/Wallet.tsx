@@ -14,6 +14,7 @@ import { formatPrice, timeAgo } from '@/lib/format';
 import BackButton from '@/components/BackButton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import WithdrawalForm from '@/components/wallet/WithdrawalForm';
+import AutoPayoutCard from '@/components/wallet/AutoPayoutCard';
 
 const Wallet = () => {
   const { user } = useAuth();
@@ -161,6 +162,9 @@ const Wallet = () => {
             {canWithdraw ? 'Withdraw' : `Minimum ₹500 (you have ₹${Math.round(actualAvailable)})`}
           </Button>
         </div>
+
+        {/* Automatic weekly payout */}
+        <AutoPayoutCard />
 
         {/* Transaction History */}
         <div>
