@@ -56,19 +56,6 @@ const Signup = () => {
     return Object.keys(e).length === 0;
   };
 
-  const getPasswordStrength = () => {
-    const p = form.password;
-    if (!p) return { label: '', color: '', width: '0%' };
-    let score = 0;
-    if (p.length >= 8) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    if (score <= 1) return { label: 'Weak', color: 'bg-destructive', width: '25%' };
-    if (score === 2) return { label: 'Fair', color: 'bg-accent', width: '50%' };
-    if (score === 3) return { label: 'Good', color: 'bg-primary/70', width: '75%' };
-    return { label: 'Strong', color: 'bg-primary', width: '100%' };
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,8 +88,6 @@ const Signup = () => {
       setLoading(false);
     }
   };
-
-  const strength = getPasswordStrength();
 
   return (
     <div
@@ -150,13 +135,8 @@ const Signup = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {form.password && (
-                <div className="mt-2">
-                  <div className="h-1.5 w-full rounded-full bg-muted">
-                    <div className={`h-full rounded-full transition-all ${strength.color}`} style={{ width: strength.width }} />
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{strength.label}</p>
-                </div>
+              {form.password && form.password.length < 8 && (
+                <p className="mt-1 text-xs text-muted-foreground">Password must be at least 8 characters</p>
               )}
               {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
             </div>
