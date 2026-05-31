@@ -44,6 +44,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           certificate_code: string
@@ -1678,6 +1696,7 @@ export type Database = {
           rejection_reason: string | null
           request_type: string
           requested_at: string
+          source: string
           status: string
           upi_id: string | null
           user_id: string
@@ -1695,6 +1714,7 @@ export type Database = {
           rejection_reason?: string | null
           request_type: string
           requested_at?: string
+          source?: string
           status?: string
           upi_id?: string | null
           user_id: string
@@ -1712,6 +1732,7 @@ export type Database = {
           rejection_reason?: string | null
           request_type?: string
           requested_at?: string
+          source?: string
           status?: string
           upi_id?: string | null
           user_id?: string
@@ -1732,6 +1753,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payout_runs: {
+        Row: {
+          errors: Json
+          finished_at: string | null
+          id: string
+          run_key: string
+          started_at: string
+          status: string
+          total_amount: number
+          triggered_by: string
+          users_processed: number
+        }
+        Insert: {
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          run_key: string
+          started_at?: string
+          status?: string
+          total_amount?: number
+          triggered_by?: string
+          users_processed?: number
+        }
+        Update: {
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          run_key?: string
+          started_at?: string
+          status?: string
+          total_amount?: number
+          triggered_by?: string
+          users_processed?: number
+        }
+        Relationships: []
       }
       pdf_download_logs: {
         Row: {
@@ -1780,6 +1837,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auto_payout_enabled: boolean
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -1801,6 +1859,12 @@ export type Database = {
           is_verified: boolean
           kyc_verified: boolean
           pan_number: string | null
+          payout_account_holder: string | null
+          payout_account_number: string | null
+          payout_bank_name: string | null
+          payout_ifsc_code: string | null
+          payout_method: string | null
+          payout_upi_id: string | null
           phone: string | null
           referrer_email: string
           total_earned: number
@@ -1811,6 +1875,7 @@ export type Database = {
           wallet_balance: number
         }
         Insert: {
+          auto_payout_enabled?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -1832,6 +1897,12 @@ export type Database = {
           is_verified?: boolean
           kyc_verified?: boolean
           pan_number?: string | null
+          payout_account_holder?: string | null
+          payout_account_number?: string | null
+          payout_bank_name?: string | null
+          payout_ifsc_code?: string | null
+          payout_method?: string | null
+          payout_upi_id?: string | null
           phone?: string | null
           referrer_email?: string
           total_earned?: number
@@ -1842,6 +1913,7 @@ export type Database = {
           wallet_balance?: number
         }
         Update: {
+          auto_payout_enabled?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -1863,6 +1935,12 @@ export type Database = {
           is_verified?: boolean
           kyc_verified?: boolean
           pan_number?: string | null
+          payout_account_holder?: string | null
+          payout_account_number?: string | null
+          payout_bank_name?: string | null
+          payout_ifsc_code?: string | null
+          payout_method?: string | null
+          payout_upi_id?: string | null
           phone?: string | null
           referrer_email?: string
           total_earned?: number
@@ -2795,6 +2873,7 @@ export type Database = {
       get_my_profile: {
         Args: never
         Returns: {
+          auto_payout_enabled: boolean
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -2816,6 +2895,12 @@ export type Database = {
           is_verified: boolean
           kyc_verified: boolean
           pan_number: string | null
+          payout_account_holder: string | null
+          payout_account_number: string | null
+          payout_bank_name: string | null
+          payout_ifsc_code: string | null
+          payout_method: string | null
+          payout_upi_id: string | null
           phone: string | null
           referrer_email: string
           total_earned: number
@@ -2868,6 +2953,7 @@ export type Database = {
           shortfall: number
         }[]
       }
+      wallet_available_balance: { Args: { _user_id: string }; Returns: number }
       wallet_credit_idempotent: {
         Args: {
           _amount: number
