@@ -113,6 +113,7 @@ const Payouts = () => {
       toast({ title: 'Payout request submitted! 🎉' });
       queryClient.invalidateQueries({ queryKey: ['my-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['kyc-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['withdrawable-balance'] });
       refreshProfile();
       setAmount(''); setUpiId(''); setBankName(''); setAccountHolder('');
       setAccountNumber(''); setIfscCode(''); setPanNumber('');
