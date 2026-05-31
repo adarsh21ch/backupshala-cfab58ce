@@ -97,7 +97,7 @@ const AdminPricingTiers = () => {
 
   const audit = async (action: string, target_id: string, details: Record<string, unknown>) => {
     await supabase.from('admin_audit_log').insert({
-      admin_id: user!.id, action, target_type: 'pricing_tier', target_id, details,
+      admin_id: user!.id, action, target_type: 'pricing_tier', target_id, details: details as any,
     });
   };
 
