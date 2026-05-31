@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback, memo } from 'react';
-import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info, Award, Upload, Eye } from 'lucide-react';
+import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info, Award, Upload, Eye, CalendarClock } from 'lucide-react';
 import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { downloadCertificatePdf } from '@/lib/certificatePdf';
@@ -182,8 +182,14 @@ const AdminSettings = () => {
   const TABS = [
     { value: 'commission', label: 'Commission', icon: Percent },
     { value: 'referral', label: 'Referral', icon: Gift },
+    { value: 'autopayout', label: 'Auto Payouts', icon: CalendarClock },
     { value: 'certificate', label: 'Certificate', icon: Award },
     { value: 'general', label: 'General', icon: Cog },
+  ];
+
+  const DAYS = [
+    { v: '0', l: 'Sunday' }, { v: '1', l: 'Monday' }, { v: '2', l: 'Tuesday' },
+    { v: '3', l: 'Wednesday' }, { v: '4', l: 'Thursday' }, { v: '5', l: 'Friday' }, { v: '6', l: 'Saturday' },
   ];
 
   // ---- Certificate signature upload ----
