@@ -14,7 +14,17 @@ const CreatorPayouts = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const walletBalance = profile?.wallet_balance || 0;
+
+  // Withdrawable balance only — held earnings are excluded.
+  const { data: withdrawable = 0 } = useQuery({
+    queryKey: ['withdrawable-balance', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc('wallet_available_balance', { _user_id: user!.id });
+      return Number(data) || 0;
+    },
+    enabled: !!user,
+  });
+  const walletBalance = withdrawable;
   const canRequest = walletBalance >= 500;
 
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'upi'>('upi');
