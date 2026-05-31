@@ -56,9 +56,6 @@ const Signup = () => {
     return Object.keys(e).length === 0;
   };
 
-  const isPasswordValid = () => {
-    return form.password.length >= 8;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
