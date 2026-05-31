@@ -1,57 +1,31 @@
-## Premium redesign of `/advanced`
+## Two separate issues to fix
 
-Goal: turn the current functional dark page into a high-conversion premium sales page that justifies the ₹4,449 price and feels distinctly more premium than the Standard Bundle page.
+### Issue 1 — Signup blocked by "Password is known to be weak"
 
-### Visual direction
+Your frontend already only requires 8+ characters. The error in the red toast is added by the **backend auth layer**, which has *leaked-password protection (HIBP)* enabled. This feature checks every password against known breach databases and blocks common ones — regardless of length.
 
-- Keep dark base (`#0b1020`) but layer in depth: radial amber glow behind hero, subtle grid/noise texture, gradient borders on cards.
-- Amber (`#f59e0b`) as the single hero accent — used sparingly for impact, not on every element.
-- Display font (Space Grotesk) for huge hero number + section headers; DM Sans for body.
-- Animations: fade-in on scroll for each section, scale-in for the hero CTA, subtle glow pulse on the price badge.
+**Fix:** Turn off leaked-password protection in the backend auth config so the only rule is the 8-character minimum (as you requested). No code change needed.
 
-### New page structure (top → bottom)
+> Note: This lowers account security slightly (users can pick breached passwords). That is the intended behavior per your request to keep "only minimum 8 characters."
 
-1. **Sticky top nav** — keep existing, add scroll-aware shadow.
-2. **Hero (revamped)**
-   - Animated "Advanced Program" badge with amber glow ring.
-   - Headline: "Go from learner to earner" (kept).
-   - Subheadline + dual CTA (Enroll / See curriculum — anchor link).
-   - Right-side floating price card (instead of centered buttons): ₹4,449 with strike-through "₹X" suggested value, "Includes ₹449 Standard Bundle FREE" pill, trust row (Razorpay · Lifetime · GST invoice).
-3. **Trust strip** — student count, average rating, certificates issued (pull from real data if available, else static).
-4. **"Includes Standard Bundle free" callout** — keep, polish with gradient border.
-5. **Curriculum preview** — accordion of modules/chapters fetched from the advanced course (resolved via `advanced_course_id` setting → `courses` + `chapters` tables). Show module title, lesson count, duration. First module expanded by default.
-6. **What you get** — keep 6 feature cards but upgrade with icons, hover lift, and gradient borders.
-7. **Basic vs Advanced comparison table** — two columns side by side, checkmarks/crosses, Advanced column highlighted with amber border + "Recommended" tag.
-8. **Testimonials** — 3-card grid (avatar, name, role, quote, star rating). Static seed data for now; later wire to a `testimonials` table.
-9. **Instructor / Mentor strip** — short "Taught by Backupshala mentors" block with avatars.
-10. **FAQ** — accordion with 6–8 common questions (refund, access duration, certificate, mentor sessions, payment, GST).
-11. **Money-back guarantee badge** — 7-day refund seal with shield icon.
-12. **Final CTA section** — keep, upgrade with bigger gradient panel and countdown-style urgency text ("Join 1,200+ students").
-13. **Footer** — keep minimal.
-14. **Sticky bottom enroll bar** — appears after scrolling past the hero on all viewports. Shows: course name, price, "Enroll for ₹4,449" button. Hidden on the hero, fades in on scroll, dismissible on mobile.
+### Issue 2 — Enroll fails with "Edge Function returned a non-2xx status code"
 
-### Files to create / edit
+The payment order function calls Razorpay and Razorpay responds with `Authentication failed`. Both secrets are present in the backend, so this is a **credential mismatch**, not missing keys. The most common causes:
 
-- **Edit** `src/pages/Advanced.tsx` — full restructure using new section components.
-- **Create** `src/components/advanced/` folder:
-  - `AdvancedHero.tsx`
-  - `AdvancedCurriculum.tsx` (queries advanced course + chapters)
-  - `AdvancedComparison.tsx`
-  - `AdvancedTestimonials.tsx`
-  - `AdvancedFAQ.tsx`
-  - `AdvancedStickyBar.tsx` (uses scroll listener + IntersectionObserver on hero)
-- **No DB changes** — reuses existing `courses`, `chapters`, `platform_settings`. Testimonials hardcoded in component (clear `// TODO: move to DB later` comment).
+- The `RAZORPAY_KEY_SECRET` was updated for the new business account, but `RAZORPAY_KEY_ID` still belongs to the **old** account (or vice versa).
+- A test Key ID (`rzp_test_…`) is paired with a live secret, or vice versa.
+- Stray whitespace / newline accidentally saved into one of the values.
 
-### Out of scope (can be follow-ups)
+**Fix:** Re-enter **both** `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` together, copied from the **same** account/mode (live) in the Razorpay dashboard, with no surrounding spaces. After updating, I'll trigger a test order against the live Razorpay API to confirm the credentials authenticate (the function logs will show success instead of "Authentication failed").
 
-- Real testimonials table + admin UI.
-- Real-time student counter.
-- Video preview embed in hero.
-- A/B testing variants.
+## Steps
 
-### Acceptance
+1. Disable leaked-password protection in backend auth config.
+2. Open the secure secret form for `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` so you can paste the matching pair from the new account.
+3. Verify the payment function authenticates with Razorpay (test order + log check).
+4. Confirm signup works with a simple 8-char password and that "Enroll Now" creates an order.
 
-- Page feels visually distinct from Standard Bundle page (premium vs friendly).
-- All sections render with real course data where applicable.
-- Sticky bar behaves correctly on mobile + desktop, doesn't overlap footer.
-- Lighthouse SEO/performance not regressed; meta tags preserved.
+## What I need from you
+
+- Confirm I should disable leaked-password protection (keeps only the 8-char rule).
+- Have your new Razorpay **Key ID** and **Key Secret** ready to paste (both from live mode, same account).
