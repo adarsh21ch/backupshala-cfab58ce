@@ -48,3 +48,18 @@ export const usePricingTiers = (includeHidden = false) => {
     staleTime: 60_000,
   });
 };
+
+/**
+ * The cheapest currently-live tier — used for marketing copy ("from ₹X").
+ * Returns the tier and a formatted "₹X" label, with a loading flag.
+ */
+export const useEntryLiveTier = () => {
+  const { data, isLoading } = usePricingTiers();
+  const live = (data || []).filter(t => t.status === 'live').sort((a, b) => a.price - b.price);
+  const tier = live[0] ?? null;
+  return {
+    tier,
+    isLoading,
+    priceLabel: isLoading || !tier ? '—' : `₹${tier.price.toLocaleString('en-IN')}`,
+  };
+};
