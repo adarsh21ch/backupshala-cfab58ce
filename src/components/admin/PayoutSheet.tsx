@@ -100,6 +100,36 @@ const PayoutSheet = ({ compact = false }: PayoutSheetProps) => {
   const rows = requests || [];
   const total = rows.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
 
+  // Per-user balance breakdown (withdrawable vs on-hold) so the admin never
+  // accidentally pays held money. Admin can read all wallet_transactions.
+  const userIds = Array.from(new Set(rows.map((r: any) => r.user_id))) as string[];
+  const { data: balances } = useQuery({
+    queryKey: ['payout-sheet-balances', userIds],
+    enabled: userIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('wallet_transactions')
+        .select('user_id, type, status, amount, available_after')
+        .in('user_id', userIds);
+      const now = Date.now();
+      const map: Record<string, { withdrawable: number; onHold: number }> = {};
+      (data || []).forEach((t: any) => {
+        const b = (map[t.user_id] ||= { withdrawable: 0, onHold: 0 });
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'credit' && t.status === 'completed') {
+          if (t.available_after && new Date(t.available_after).getTime() > now) b.onHold += amt;
+          else b.withdrawable += amt;
+        } else if ((t.type === 'debit' || t.type === 'withdrawal') &&
+          (t.status === 'completed' || t.status === 'pending')) {
+          b.withdrawable -= amt;
+        }
+      });
+      Object.values(map).forEach((b) => { b.withdrawable = Math.max(0, b.withdrawable); });
+      return map;
+    },
+  });
+
+
   const invokeComplete = async (id: string, utr: string) => {
     const { data, error } = await supabase.functions.invoke('admin-payout-action', {
       body: { action: 'complete', payout_id: id, utr },
@@ -244,6 +274,33 @@ const PayoutSheet = ({ compact = false }: PayoutSheetProps) => {
                   <Field label="Bank" value={r.bank_name} mono={false} />
                   <Field label="PAN" value={pan(r)} />
                 </div>
+
+                {/* balance safety: withdrawable (payable now) vs on hold */}
+                {(() => {
+                  const bal = balances?.[r.user_id];
+                  const withdrawable = bal?.withdrawable ?? 0;
+                  const onHold = bal?.onHold ?? 0;
+                  const overpay = Number(r.amount) > withdrawable + 0.5;
+                  return (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      <span className="flex items-center gap-1">
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Withdrawable</span>
+                        <span className="font-semibold text-primary">{formatINR(withdrawable)}</span>
+                      </span>
+                      <span className="flex items-center gap-1 text-muted-foreground/60">
+                        <span className="text-[10px] uppercase tracking-wide">On hold</span>
+                        <span className="font-medium">{formatINR(onHold)}</span>
+                      </span>
+                      {overpay && (
+                        <Badge variant="secondary" className="border-0 bg-destructive/15 text-destructive text-[10px]">
+                          ⚠ Exceeds withdrawable — do not pay
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })()}
+
+
 
                 {/* inline mark-paid */}
                 <div className="flex flex-wrap items-center gap-2">

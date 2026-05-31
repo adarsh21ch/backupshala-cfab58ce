@@ -77,6 +77,24 @@ export async function createPayout(
     };
   }
 
+  // ---- WITHDRAWABLE balance gate (held money must be invisible) ----
+  // Single source of truth: only credits whose hold has elapsed, minus all
+  // debits/withdrawals already taken. Held (available_after > now) money can
+  // NEVER be paid out, regardless of what wallets.balance shows.
+  const { data: availRaw, error: availErr } = await supabase.rpc(
+    "wallet_available_balance",
+    { _user_id: input.userId },
+  );
+  if (availErr) return { ok: false, status: 500, error: availErr.message };
+  const withdrawable = Number(availRaw) || 0;
+  if (amt > withdrawable) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Amount exceeds withdrawable balance — some funds are still on hold",
+    };
+  }
+
   // ---- Load wallet ----
   const { data: walletRow, error: walletSelErr } = await supabase
     .from("wallets")

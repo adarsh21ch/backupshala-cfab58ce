@@ -47,27 +47,26 @@ const Wallet = () => {
     enabled: !!user,
   });
 
-  // Calculate available vs pending
+  // Authoritative withdrawable balance (single source of truth, shared with
+  // the payout backend). Held money is excluded by the RPC.
+  const { data: rpcAvailable } = useQuery({
+    queryKey: ['withdrawable-balance', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc('wallet_available_balance', { _user_id: user!.id });
+      return Number(data) || 0;
+    },
+    enabled: !!user,
+  });
+
+  // Held (pending) credits — shown separately so users understand the gap
+  // between current balance and what is actually withdrawable.
   const now = new Date();
-  const availableBalance = transactions?.filter(t =>
-    t.type === 'credit' && t.status === 'completed' &&
-    (!t.available_after || new Date(t.available_after) <= now)
-  ).reduce((s, t) => s + Number(t.amount), 0) || 0;
-
-  const pendingDebits = transactions?.filter(t =>
-    (t.type === 'debit' || t.type === 'withdrawal') && t.status === 'pending'
-  ).reduce((s, t) => s + Number(t.amount), 0) || 0;
-
-  const totalDebits = transactions?.filter(t =>
-    (t.type === 'debit' || t.type === 'withdrawal') && t.status === 'completed'
-  ).reduce((s, t) => s + Number(t.amount), 0) || 0;
-
   const pendingCredits = transactions?.filter(t =>
     t.type === 'credit' && t.status === 'completed' &&
     t.available_after && new Date(t.available_after) > now
   ).reduce((s, t) => s + Number(t.amount), 0) || 0;
 
-  const actualAvailable = Math.max(0, availableBalance - totalDebits - pendingDebits);
+  const actualAvailable = Math.max(0, Number(rpcAvailable) || 0);
   const canWithdraw = actualAvailable >= 500;
 
   const filteredTx = transactions?.filter(t => {
@@ -111,6 +110,7 @@ const Wallet = () => {
       setShowWithdraw(false);
       queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['withdrawable-balance'] });
     },
     onError: (err: any) => {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });

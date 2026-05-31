@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Play, Loader2, CalendarClock } from 'lucide-react';
 import PayoutSheet from '@/components/admin/PayoutSheet';
+import ReconciliationCard from '@/components/admin/ReconciliationCard';
 
 const statusBadge = (status: string) => {
   switch (status) {
@@ -81,6 +82,8 @@ const AdminPayoutRuns = () => {
         </div>
 
         <PayoutSheet compact />
+
+        <ReconciliationCard />
 
 
 

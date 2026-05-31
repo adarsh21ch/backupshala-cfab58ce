@@ -15,7 +15,18 @@ const Payouts = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const walletBalance = profile?.wallet_balance || 0;
+
+  // Withdrawable balance only — held money (available_after in the future) is
+  // excluded. Single source of truth shared with the payout backend.
+  const { data: withdrawable = 0 } = useQuery({
+    queryKey: ['withdrawable-balance', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc('wallet_available_balance', { _user_id: user!.id });
+      return Number(data) || 0;
+    },
+    enabled: !!user,
+  });
+  const walletBalance = withdrawable;
   const canRequest = walletBalance >= 500;
 
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'upi'>('upi');
@@ -102,6 +113,7 @@ const Payouts = () => {
       toast({ title: 'Payout request submitted! 🎉' });
       queryClient.invalidateQueries({ queryKey: ['my-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['kyc-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['withdrawable-balance'] });
       refreshProfile();
       setAmount(''); setUpiId(''); setBankName(''); setAccountHolder('');
       setAccountNumber(''); setIfscCode(''); setPanNumber('');
