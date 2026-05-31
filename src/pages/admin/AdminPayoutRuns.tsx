@@ -9,6 +9,7 @@ import { formatINR } from '@/lib/format';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Play, Loader2, CalendarClock } from 'lucide-react';
+import PayoutSheet from '@/components/admin/PayoutSheet';
 
 const statusBadge = (status: string) => {
   switch (status) {
@@ -78,6 +79,10 @@ const AdminPayoutRuns = () => {
             Run now
           </Button>
         </div>
+
+        <PayoutSheet compact />
+
+
 
         <Card className="bg-card border-border">
           <CardContent className="p-0">
