@@ -42,6 +42,7 @@ import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import Pricing from "./pages/Pricing";
 import CreatorVideos from "./pages/creator/CreatorVideos";
 import CreatorSettings from "./pages/creator/CreatorSettings";
 import CreatorUnlockRequests from "./pages/creator/CreatorUnlockRequests";
@@ -156,6 +157,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/advanced" element={<Advanced />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/c/:creatorSlug" element={<CreatorProfile />} />
             <Route path="/c/:creatorSlug/:courseSlug" element={<CourseEnrollment />} />
             <Route path="/login" element={<Login />} />
