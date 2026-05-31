@@ -160,13 +160,18 @@ const AdminPayouts = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="pending">
+        <Tabs defaultValue="sheet">
           <TabsList>
+            <TabsTrigger value="sheet">Payout Sheet ({pendingItems.length})</TabsTrigger>
             <TabsTrigger value="pending">Pending ({pendingItems.length})</TabsTrigger>
             <TabsTrigger value="paid">Completed ({filterByStatus('paid').length})</TabsTrigger>
             <TabsTrigger value="rejected">Rejected ({filterByStatus('rejected').length})</TabsTrigger>
             <TabsTrigger value="all">All ({(requests || []).length})</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="sheet">
+            <PayoutSheet />
+          </TabsContent>
           {['pending', 'paid', 'rejected', 'all'].map(status => (
             <TabsContent key={status} value={status}>
               <Card className="bg-card border-border">
