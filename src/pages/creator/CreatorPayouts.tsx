@@ -82,6 +82,7 @@ const CreatorPayouts = () => {
     onSuccess: () => {
       toast({ title: 'Payout request submitted! 🎉' });
       queryClient.invalidateQueries({ queryKey: ['creator-payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['withdrawable-balance'] });
       refreshProfile();
       setAmount(''); setUpiId(''); setBankName(''); setAccountHolder(''); setAccountNumber(''); setIfscCode('');
     },
