@@ -73,6 +73,14 @@ export const emailTpl = {
        <p>Your certificate code: <strong style="font-family:monospace">${certCode}</strong></p>`,
       'View Certificate', `${SITE}/certificate/${certCode}`)
   }),
+  weeklyPayoutQueued: (name: string, amount: number, method: string) => ({
+    subject: `Your weekly payout of ₹${amount.toFixed(0)} is queued 💸`,
+    html: wrap('Weekly payout queued',
+      `<p>Hi ${name || 'there'}, your withdrawable balance has been automatically queued for payout.</p>
+       <p>Amount: <strong>₹${amount.toFixed(0)}</strong> via <strong>${method}</strong>.</p>
+       <p>It will be processed within 3–5 business days. You can turn off automatic weekly payouts anytime from your wallet.</p>`,
+      'View Wallet', `${SITE}/wallet`)
+  }),
 };
 
 export async function sendEmail(supabase: any, to: string | string[], tpl: { subject: string; html: string }) {

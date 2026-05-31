@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback, memo } from 'react';
-import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info, Award, Upload, Eye } from 'lucide-react';
+import { Save, AlertTriangle, Settings as SettingsIcon, Percent, Gift, Star, Cog, X, Info, Award, Upload, Eye, CalendarClock } from 'lucide-react';
 import CommissionStructureCard from '@/components/admin/CommissionStructureCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { downloadCertificatePdf } from '@/lib/certificatePdf';
@@ -182,8 +182,14 @@ const AdminSettings = () => {
   const TABS = [
     { value: 'commission', label: 'Commission', icon: Percent },
     { value: 'referral', label: 'Referral', icon: Gift },
+    { value: 'autopayout', label: 'Auto Payouts', icon: CalendarClock },
     { value: 'certificate', label: 'Certificate', icon: Award },
     { value: 'general', label: 'General', icon: Cog },
+  ];
+
+  const DAYS = [
+    { v: '0', l: 'Sunday' }, { v: '1', l: 'Monday' }, { v: '2', l: 'Tuesday' },
+    { v: '3', l: 'Wednesday' }, { v: '4', l: 'Thursday' }, { v: '5', l: 'Friday' }, { v: '6', l: 'Saturday' },
   ];
 
   // ---- Certificate signature upload ----
@@ -345,6 +351,52 @@ const AdminSettings = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="autopayout" className="mt-5">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-primary" /> Automatic Weekly Payouts
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Once a week the system automatically creates pending payout requests for every eligible user (withdrawable balance over the minimum, saved payout details + PAN, no open request). It does NOT auto-send money — you still approve &amp; pay from the Payouts queue.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <ToggleField
+                  k="auto_payout_enabled"
+                  label="Enable Automatic Weekly Payouts"
+                  checked={(values.auto_payout_enabled ?? 'true') === 'true'}
+                  onChange={v => setVal('auto_payout_enabled', v ? 'true' : 'false')}
+                  hint="Master switch. When off, no weekly runs happen even if users opted in."
+                />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <NumberField
+                    k="auto_payout_min_amount"
+                    label="Minimum Auto-Payout Amount"
+                    value={values.auto_payout_min_amount ?? '500'}
+                    onChange={v => setVal('auto_payout_min_amount', v)}
+                    prefix="₹"
+                    hint="A user's withdrawable balance must reach this before an automatic payout is created. Min ₹500."
+                  />
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Payout Day (UTC)</Label>
+                    <Select value={values.auto_payout_day_of_week ?? '1'} onValueChange={v => setVal('auto_payout_day_of_week', v)}>
+                      <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {DAYS.map(d => <SelectItem key={d.v} value={d.v}>{d.l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">The job runs daily at 04:00 UTC (≈09:30 AM IST) and only fires the payout run on this day.</p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 text-xs text-muted-foreground">
+                  Runs are idempotent per ISO week — re-running never double-pays. See <strong>Payout Runs</strong> for history and a manual "Run now" button.
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="certificate" className="mt-5">
             <Card className="bg-card border-border">

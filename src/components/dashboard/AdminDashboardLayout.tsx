@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles, ChevronDown, Webhook, AlertCircle } from 'lucide-react';
+import { BookOpen, Users, IndianRupee, LayoutDashboard, LogOut, Menu, X, Wallet, Settings, ShieldCheck, CreditCard, UserCheck, MessageSquare, Trophy, Film, Star, ClipboardList, TrendingUp, Sparkles, ChevronDown, Webhook, AlertCircle, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useMemo, useEffect } from 'react';
 import { prefetchAdminRoutes } from '@/App';
@@ -37,6 +37,7 @@ const groups: Group[] = [
       { to: '/admin/payments', label: 'Payments', icon: CreditCard, allow: ['admin', 'finance'] },
       { to: '/admin/commissions', label: 'Commissions', icon: IndianRupee, allow: ['admin', 'finance'] },
       { to: '/admin/payouts', label: 'Payouts', icon: Wallet, allow: ['admin', 'finance'] },
+      { to: '/admin/payout-runs', label: 'Payout Runs', icon: CalendarClock, allow: ['admin', 'finance'] },
     ],
   },
   {
