@@ -110,6 +110,7 @@ const Wallet = () => {
       setShowWithdraw(false);
       queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['withdrawable-balance'] });
     },
     onError: (err: any) => {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });
