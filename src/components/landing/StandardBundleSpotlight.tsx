@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check, Star, Award } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { useEntryLiveTier } from '@/hooks/usePricingTiers';
 
 const includes = [
   'Video Editing — learn CapCut and short-form editing',
@@ -16,8 +16,7 @@ const includes = [
 ];
 
 const StandardBundleSpotlight = () => {
-  const { data: settings, isLoading } = usePlatformSettings();
-  const priceLabel = isLoading ? '—' : `₹${settings.basic_price}`;
+  const { priceLabel } = useEntryLiveTier();
   return (
   <section id="standard-bundle" className="relative py-16 md:py-24 pb-24 md:pb-24">
     <div className="container mx-auto px-4">

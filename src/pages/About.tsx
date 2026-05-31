@@ -4,8 +4,7 @@ import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 import { Target, Scale, Users } from 'lucide-react';
 import BackButton from '@/components/BackButton';
-import { usePlatformSettings } from '@/hooks/usePlatformSettings';
-import { formatINR } from '@/lib/format';
+import { useEntryLiveTier } from '@/hooks/usePricingTiers';
 
 const values = [
   { icon: Target, title: 'Affordable', desc: 'World-class skills at Indian prices' },
@@ -14,8 +13,7 @@ const values = [
 ];
 
 const About = () => {
-  const { data } = usePlatformSettings();
-  const priceLabel = formatINR(data.basic_price);
+  const { priceLabel } = useEntryLiveTier();
 
   return (
     <div className="min-h-screen">
