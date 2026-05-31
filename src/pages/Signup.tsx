@@ -135,13 +135,8 @@ const Signup = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {form.password && (
-                <div className="mt-2">
-                  <div className="h-1.5 w-full rounded-full bg-muted">
-                    <div className={`h-full rounded-full transition-all ${strength.color}`} style={{ width: strength.width }} />
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{strength.label}</p>
-                </div>
+              {form.password && form.password.length < 8 && (
+                <p className="mt-1 text-xs text-muted-foreground">Password must be at least 8 characters</p>
               )}
               {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
             </div>
