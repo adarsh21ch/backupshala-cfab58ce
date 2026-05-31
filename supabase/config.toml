@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.sitemap]
 verify_jwt = false
+
+[functions.run-weekly-payouts]
+verify_jwt = false
