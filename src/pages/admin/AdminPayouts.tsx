@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, Clock, Download } from 'lucide-react';
 import { useState } from 'react';
+import PayoutSheet from '@/components/admin/PayoutSheet';
 
 const AdminPayouts = () => {
   const { user } = useAuth();
