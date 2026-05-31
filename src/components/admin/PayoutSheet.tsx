@@ -100,6 +100,36 @@ const PayoutSheet = ({ compact = false }: PayoutSheetProps) => {
   const rows = requests || [];
   const total = rows.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
 
+  // Per-user balance breakdown (withdrawable vs on-hold) so the admin never
+  // accidentally pays held money. Admin can read all wallet_transactions.
+  const userIds = Array.from(new Set(rows.map((r: any) => r.user_id))) as string[];
+  const { data: balances } = useQuery({
+    queryKey: ['payout-sheet-balances', userIds],
+    enabled: userIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('wallet_transactions')
+        .select('user_id, type, status, amount, available_after')
+        .in('user_id', userIds);
+      const now = Date.now();
+      const map: Record<string, { withdrawable: number; onHold: number }> = {};
+      (data || []).forEach((t: any) => {
+        const b = (map[t.user_id] ||= { withdrawable: 0, onHold: 0 });
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'credit' && t.status === 'completed') {
+          if (t.available_after && new Date(t.available_after).getTime() > now) b.onHold += amt;
+          else b.withdrawable += amt;
+        } else if ((t.type === 'debit' || t.type === 'withdrawal') &&
+          (t.status === 'completed' || t.status === 'pending')) {
+          b.withdrawable -= amt;
+        }
+      });
+      Object.values(map).forEach((b) => { b.withdrawable = Math.max(0, b.withdrawable); });
+      return map;
+    },
+  });
+
+
   const invokeComplete = async (id: string, utr: string) => {
     const { data, error } = await supabase.functions.invoke('admin-payout-action', {
       body: { action: 'complete', payout_id: id, utr },
