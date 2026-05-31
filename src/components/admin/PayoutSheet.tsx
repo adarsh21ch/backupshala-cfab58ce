@@ -275,6 +275,33 @@ const PayoutSheet = ({ compact = false }: PayoutSheetProps) => {
                   <Field label="PAN" value={pan(r)} />
                 </div>
 
+                {/* balance safety: withdrawable (payable now) vs on hold */}
+                {(() => {
+                  const bal = balances?.[r.user_id];
+                  const withdrawable = bal?.withdrawable ?? 0;
+                  const onHold = bal?.onHold ?? 0;
+                  const overpay = Number(r.amount) > withdrawable + 0.5;
+                  return (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      <span className="flex items-center gap-1">
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Withdrawable</span>
+                        <span className="font-semibold text-primary">{formatINR(withdrawable)}</span>
+                      </span>
+                      <span className="flex items-center gap-1 text-muted-foreground/60">
+                        <span className="text-[10px] uppercase tracking-wide">On hold</span>
+                        <span className="font-medium">{formatINR(onHold)}</span>
+                      </span>
+                      {overpay && (
+                        <Badge variant="secondary" className="border-0 bg-destructive/15 text-destructive text-[10px]">
+                          ⚠ Exceeds withdrawable — do not pay
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })()}
+
+
+
                 {/* inline mark-paid */}
                 <div className="flex flex-wrap items-center gap-2">
                   <Input
